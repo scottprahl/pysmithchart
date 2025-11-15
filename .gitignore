@@ -1,16 +1,44 @@
-charts/
+# macOS
 .DS_Store
-tests/.DS_Store
 
-# Sphinx documentation
+# Python
+*.pyc
+*.py[cod]
+*$py.class
+*.so
+__pycache__/
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+.jupyterlite.doit.db
+
+# JupyterLite
+_site/
+.lite_src/
+.lite_root/
+lite/
+
+# Documentation
 docs/_build/
 docs/api/
 
-.ipynb_checkpoints
+# Testing
+.pytest_cache/
 
-pysmithchart/__pycache__/
-tests/__pycache__/
-tests/charts/
-todo.txt
+# GitHub Pages
+.gh-pages/
 
-pysmithchart.egg-info/
+# Temporary
+.tmp/
+*.tmp
+todo
