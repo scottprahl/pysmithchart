@@ -16,7 +16,6 @@ description = "A Python library extending Matplotlib to generate Smith Charts."
 readme = "README.rst"
 license = "BSD-3-Clause"
 dependencies = [
-    "pysmithchart",
     "matplotlib >= 3.7.0",
     "numpy >= 1.20",
     "scipy >= 1.6"
