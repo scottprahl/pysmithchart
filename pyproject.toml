@@ -1,3 +1,10 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["pysmithchart"]
+
 [project]
 name = "pysmithchart"
 version = "0.3.0"
@@ -7,7 +14,7 @@ authors = [
 ]
 description = "A Python library extending Matplotlib to generate Smith Charts."
 readme = "README.rst"
-license = { text = "BSD" }
+license = "BSD-3-Clause"
 dependencies = [
     "pysmithchart",
     "matplotlib >= 3.7.0",
@@ -18,7 +25,6 @@ requires-python = ">=3.8"
 keywords = ["Smith Chart", "impedance", "reflection", "RF engineering", "microwave"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
-    "License :: OSI Approved :: BSD License",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering",
     "Programming Language :: Python",
@@ -35,15 +41,14 @@ classifiers = [
 dev = ["pytest >= 7.0"]
 
 [project.urls]
-"Homepage" = "https://github.com/scottprahl/pysmithchart"
-"Bug Tracker" = "https://github.com/scottprahl/pysmithchart/issues"
-
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+Homepage = "https://github.com/scottprahl/pysmithchart"
+Documentation = "https://pysmithchart.readthedocs.io"
+Source = "https://github.com/scottprahl/pysmithchart"
+Tracker = "https://github.com/scottprahl/pysmithchart/issues"
+Changelog = "https://github.com/scottprahl/pysmithchart/blob/main/docs/CHANGELOG.rst"
 
 [tool.black]
-line-length = 110
+line-length = 120
 target-version = ["py38", "py39", "py310", "py311", "py312"]
 
 [tool.pylint]
@@ -52,12 +57,26 @@ disable = [
     "R0902", "R0904", "R0912", "R0913", "R0914", "R0915", "R1702",
     "W0511"
 ]
-max-line-length = 110
+max-line-length = 120
 
 [tool.ruff]
-line-length = 110
+line-length = 120
 exclude = ["docs"]
 lint.select = ["D", "E", "F", "W"]
 lint.ignore = ["D200", "D212", "F403"]
 lint.pydocstyle.convention = "google"
+
+[tool.check-manifest]
+ignore = [
+  ".readthedocs.yaml",
+  "Makefile",
+  "docs/*",
+  "docs/**/*",
+  "jupyter-lite.json",
+  "jupyter_lite_config.py",
+  "lab/*",
+  "lab/**/*",
+  "release.txt",
+]
+
 

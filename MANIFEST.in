@@ -1,7 +1,7 @@
-include CHANGELOG.rst
+# Core package files
 include LICENSE.txt
-include Makefile
-exclude tests/*
-exclude tests/data/*
-exclude docs/*
-exclude release.txt
+include README.rst
+include CHANGELOG.rst
+#include CITATION.cff
+
+recursive-include tests *.py *.csv
