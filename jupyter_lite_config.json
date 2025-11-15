@@ -1,0 +1,13 @@
+{
+  "LiteBuildConfig": {
+    "apps": ["lab"],
+    "contents": [".lite_src"],
+    "output_dir": "_site/pysmithchart"
+  },
+  "jupyter-config-data": {
+    "appName": "PySmithChart",
+    "appUrl": "./lab",
+    "baseUrl": "./",
+    "defaultKernelName": "python"
+  }
+}
