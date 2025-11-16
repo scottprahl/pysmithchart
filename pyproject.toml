@@ -68,6 +68,7 @@ lint.pydocstyle.convention = "google"
 [tool.check-manifest]
 ignore = [
   ".readthedocs.yaml",
+  ".jupyterlite-ignore",
   "Makefile",
   "requirements-dev.txt",
   "jupyter_lite_config.json",
