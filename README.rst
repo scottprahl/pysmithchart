@@ -20,151 +20,127 @@
 
 .. |docs| image:: https://readthedocs.org/projects/pysmithchart/badge?color=68CA66
    :target: https://pysmithchart.readthedocs.io
-   :alt: Docs
+   :alt: Documentation
 
 .. |downloads| image:: https://img.shields.io/pypi/dm/pysmithchart?color=68CA66
    :target: https://pypi.org/project/pysmithchart/
    :alt: Downloads
 
-.. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
-   :target: https://github.com/psf/black
-   :alt: code style: black
-
+.. |lite| image:: https://img.shields.io/badge/try-JupyterLite-68CA66.svg
+   :target: https://scottprahl.github.io/pysmithchart/
+   :alt: Try Online
 
 pysmithchart
 ============
 
 |pypi| |github| |conda| |downloads|
 
-|license| |test| |docs| |black|
+|license| |test| |docs| |lite|
 
-Overview
+**pysmithchart** is a Python library that provides high-quality Smith charts for RF and microwave engineering applications. Built as a native extension to **matplotlib**, it enables reproducible analysis and publication-ready visualization of reflection coefficients, impedances, and admittances commonly encountered in transmission-line theory, antenna characterization, and network analysis.
+
+Smith charts remain a foundational tool in RF engineering, and this library is designed to support both instructional use and research workflows. By integrating directly with matplotlib's projection system, pysmithchart enables familiar plotting syntax while offering fine-grained control of chart geometry, grid styling, interpolation, and layout.
+
+.. image:: https://raw.githubusercontent.com/scottprahl/pysmithchart/main/docs/readme_fig1.svg
+   :alt: Smith Chart Example
+   :width: 400px
+   :align: center
+
+----
+
+Features
 --------
 
-**pysmithchart** is a matplotlib extension that adds a custom projection for creating
-Smith Charts in Python. Originally forked from `pysmithplot <https://github.com/vMeijin/pySmithPlot>`_,
-this library has been updated to work with modern matplotlib versions while preserving
-a rich set of features for RF and microwave engineering applications.
-
-The package enables visualization and analysis of reflection coefficients,
-impedances, and admittances. It seamlessly integrates into the matplotlib ecosystem,
-providing full control over plot appearance, grid customizations, interpolation
-of complex data, and even advanced marker handling.
-
-Key Capabilities
-----------------
-
-- **Smith Projection:** Plot data on a Smith chart using the `SmithAxes` projection.
-- **Multiple Data Types:** Easily plot S-parameters, normalized impedances (Z) and admittances (Y).
-- **Grid Customization:** Draw major/minor gridlines as arcs with "fancy" adaptive
-  spacing and styling options.
-- **Interpolation & Equidistant Points:** Optionally smooth or resample plotted data.
-- **Marker Customization:** Manipulate start and end markers (with optional rotation)
-  to emphasize data endpoints.
-- **Full Matplotlib Integration:** Use matplotlib’s standard API along with extra keywords
-  for specialized Smith chart plotting.
-
-Full docs are available at https://pysmithchart.readthedocs.io
+* **Seamless matplotlib integration** — implemented as a projection; compatible with standard plotting workflows
+* **Support for common RF quantities** — reflection coefficients, impedances, admittances, and S-parameters
+* **Configurable analytical grids** — control spacing, style, and precision of constant-R and constant-X curves
+* **Interpolation utilities** — optional smoothing and resampling of complex-valued datasets
+* **Custom marker rotation** — useful for frequency-indexed trajectories and multi-point measurement data
+* **Publication-quality output** — full control over fonts, colors, annotations, and line styling
 
 Installation
 ------------
 
-Install pysmithchart with pip:
+**Using pip:**
 
 .. code-block:: bash
 
     pip install pysmithchart
 
-Or install via conda:
+**Using conda:**
 
 .. code-block:: bash
 
     conda install -c conda-forge pysmithchart
 
-Quick Start Examples
---------------------
+Quick Start
+-----------
 
-Below are a few examples to help you get started quickly.
-
-**Example 1: Plotting a Reflection Coefficient (S-parameter)**
-
-This example creates a Smith chart and plots a simple reflection coefficient:
+**Reflection Coefficients (S-Parameters)**
 
 .. code-block:: python
 
-    import numpy as np
     import matplotlib.pyplot as plt
     from pysmithchart import S_PARAMETER
 
-    # array of reflection coefficients
     S = [0.5 + 0.3j, -0.2 - 0.1j]
 
-    # Create a subplot that will use the Smith projection.
-    plt.figure(figsize=(6,6))
-    plt.subplot(1, 1, 1, projection="smith", grid_major_color_x='red', grid_major_color_y='blue')
-
-    # Plot the reflection (scattering) coefficients
-    plt.plot(S, ls='', markersize=10, datatype=S_PARAMETER)
-
-    plt.title('Plotting 0.5 + 0.3j and -0.2 - 0.1j')
+    plt.figure(figsize=(6, 6))
+    plt.subplot(1, 1, 1, projection="smith")
+    plt.plot(S, datatype=S_PARAMETER, marker='o', markersize=10, label='S₁₁')
+    plt.legend()
+    plt.title('Reflection Coefficients')
     plt.show()
 
-.. image:: https://raw.githubusercontent.com/scottprahl/pysmithchart/main/docs/readme_fig1.svg
-   :alt: Colored Smith Chart
-
-**Example 2: Plotting Impedance Data**
-
-Here we plot a set of normalized impedance values on the Smith chart:
+**Normalized Impedance Example**
 
 .. code-block:: python
 
     import matplotlib.pyplot as plt
-    import pysmithchart
 
-    # Sample impedance data (normalized)
     ZL = [30 + 30j, 50 + 50j, 100 + 100j]
 
-    # Create a subplot that will use the Smith projection and include the minor grid
-    plt.figure(figsize=(6,6))
-    plt.subplot(1, 1, 1, projection="smith", axes_impedance=200, grid_minor_enable=True)
-    
-    plt.plot(ZL, "b-o", markersize=10)   # default datatype is Z_PARAMETER
-    plt.title('Plotting Impedances Assuming Z₀=200Ω')
+    plt.figure(figsize=(6, 6))
+    ax = plt.subplot(1, 1, 1, projection="smith",
+                     axes_impedance=200,  # Z₀ = 200Ω
+                     grid_minor_enable=True)
+
+    plt.plot(ZL, "b-o", markersize=10, label='Load Impedance')
+    plt.legend()
+    plt.title('Impedances with Z₀ = 200Ω')
     plt.show()
-
-.. image:: https://raw.githubusercontent.com/scottprahl/pysmithchart/main/docs/readme_fig2.svg
-   :alt: Colored Smith Chart
-
-**Example 3: Advanced Plot Customization**
-
-Customize grid styles, marker behavior, and apply interpolation:
-
-.. code-block:: python
-
-    import matplotlib.pyplot as plt
-    import pysmithchart
-
-    ZL = [40 + 20j, 60 + 80j, 90 + 30j]
-
-    plt.figure(figsize=(6,6))
-    plt.subplot(1, 1, 1, projection="smith")
-
-    plt.plot(ZL, markersize=16, ls='--', markerhack=True, rotate_marker=True)
-    plt.title('Custom markers')
-    plt.savefig("readme_fig3.svg", format='svg')
-    plt.show()
-
-.. image:: https://raw.githubusercontent.com/scottprahl/pysmithchart/main/docs/readme_fig3.svg
-   :alt: Custom Markers
 
 Documentation
 -------------
 
-For more details on the API, configuration options, and advanced usage, please refer
-to the full documentation at `pysmithchart.readthedocs.io <https://pysmithchart.readthedocs.io>`_.
+Comprehensive documentation, including the API reference, tutorials, theoretical background, and worked examples, is available at:
+
+📚 https://pysmithchart.readthedocs.io
+
+Interactive Examples
+--------------------
+
+A live, browser-based environment powered by JupyterLite is available for experimentation without installation:
+
+🚀 https://scottprahl.github.io/pysmithchart/
+
+Contributing
+------------
+
+Contributions, issue reports, and feature requests are welcome. Development guidelines and tests are included in the repository.
+
+* Repository: https://github.com/scottprahl/pysmithchart
+* Issues: https://github.com/scottprahl/pysmithchart/issues
 
 License
 -------
 
-pysmithchart is distributed under the 
-`BSD LICENSE <https://raw.githubusercontent.com/scottprahl/pysmithchart/main/LICENSE.txt>`.
+pysmithchart is released under the BSD-3 Clause License.
+
+See `LICENSE.txt <https://github.com/scottprahl/pysmithchart/blob/main/LICENSE.txt>`_ for details.
+
+Acknowledgments
+---------------
+
+This project originated from an adaptation of `pySmithPlot <https://github.com/vMeijin/pySmithPlot>`_ by Paul Staerke. pysmithchart extends that foundation with modernized interfaces, enhanced plotting capabilities, and compatibility with current versions of matplotlib.
+
