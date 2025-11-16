@@ -184,25 +184,50 @@ lite: $(VENV)/.ready
 	@echo "==> Ensuring required files exist"; \
 	test -f "$(ROOT)/jupyter_lite_config.json" || (echo "❌ Missing jupyter_lite_config.json" && false)
 
-	@echo "==> Clearing doit cache (if present)"
-	@/bin/rm -f "$(DOIT_DB)"
+	@echo "==> Building package wheel for PyOdide"
+	@$(PYTHON) -m build
+
+	@echo "==> Checking for .gh-pages worktree"
+	@if [ -d "$(WORKTREE)" ]; then \
+		echo "    Found .gh-pages worktree, removing..."; \
+		git worktree remove "$(WORKTREE)" --force 2>/dev/null || true; \
+		git worktree prune; \
+		rm -rf "$(WORKTREE)"; \
+		echo "    ✓ Removed"; \
+	else \
+		echo "    No .gh-pages worktree found"; \
+	fi
+
+	@echo "==> Cleaning previous builds"
+	@/bin/rm -rf "$(OUT_ROOT)"
+	@/bin/rm -rf "$(DOIT_DB)"
+	@/bin/rm -rf ".doit.db"
+	@/bin/rm -rf ".jupyterlite.doit.db.db"
+	@echo "    ✓ Cleaned"
 
 	@echo "==> Staging notebooks from docs -> $(STAGE_DIR)"
 	@/bin/rm -rf "$(STAGE_DIR)"; mkdir -p "$(STAGE_DIR)"
-	@/bin/cp docs/*.ipynb "$(STAGE_DIR)"
+	@if ls docs/*.ipynb 1> /dev/null 2>&1; then \
+		/bin/cp docs/*.ipynb "$(STAGE_DIR)"; \
+		echo "==> Clearing outputs from staged notebooks"; \
+		"$(PYTHON)" -m jupyter nbconvert --clear-output --inplace "$(STAGE_DIR)"/*.ipynb; \
+	else \
+		echo "⚠️  No notebooks found in docs/"; \
+	fi
 
-	@echo "==> Clearing outputs from staged notebooks"
-	@"$(PYTHON)" -m jupyter nbconvert --clear-output --inplace "$(STAGE_DIR)"/*.ipynb
+	@echo "==> Building JupyterLite"
+	@"$(PYTHON)" -m jupyter lite build \
+		--contents="$(STAGE_DIR)" \
+		--output-dir="$(OUT_DIR)"
 
-	@echo "==> Building JupyterLite into _site/pysmithchart"
-	$(PYTHON) -m jupyter lite build --config=jupyter_lite_config.json
-	
+	@echo "==> Adding .nojekyll for GitHub Pages"
 	@touch "$(OUT_DIR)/.nojekyll"
+	
 	@echo "✅ Build complete -> $(OUT_DIR)"
 
 .PHONY: lite-serve
-lite-serve:
-	[ -d $(OUT_ROOT) ] || { echo "❌ run 'make lite' first"; exit 1; }
+lite-serve: $(VENV)/.ready
+	@test -d "$(OUT_DIR)" || { echo "❌ run 'make lite' first"; exit 1; }
 	@echo "Serving at"
 	@echo "   http://$(HOST):$(PORT)/$(PACKAGE)/?disableCache=1"
 	@echo ""
@@ -244,14 +269,8 @@ lite-deploy:
 	    echo "✅ Deployed to https://$(GITHUB_USER).github.io/$(PACKAGE)/"; \
 	  fi
 
-.PHONY: lab-kernel
-lab-kernel: $(VENV)/.ready
-	@echo "==> Ensuring Jupyter kernel is installed"
-	@$(PYTHON) -m ipykernel install --user --name pysmithchart-dev --display-name "PySmithChart Dev" >/dev/null 2>&1 || true
-	@echo "✅ Kernel available as: PySmithChart Dev"
-
 .PHONY: lab
-lab: lab-kernel
+lab:
 	@echo "==> Launching JupyterLab using venv ($(PYTHON))"
 	@cd "$(CURDIR)" && "$(PYTHON)" -m jupyter lab --ServerApp.root_dir="$(CURDIR)"
 
@@ -266,6 +285,7 @@ clean:
 	rm -rf $(PACKAGE).egg-info
 	rm -rf docs/api
 	rm -rf docs/_build
+	rm -rf tests/charts
 	rm -rf dist
 
 .PHONY: lite-clean
