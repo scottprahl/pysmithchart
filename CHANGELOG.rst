@@ -1,6 +1,15 @@
 Changelog
 =========
 
+0.4.0
+-----
+* added jupyterlite support
+* improved readme
+* simplified MANIFEST.in
+* use venv to build and test
+* use requirements-dev.txt
+* Makefile has many more targets
+
 0.3.0
 -----
 * changed name to pysmithchart
