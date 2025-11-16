@@ -310,9 +310,7 @@ class SmithAxes(Axes):
         self._xaxis_transform = self._xaxis_pretransform + self.transData
         self._xaxis_text1_transform = Affine2D().scale(1.0, 0.0) + self.transData
         self._yaxis_stretch = Affine2D().scale(SC_TWICE_INFINITY, 1.0)
-        self._yaxis_correction = self.transData + Affine2D().translate(
-            *self._get_key("axes.ylabel.correction")[:2]
-        )
+        self._yaxis_correction = self.transData + Affine2D().translate(*self._get_key("axes.ylabel.correction")[:2])
         self._yaxis_transform = self._yaxis_stretch + self.transData
         self._yaxis_text1_transform = self._yaxis_stretch + self._yaxis_correction
 
@@ -697,9 +695,7 @@ class SmithAxes(Axes):
         """
         datatype = kwargs.pop("datatype", self._get_key("plot.default.datatype"))
         if datatype not in [S_PARAMETER, Z_PARAMETER, Y_PARAMETER]:
-            raise ValueError(
-                f"Invalid datatype: {datatype}. Must be S_PARAMETER, Z_PARAMETER, or Y_PARAMETER"
-            )
+            raise ValueError(f"Invalid datatype: {datatype}. Must be S_PARAMETER, Z_PARAMETER, or Y_PARAMETER")
 
         new_args = ()
         for arg in args:
@@ -1036,9 +1032,7 @@ class SmithAxes(Axes):
                 lines = np.array([[ps, min(p0, p1), max(p0, p1)] for ps, p0, p1 in lines])
                 for tq, (qs, q0, q1), _ in self._majorarcs:
                     if tp == tq:
-                        overlaps = (
-                            (abs(lines[:, 0] - qs) < SC_EPSILON) & (lines[:, 2] > q0) & (lines[:, 1] < q1)
-                        )
+                        overlaps = (abs(lines[:, 0] - qs) < SC_EPSILON) & (lines[:, 2] > q0) & (lines[:, 1] < q1)
                         lines[overlaps] = np.nan
                 lines = lines[~np.isnan(lines[:, 0])]
                 lines = lines[np.lexsort((lines[:, 1], lines[:, 0]))]

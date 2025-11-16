@@ -241,9 +241,7 @@ def split_complex(z):
     return [np.real(z), np.imag(z)]
 
 
-def vswr_rotation(
-    x, y, impedance=1, real=None, imag=None, lambda_rotation=None, solution2=True, direction="clockwise"
-):
+def vswr_rotation(x, y, impedance=1, real=None, imag=None, lambda_rotation=None, solution2=True, direction="clockwise"):
     """
     Rotates a point `(x, y)` on the Smith chart to a specified destination or orientation.
 

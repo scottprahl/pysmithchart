@@ -191,9 +191,7 @@ class SmithAutoMinorLocator(AutoMinorLocator):
         if self._ticks is not None:
             return self._ticks
 
-        self._ticks = np.hstack(
-            [np.linspace(p0, p1, self.ndivs + 1)[1:-1] for p0, p1 in zip(locs[:-1], locs[1:])]
-        )
+        self._ticks = np.hstack([np.linspace(p0, p1, self.ndivs + 1)[1:-1] for p0, p1 in zip(locs[:-1], locs[1:])])
         return self._ticks  # Ensures Matplotlib receives the computed ticks
 
     def get_ticklocs(self):
