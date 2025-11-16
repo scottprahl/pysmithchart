@@ -50,6 +50,7 @@ help:
 	@echo "  html           - Build Sphinx HTML documentation"
 	@echo "  speed          - Quick test of jit and no-jit speeds"
 	@echo "  venv           - Create/provision the virtual environment ($(VENV))"
+	@echo "  lab            - Start jupyterlab"
 	@echo ""
 	@echo "Packaging Targets:"
 	@echo "  lint           - Run pylint"
@@ -139,9 +140,9 @@ pylint-check: $(VENV)/.ready
 
 .PHONY: yaml-check
 yaml-check: $(VENV)/.ready
-	-@$(PYTHON) -m yamllint .github/workflows/update_citation.yaml
+#	-@$(PYTHON) -m yamllint .github/workflows/update_citation.yaml
 	-@$(PYTHON) -m yamllint .github/workflows/pypi.yaml
-	-@$(PYTHON) -m yamllint .github/workflows/test.yml
+	-@$(PYTHON) -m yamllint .github/workflows/test.yaml
 
 .PHONY: rst-check
 rst-check: $(VENV)/.ready
@@ -272,7 +273,7 @@ lite-deploy:
 .PHONY: lab
 lab:
 	@echo "==> Launching JupyterLab using venv ($(PYTHON))"
-	@cd "$(CURDIR)" && "$(PYTHON)" -m jupyter lab --ServerApp.root_dir="$(CURDIR)"
+	"$(PYTHON)" -m jupyter lab --ServerApp.root_dir="$(CURDIR)"
 
 .PHONY: clean
 clean:
