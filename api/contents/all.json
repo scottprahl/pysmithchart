@@ -1,0 +1,71 @@
+{
+  "content": [
+    {
+      "content": null,
+      "created": "2025-11-15T23:48:03.558249Z",
+      "format": null,
+      "hash": null,
+      "hash_algorithm": null,
+      "last_modified": "2025-11-15T23:48:01.587333Z",
+      "mimetype": null,
+      "name": "overview.ipynb",
+      "path": "overview.ipynb",
+      "size": 4882,
+      "type": "notebook",
+      "writable": true
+    },
+    {
+      "content": null,
+      "created": "2025-11-15T23:48:03.558456Z",
+      "format": null,
+      "hash": null,
+      "hash_algorithm": null,
+      "last_modified": "2025-11-15T23:48:01.693320Z",
+      "mimetype": null,
+      "name": "vswr.ipynb",
+      "path": "vswr.ipynb",
+      "size": 7184,
+      "type": "notebook",
+      "writable": true
+    },
+    {
+      "content": null,
+      "created": "2025-11-15T23:48:03.557997Z",
+      "format": null,
+      "hash": null,
+      "hash_algorithm": null,
+      "last_modified": "2025-11-15T23:48:01.463428Z",
+      "mimetype": null,
+      "name": "basic.ipynb",
+      "path": "basic.ipynb",
+      "size": 8727,
+      "type": "notebook",
+      "writable": true
+    },
+    {
+      "content": null,
+      "created": "2025-11-15T23:48:03.557709Z",
+      "format": null,
+      "hash": null,
+      "hash_algorithm": null,
+      "last_modified": "2025-11-15T23:48:01.354986Z",
+      "mimetype": null,
+      "name": "advanced.ipynb",
+      "path": "advanced.ipynb",
+      "size": 26070,
+      "type": "notebook",
+      "writable": true
+    }
+  ],
+  "created": "2025-11-15T23:48:03.558366Z",
+  "format": "json",
+  "hash": null,
+  "hash_algorithm": null,
+  "last_modified": "2025-11-15T23:48:03.558366Z",
+  "mimetype": null,
+  "name": "",
+  "path": "",
+  "size": null,
+  "type": "directory",
+  "writable": true
+}
