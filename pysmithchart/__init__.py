@@ -42,9 +42,9 @@ register_projection(SmithAxes)
 # Public API for wildcard imports
 __all__ = ["SmithAxes", "S_PARAMETER", "Z_PARAMETER", "Y_PARAMETER"]
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __author__ = "Paul Staerke, Scott Prahl"
 __email__ = "scott.prahl@oit.edu"
 __copyright__ = "2025 Scott Prahl"
-__license__ = "BSD"
+__license__ = "BSD-3-Clause"
 __url__ = "https://github.com/scottprahl/pysmithchart.git"
