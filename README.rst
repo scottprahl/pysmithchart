@@ -41,7 +41,7 @@ pysmithchart
 
 Smith charts remain a foundational tool in RF engineering, and this library is designed to support both instructional use and research workflows. By integrating directly with matplotlib's projection system, pysmithchart enables familiar plotting syntax while offering fine-grained control of chart geometry, grid styling, interpolation, and layout.
 
-.. image:: https://raw.githubusercontent.com/scottprahl/pysmithchart/main/docs/readme_fig1.svg
+.. image:: https://raw.githubusercontent.com/scottprahl/pysmithchart/main/docs/images/readme_fig1.svg
    :alt: Smith Chart Example
    :width: 400px
    :align: center
