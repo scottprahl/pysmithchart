@@ -9,6 +9,7 @@ Changelog
 * use venv to build and test
 * use requirements-dev.txt
 * Makefile has many more targets
+* remove unnecessary files from pypi distributions
 
 0.3.0
 -----

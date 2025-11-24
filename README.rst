@@ -127,30 +127,6 @@ A live, browser-based environment powered by JupyterLite is available for experi
 
     https://scottprahl.github.io/pysmithchart/
 
-Citation
---------
-
-If you use ``pyspeckle`` in academic, instructional, or applied technical work, please cite:
-
-Prahl, S. (2025). *pysmithchart: A Python library for Smith Chart plotting and RF visualization*
-(Version 0.4.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.XXXX
-
-
-BibTeX
-~~~~~~
-
-.. code-block:: bibtex
-
-   @software{pysmithchart_prahl_2025,
-     author    = {Scott Prahl},
-     title     = {pysmithchart: A Python library for Smith Chart plotting and RF visualization},
-     year      = {2025},
-     version   = {0.4.0},
-     doi       = {10.5281/zenodo.XXXX},
-     url       = {https://github.com/scottprahl/pysmithchart},
-     publisher = {Zenodo}
-   }
-
 License
 -------
 
