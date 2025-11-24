@@ -1,0 +1,48 @@
+cff-version: 1.2.0
+type: software
+message: If you use this software, please cite it as below.
+title: 'pysmithchart: A Python library for Smith Chart plotting and RF visualization'
+version: 0.4.0
+doi: 10.5281/zenodo.XXXX
+date-released: '2025-02-??'
+url: https://doi.org/10.5281/zenodo.XXXX
+repository-code: https://github.com/scottprahl/pysmithchart
+license: BSD-3-Clause
+
+authors:
+- family-names: Staerke
+  given-names: Paul
+- family-names: Prahl
+  given-names: Scott
+  orcid: https://orcid.org/0000-0003-1468-6851
+
+abstract: >
+  pysmithchart extends Matplotlib to support the creation and customization
+  of Smith Charts for RF and microwave engineering applications. It supports
+  impedance mapping, reflection coefficient visualization, and provides tools
+  suitable for research, education, and engineering analysis involving RF
+  circuitry, scattering parameters, and transmission line behavior.
+
+keywords:
+- Smith Chart
+- RF engineering
+- impedance matching
+- transmission lines
+- reflection coefficient
+- microwave circuits
+- S-parameters
+- visualization
+
+preferred-citation:
+  type: software
+  title: 'pysmithchart: A Python library for Smith Chart plotting and RF visualization'
+  year: 2025
+  version: 0.4.0
+  doi: 10.5281/zenodo.XXXX
+  url: https://doi.org/10.5281/zenodo.XXXX
+  authors:
+  - family-names: Staerke
+    given-names: Paul
+  - family-names: Prahl
+    given-names: Scott
+    orcid: https://orcid.org/0000-0003-1468-6851
