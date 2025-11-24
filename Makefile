@@ -48,17 +48,16 @@ help:
 	@echo "Build Targets:"
 	@echo "  dist           - Build sdist+wheel locally"
 	@echo "  html           - Build Sphinx HTML documentation"
-	@echo "  speed          - Quick test of jit and no-jit speeds"
 	@echo "  venv           - Create/provision the virtual environment ($(VENV))"
 	@echo "  lab            - Start jupyterlab"
 	@echo ""
-	@echo "Packaging Targets:"
-	@echo "  lint           - Run pylint"
-	@echo "  rcheck         - Distribution release checks"
+	@echo "Test Targets:"
 	@echo "  test           - Run pytest on python files"
 	@echo "  note-test      - Test all notebooks for errors"
+	@echo ""
+	@echo "Linting Targets:"
+	@echo "  rcheck         - Distribution release checks"
 	@echo "  manifest-check - Validate MANIFEST"
-	@echo "  note-check     - Validate jupyter notebooks"
 	@echo "  pylint-check   - Same as lint above"
 	@echo "  pyroma-check   - Validate overall packaging"
 	@echo "  rst-check      - Validate all RST files"
@@ -66,7 +65,6 @@ help:
 	@echo "  yaml-check     - Validate YAML files"
 	@echo ""
 	@echo "JupyterLite Targets:"
-	@echo "  run            - Clean lite, build, and serve locally"
 	@echo "  lite           - Build JupyterLite site into $(OUT_DIR)"
 	@echo "  lite-serve     - Serve $(OUT_DIR) at http://$(HOST):$(PORT)"
 	@echo "  lite-deploy    - Upload to github"
@@ -288,6 +286,8 @@ clean:
 	rm -rf docs/_build
 	rm -rf tests/charts
 	rm -rf dist
+	rm -rf .cache
+
 
 .PHONY: lite-clean
 lite-clean:
