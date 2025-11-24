@@ -30,12 +30,18 @@
    :target: https://scottprahl.github.io/pysmithchart/
    :alt: Try Online
 
+.. |doi| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.XXXX.svg
+   :target: https://doi.org/10.5281/zenodo.XXXX
+   :alt: doi
+
 pysmithchart
 ============
 
-|pypi| |github| |conda| |downloads|
+|pypi| |github| |conda| |doi|
 
-|license| |test| |docs| |lite|
+|license| |test| |docs| |downloads|
+
+|lite|
 
 **pysmithchart** is a Python library that provides high-quality Smith charts for RF and microwave engineering applications. Built as a native extension to **matplotlib**, it enables reproducible analysis and publication-ready visualization of reflection coefficients, impedances, and admittances commonly encountered in transmission-line theory, antenna characterization, and network analysis.
 
@@ -115,32 +121,42 @@ Documentation
 
 Comprehensive documentation, including the API reference, tutorials, theoretical background, and worked examples, is available at:
 
-📚 https://pysmithchart.readthedocs.io
-
-Interactive Examples
---------------------
+    https://pysmithchart.readthedocs.io
 
 A live, browser-based environment powered by JupyterLite is available for experimentation without installation:
 
-🚀 https://scottprahl.github.io/pysmithchart/
+    https://scottprahl.github.io/pysmithchart/
 
-Contributing
-------------
+Citation
+--------
 
-Contributions, issue reports, and feature requests are welcome. Development guidelines and tests are included in the repository.
+If you use ``pyspeckle`` in academic, instructional, or applied technical work, please cite:
 
-* Repository: https://github.com/scottprahl/pysmithchart
-* Issues: https://github.com/scottprahl/pysmithchart/issues
+Prahl, S. (2025). *pysmithchart: A Python library for Smith Chart plotting and RF visualization*
+(Version 0.4.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.XXXX
+
+
+BibTeX
+~~~~~~
+
+.. code-block:: bibtex
+
+   @software{pysmithchart_prahl_2025,
+     author    = {Scott Prahl},
+     title     = {pysmithchart: A Python library for Smith Chart plotting and RF visualization},
+     year      = {2025},
+     version   = {0.4.0},
+     doi       = {10.5281/zenodo.XXXX},
+     url       = {https://github.com/scottprahl/pysmithchart},
+     publisher = {Zenodo}
+   }
 
 License
 -------
 
-pysmithchart is released under the BSD-3 Clause License.
-
-See `LICENSE.txt <https://github.com/scottprahl/pysmithchart/blob/main/LICENSE.txt>`_ for details.
+``pysmithchart`` is released under the BSD-3 Clause License.
 
 Acknowledgments
 ---------------
 
-This project originated from an adaptation of `pySmithPlot <https://github.com/vMeijin/pySmithPlot>`_ by Paul Staerke. pysmithchart extends that foundation with modernized interfaces, enhanced plotting capabilities, and compatibility with current versions of matplotlib.
-
+This project originated from an adaptation of `pySmithPlot <https://github.com/vMeijin/pySmithPlot>`_ by Paul Staerke. ``pysmithchart`` extends that foundation with modernized interfaces, enhanced plotting capabilities, and compatibility with current versions of matplotlib.
