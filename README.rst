@@ -135,4 +135,4 @@ License
 Acknowledgments
 ---------------
 
-This project originated from an adaptation of `pySmithPlot <https://github.com/vMeijin/pySmithPlot>`_ by Paul Staerke. ``pysmithchart`` extends that foundation with modernized interfaces, enhanced plotting capabilities, and compatibility with current versions of matplotlib.
+This project originated from `pySmithPlot <https://github.com/vMeijin/pySmithPlot>`_ by Paul Staerke and extends that foundation with modernized interfaces, enhanced plotting capabilities, and compatibility with current versions of matplotlib.
