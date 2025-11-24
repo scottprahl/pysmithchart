@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.4.1
+-----
+* fixing pypi deployment
+
 0.4.0
 -----
 * added jupyterlite support
