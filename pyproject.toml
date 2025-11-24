@@ -7,7 +7,7 @@ packages = ["pysmithchart"]
 
 [project]
 name = "pysmithchart"
-version = "0.4.0"
+version = "0.4.1"
 authors = [
     { name = "Paul Staerke", email = "paul.staerke@gmail.com" },
     { name = "Scott Prahl", email = "scott.prahl@oit.edu" }
