@@ -30,18 +30,13 @@
    :target: https://scottprahl.github.io/pysmithchart/
    :alt: Try Online
 
-.. |doi| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.XXXX.svg
-   :target: https://doi.org/10.5281/zenodo.XXXX
-   :alt: doi
-
 pysmithchart
 ============
 
-|pypi| |github| |conda| |doi|
+|pypi| |github| |conda| |lite|
 
 |license| |test| |docs| |downloads|
 
-|lite|
 
 **pysmithchart** is a Python library that provides high-quality Smith charts for RF and microwave engineering applications. Built as a native extension to **matplotlib**, it enables reproducible analysis and publication-ready visualization of reflection coefficients, impedances, and admittances commonly encountered in transmission-line theory, antenna characterization, and network analysis.
 
