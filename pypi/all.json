@@ -1,24 +1,24 @@
 {
   "pysmithchart": {
     "releases": {
-      "0.3.0": [
+      "0.5.0": [
         {
           "comment_text": "",
           "digests": {
-            "md5": "78c25582fc9754848ff58eb4e1f957cf",
-            "sha256": "a37d517e183b8a2b762206e4b939d3363acb1225d640a9436581bb9cc1bc25a5"
+            "md5": "bf97423b747d9d08cadb810245786a6c",
+            "sha256": "c582b119c6a0b6356db4ef50e9b7b0cd0b6d3e4f77c1a6d49fafd2521decd5a0"
           },
           "downloads": -1,
-          "filename": "pysmithchart-0.3.0-py3-none-any.whl",
+          "filename": "pysmithchart-0.5.0-py3-none-any.whl",
           "has_sig": false,
-          "md5_digest": "78c25582fc9754848ff58eb4e1f957cf",
+          "md5_digest": "bf97423b747d9d08cadb810245786a6c",
           "packagetype": "bdist_wheel",
           "python_version": "py3",
-          "requires_python": ">=3.8",
-          "size": 32015,
-          "upload_time": "2025-11-16T16:54:26.997735Z",
-          "upload_time_iso_8601": "2025-11-16T16:54:26.997735Z",
-          "url": "./pysmithchart-0.3.0-py3-none-any.whl",
+          "requires_python": ">=3.9",
+          "size": 32095,
+          "upload_time": "2026-01-05T18:08:56.895104Z",
+          "upload_time_iso_8601": "2026-01-05T18:08:56.895104Z",
+          "url": "./pysmithchart-0.5.0-py3-none-any.whl",
           "yanked": false,
           "yanked_reason": null
         }
