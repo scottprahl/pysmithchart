@@ -93,6 +93,9 @@ Quick Start
     plt.title('Reflection Coefficients')
     plt.show()
 
+.. image:: https://raw.githubusercontent.com/scottprahl/pysmithchart/main/docs/readme_fig1.svg
+   :alt: simple smithchart
+
 **Normalized Impedance Example**
 
 .. code-block:: python
@@ -110,6 +113,9 @@ Quick Start
     plt.legend()
     plt.title('Impedances with Z₀ = 200Ω')
     plt.show()
+
+.. image:: https://raw.githubusercontent.com/scottprahl/pysmithchart/main/docs/readme_fig2.svg
+   :alt: simple smithchart
 
 Documentation
 -------------
