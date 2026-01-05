@@ -1,6 +1,16 @@
 Changelog
 =========
 
+0.5.0
+-----
+* __init__.py is only source of version
+* pyproject.toml is only source of package requirements
+* update .readthedocs.yaml
+* update docs/conf.py
+* update github actions
+* move jupyter_lite_config.json to pysmithchart folder
+* improve README
+
 0.4.1
 -----
 * fixing pypi deployment
