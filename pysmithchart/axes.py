@@ -1236,3 +1236,138 @@ class SmithAxes(Axes):
             if abs(ps) > SC_EPSILON:
                 line.get_path()._interpolation_steps = "y_gridline"  # pylint: disable=protected-access
         return self.add_artist(line)
+
+    def text(self, x, y, s, datatype=None, **kwargs):
+        """
+        Add text to the Smith chart at the specified coordinates.
+
+        Args:
+            x (float): Real part of the coordinate.
+            y (float): Imaginary part of the coordinate.
+            s (str): The text string to display.
+            datatype (str, optional): Coordinate type (Z_PARAMETER, Y_PARAMETER, S_PARAMETER).
+            **kwargs: Additional matplotlib text parameters.
+
+        Returns:
+            matplotlib.text.Text: The created text object.
+        """
+        # Get default datatype if not specified
+        if datatype is None:
+            datatype = self._get_key("plot.default.datatype")
+        
+        # Validate datatype
+        if datatype not in [S_PARAMETER, Z_PARAMETER, Y_PARAMETER]:
+            raise ValueError(f"Invalid datatype: {datatype}")
+        
+        # Convert to complex
+        z = x + 1j * y
+        
+        # Transform based on datatype (matching plot() logic)
+        if datatype == S_PARAMETER:
+            z_impedance = self.moebius_inv_z(z)
+        elif datatype == Y_PARAMETER:
+            z_impedance = 1 / z
+        else:  # Z_PARAMETER
+            z_impedance = z
+        
+        # Apply normalization if needed
+        if self._normalize and datatype == Z_PARAMETER:
+            z_impedance /= self._get_key("axes.impedance")
+        
+        # Extract x, y from impedance (like plot() does with line.set_data)
+        x_impedance, y_impedance = utils.z_to_xy(z_impedance)
+        
+        # Pass impedance coordinates to parent - transData will transform
+        return super().text(x_impedance, y_impedance, s, **kwargs)
+
+    def _transform_coordinates(self, x, y, datatype):
+        """
+        Transform coordinates based on datatype.
+        
+        Helper method for text() and annotate() to ensure consistent transformation.
+        
+        Args:
+            x (float): Real part of coordinate.
+            y (float): Imaginary part of coordinate.
+            datatype (str): Coordinate type (Z, Y, or S parameter).
+        
+        Returns:
+            tuple: (x_impedance, y_impedance) in impedance space.
+        """
+        # Convert to complex
+        z = x + 1j * y
+        
+        # Transform based on datatype
+        if datatype == S_PARAMETER:
+            z_impedance = self.moebius_inv_z(z)
+        elif datatype == Y_PARAMETER:
+            z_impedance = 1 / z
+        else:  # Z_PARAMETER
+            z_impedance = z
+        
+        # Apply normalization if needed
+        if self._normalize and datatype == Z_PARAMETER:
+            z_impedance /= self._get_key("axes.impedance")
+        
+        # Extract x, y from impedance
+        x_impedance, y_impedance = utils.z_to_xy(z_impedance)
+        
+        return (x_impedance, y_impedance)
+
+    def annotate(self, text, xy, xytext=None, xycoords='data', textcoords=None,
+                 datatype=None, datatype_text=None, arrowprops=None, 
+                 annotation_clip=None, **kwargs):
+        """
+        Add an annotation (text with optional arrow) to the Smith chart.
+
+        Args:
+            text (str): The text of the annotation.
+            xy (tuple): The point (x, y) to annotate.
+            xytext (tuple, optional): Position (x, y) for the text.
+            xycoords (str, optional): Coordinate system for xy (default: 'data').
+            textcoords (str, optional): Coordinate system for xytext.
+            datatype (str, optional): Coordinate type for xy (Z, Y, or S parameter).
+            datatype_text (str, optional): Coordinate type for xytext (defaults to datatype).
+            arrowprops (dict, optional): Arrow properties.
+            annotation_clip (bool, optional): Whether to clip annotation.
+            **kwargs: Additional matplotlib annotate parameters.
+
+        Returns:
+            matplotlib.text.Annotation: The annotation object.
+        """
+        # Get default datatype if not specified
+        if datatype is None:
+            datatype = self._get_key("plot.default.datatype")
+        
+        # Validate datatype for xy
+        if datatype not in [S_PARAMETER, Z_PARAMETER, Y_PARAMETER]:
+            raise ValueError(f"Invalid datatype: {datatype}")
+        
+        # If datatype_text not specified, use same as datatype
+        if datatype_text is None:
+            datatype_text = datatype
+        
+        # Validate datatype_text
+        if datatype_text not in [S_PARAMETER, Z_PARAMETER, Y_PARAMETER]:
+            raise ValueError(f"Invalid datatype_text: {datatype_text}")
+        
+        # Transform xy coordinates (the point being annotated)
+        xy_transformed = self._transform_coordinates(xy[0], xy[1], datatype)
+        
+        # Transform xytext coordinates (where the text appears)
+        if xytext is not None:
+            xytext_transformed = self._transform_coordinates(xytext[0], xytext[1], datatype_text)
+        else:
+            xytext_transformed = None
+        
+        # Call parent annotate with transformed coordinates
+        return super().annotate(
+            text,
+            xy=xy_transformed,
+            xytext=xytext_transformed,
+            xycoords=xycoords,
+            textcoords=textcoords,
+            arrowprops=arrowprops,
+            annotation_clip=annotation_clip,
+            **kwargs
+        )
