@@ -21,6 +21,8 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx_automodapi.automodapi",
     "nbsphinx",
+    "sphinx.ext.graphviz",
+    "sphinx.ext.inheritance_diagram",
 ]
 
 napoleon_use_param = False
