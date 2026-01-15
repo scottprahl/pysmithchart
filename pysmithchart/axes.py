@@ -182,6 +182,33 @@ class SmithAxes(Axes):
             return mp.rcParams[key]
         raise KeyError("%s is not a valid key" % key)
 
+    def _should_transform_coordinates(self, coord_system):
+        """
+        Determine if coordinates should be transformed based on the coordinate system.
+        
+        This is a unified helper to check whether we should apply Smith chart transformations.
+        Only 'data' coordinates should be transformed; all other coordinate systems 
+        (axes, figure, etc.) should be left alone.
+        
+        Args:
+            coord_system (str or Transform): The coordinate system specification.
+                Can be 'data', 'axes', 'figure', or a Transform object.
+        
+        Returns:
+            bool: True if coordinates should be transformed, False otherwise.
+        """
+        # If it's a string, check if it's 'data'
+        if isinstance(coord_system, str):
+            return coord_system == 'data'
+        
+        # If it's a Transform object, check if it's transData
+        # (or None, which defaults to transData)
+        if coord_system is None:
+            return True
+        
+        # Check if it's the data transform
+        return coord_system is self.transData
+
     def _init_axis(self):
         self.xaxis = mp.axis.XAxis(self)
         self.yaxis = mp.axis.YAxis(self)
@@ -1237,48 +1264,47 @@ class SmithAxes(Axes):
                 line.get_path()._interpolation_steps = "y_gridline"  # pylint: disable=protected-access
         return self.add_artist(line)
 
-    def text(self, x, y, s, datatype=None, **kwargs):
+    def text(self, x, y, s, datatype=None, transform=None, **kwargs):
         """
         Add text to the Smith chart at the specified coordinates.
 
         Args:
-            x (float): Real part of the coordinate.
-            y (float): Imaginary part of the coordinate.
+            x (float): Real part of the coordinate (or axes coordinate if transform is specified).
+            y (float): Imaginary part of the coordinate (or axes coordinate if transform is specified).
             s (str): The text string to display.
             datatype (str, optional): Coordinate type (Z_PARAMETER, Y_PARAMETER, S_PARAMETER).
+                Only used if transform is not specified or is self.transData.
+            transform (Transform, optional): The coordinate transform. If not specified or is
+                self.transData, coordinates will be transformed according to datatype.
+                If specified as ax.transAxes or another non-data transform, coordinates
+                will be used as-is without Smith chart transformation.
             **kwargs: Additional matplotlib text parameters.
 
         Returns:
             matplotlib.text.Text: The created text object.
         """
-        # Get default datatype if not specified
-        if datatype is None:
-            datatype = self._get_key("plot.default.datatype")
+        # Check if we should apply Smith chart transformation
+        # Handle 'transform' kwarg which may also be in kwargs dict
+        if transform is None and 'transform' in kwargs:
+            transform = kwargs['transform']
         
-        # Validate datatype
-        if datatype not in [S_PARAMETER, Z_PARAMETER, Y_PARAMETER]:
-            raise ValueError(f"Invalid datatype: {datatype}")
-        
-        # Convert to complex
-        z = x + 1j * y
-        
-        # Transform based on datatype (matching plot() logic)
-        if datatype == S_PARAMETER:
-            z_impedance = self.moebius_inv_z(z)
-        elif datatype == Y_PARAMETER:
-            z_impedance = 1 / z
-        else:  # Z_PARAMETER
-            z_impedance = z
-        
-        # Apply normalization if needed
-        if self._normalize and datatype == Z_PARAMETER:
-            z_impedance /= self._get_key("axes.impedance")
-        
-        # Extract x, y from impedance (like plot() does with line.set_data)
-        x_impedance, y_impedance = utils.z_to_xy(z_impedance)
-        
-        # Pass impedance coordinates to parent - transData will transform
-        return super().text(x_impedance, y_impedance, s, **kwargs)
+        if self._should_transform_coordinates(transform):
+            # Get default datatype if not specified
+            if datatype is None:
+                datatype = self._get_key("plot.default.datatype")
+            
+            # Validate datatype
+            if datatype not in [S_PARAMETER, Z_PARAMETER, Y_PARAMETER]:
+                raise ValueError(f"Invalid datatype: {datatype}")
+            
+            # Transform coordinates using the helper method
+            x_transformed, y_transformed = self._transform_coordinates(x, y, datatype)
+            
+            # Call parent with transformed coordinates
+            return super().text(x_transformed, y_transformed, s, transform=transform, **kwargs)
+        else:
+            # User specified a non-data transform, use coordinates as-is
+            return super().text(x, y, s, transform=transform, **kwargs)
 
     def _transform_coordinates(self, x, y, datatype):
         """
@@ -1323,11 +1349,16 @@ class SmithAxes(Axes):
         Args:
             text (str): The text of the annotation.
             xy (tuple): The point (x, y) to annotate.
-            xytext (tuple, optional): Position (x, y) for the text.
-            xycoords (str, optional): Coordinate system for xy (default: 'data').
-            textcoords (str, optional): Coordinate system for xytext.
+            xytext (tuple, optional): Position (x, y) for the text. If None, text is placed at xy.
+            xycoords (str or Transform, optional): Coordinate system for xy. 
+                Default is 'data'. Can be 'data', 'axes', 'figure', or a Transform.
+                Only 'data' coordinates are transformed according to datatype.
+            textcoords (str or Transform, optional): Coordinate system for xytext.
+                Defaults to xycoords value.
             datatype (str, optional): Coordinate type for xy (Z, Y, or S parameter).
-            datatype_text (str, optional): Coordinate type for xytext (defaults to datatype).
+                Only used when xycoords is 'data' or not specified.
+            datatype_text (str, optional): Coordinate type for xytext.
+                Only used when textcoords is 'data'. Defaults to datatype value.
             arrowprops (dict, optional): Arrow properties.
             annotation_clip (bool, optional): Whether to clip annotation.
             **kwargs: Additional matplotlib annotate parameters.
@@ -1335,28 +1366,43 @@ class SmithAxes(Axes):
         Returns:
             matplotlib.text.Annotation: The annotation object.
         """
-        # Get default datatype if not specified
-        if datatype is None:
-            datatype = self._get_key("plot.default.datatype")
+        # Determine if we should transform xy coordinates
+        if self._should_transform_coordinates(xycoords):
+            # Get default datatype if not specified
+            if datatype is None:
+                datatype = self._get_key("plot.default.datatype")
+            
+            # Validate datatype for xy
+            if datatype not in [S_PARAMETER, Z_PARAMETER, Y_PARAMETER]:
+                raise ValueError(f"Invalid datatype: {datatype}")
+            
+            # Transform xy coordinates (the point being annotated)
+            xy_transformed = self._transform_coordinates(xy[0], xy[1], datatype)
+        else:
+            # xycoords is not 'data', use coordinates as-is
+            xy_transformed = xy
         
-        # Validate datatype for xy
-        if datatype not in [S_PARAMETER, Z_PARAMETER, Y_PARAMETER]:
-            raise ValueError(f"Invalid datatype: {datatype}")
-        
-        # If datatype_text not specified, use same as datatype
-        if datatype_text is None:
-            datatype_text = datatype
-        
-        # Validate datatype_text
-        if datatype_text not in [S_PARAMETER, Z_PARAMETER, Y_PARAMETER]:
-            raise ValueError(f"Invalid datatype_text: {datatype_text}")
-        
-        # Transform xy coordinates (the point being annotated)
-        xy_transformed = self._transform_coordinates(xy[0], xy[1], datatype)
-        
-        # Transform xytext coordinates (where the text appears)
+        # Handle xytext coordinates if provided
         if xytext is not None:
-            xytext_transformed = self._transform_coordinates(xytext[0], xytext[1], datatype_text)
+            # If textcoords not specified, it defaults to xycoords
+            if textcoords is None:
+                textcoords = xycoords
+            
+            # Determine if we should transform xytext coordinates
+            if self._should_transform_coordinates(textcoords):
+                # If datatype_text not specified, use same as datatype
+                if datatype_text is None:
+                    datatype_text = datatype if datatype is not None else self._get_key("plot.default.datatype")
+                
+                # Validate datatype_text
+                if datatype_text not in [S_PARAMETER, Z_PARAMETER, Y_PARAMETER]:
+                    raise ValueError(f"Invalid datatype_text: {datatype_text}")
+                
+                # Transform xytext coordinates
+                xytext_transformed = self._transform_coordinates(xytext[0], xytext[1], datatype_text)
+            else:
+                # textcoords is not 'data', use coordinates as-is
+                xytext_transformed = xytext
         else:
             xytext_transformed = None
         
