@@ -8,8 +8,9 @@ as well as numerical tolerances.
 
 Parameter Types
 ---------------
-- ``S_PARAMETER``: Indicates scattering parameters (e.g. Γ).
-- ``Z_PARAMETER``: Indicates impedance parameters.
+- ``S_PARAMETER``: Indicates scattering parameters (reflection coefficient Γ).
+- ``Z_PARAMETER``: Indicates impedance parameters (always normalized by Z₀).
+- ``A_PARAMETER``: Indicates absolute/unnormalized values (plotted as-is).
 - ``Y_PARAMETER``: Indicates admittance parameters.
 
 Numerical Constants
@@ -113,6 +114,7 @@ Additional Parameter:
 # =============================================================================
 S_PARAMETER = "S"
 Z_PARAMETER = "Z"
+A_PARAMETER = "A"
 Y_PARAMETER = "Y"
 
 SC_EPSILON = 1e-7
@@ -160,7 +162,8 @@ SC_DEFAULT_PARAMS = {
     "axes.radius": 0.43,
     "axes.normalize": True,
     "axes.normalize.label": True,
-    "axes.normalize.label.position": -1 - 1j,  # lower left
+    "axes.normalize.label.position.x": 0.98,  #  left
+    "axes.normalize.label.position.y": 0.98,  #  bottom
     "axes.ylabel.correction": (-1.5, 0, 0),
     # Grid settings
     "grid.zorder": 1,

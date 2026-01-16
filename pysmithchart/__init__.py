@@ -5,7 +5,12 @@ The `pysmithchart` package provides tools for working with Smith charts, enablin
 analysis of reflection coefficients, impedances, and admittances in RF and microwave engineering.
 
 Modules:
-    smithaxes: Defines the `SmithAxes` class, which implements the custom Smith chart projection.
+    axes: Defines the `SmithAxes` class, which implements the custom Smith chart projection.
+    core: Core initialization and configuration for SmithAxes.
+    transforms: Coordinate transformation operations (Möbius, etc.).
+    grid: Grid drawing functionality.
+    plotting: Plotting, text, and annotation methods.
+    helpers: Utility and helper methods.
 
 Constants:
     S_PARAMETER: Scattering parameter for plotting reflection coefficients.
@@ -28,10 +33,11 @@ Example:
     >>> plt.show()
 """
 
+import pathlib
 from matplotlib.projections import register_projection
 
 # Import constants FIRST
-from .constants import S_PARAMETER, Z_PARAMETER, Y_PARAMETER
+from .constants import A_PARAMETER, S_PARAMETER, Z_PARAMETER, Y_PARAMETER
 
 # Now import axes AFTER constants
 from .axes import SmithAxes
@@ -42,9 +48,13 @@ register_projection(SmithAxes)
 # Public API for wildcard imports
 __all__ = ["SmithAxes", "S_PARAMETER", "Z_PARAMETER", "Y_PARAMETER"]
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 __author__ = "Paul Staerke, Scott Prahl"
 __email__ = "scott.prahl@oit.edu"
-__copyright__ = "2026 Scott Prahl"
+__copyright__ = "2025-2026 Scott Prahl"
 __license__ = "BSD-3-Clause"
 __url__ = "https://github.com/scottprahl/pysmithchart.git"
+
+if "site-packages" in __file__:
+    raise RuntimeError("pysmithchart is not running from a development checkout")
+

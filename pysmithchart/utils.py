@@ -2,6 +2,15 @@
 This module provides utility functions for computations related to Smith charts.
 
 Functions:
+    validate_datatype(datatype, allow_none):
+        Validates that a datatype parameter is one of the valid types.
+    
+    get_datatype_name(datatype):
+        Returns a human-readable name for a datatype constant.
+    
+    transform_to_impedance_space(data, datatype, axes):
+        Centralized transformation logic from any parameter type to impedance space.
+
     cs(z, N=5):
         Converts a complex number to a formatted string for printing.
 
@@ -32,8 +41,134 @@ Functions:
 
 from collections.abc import Iterable
 import numpy as np
-from .constants import SC_EPSILON
+from .constants import SC_EPSILON, SC_INFINITY
+from .constants import S_PARAMETER, Z_PARAMETER, Y_PARAMETER, A_PARAMETER
 
+
+# ============================================================================
+# Parameter Type Validation and Transformation Utilities
+# ============================================================================
+
+def validate_datatype(datatype, allow_none=False):
+    """
+    Validate that a datatype parameter is valid.
+    
+    Args:
+        datatype: The datatype to validate (S_PARAMETER, Z_PARAMETER, Y_PARAMETER, or A_PARAMETER)
+        allow_none (bool): If True, None is considered valid
+        
+    Returns:
+        The validated datatype
+        
+    Raises:
+        ValueError: If datatype is invalid
+    
+    Example:
+        >>> from pysmithchart.constants import Z_PARAMETER
+        >>> validate_datatype(Z_PARAMETER)
+        'Z'
+    """
+    valid_types = [S_PARAMETER, Z_PARAMETER, Y_PARAMETER, A_PARAMETER]
+    
+    if datatype is None and allow_none:
+        return None
+        
+    if datatype not in valid_types:
+        raise ValueError(
+            f"Invalid datatype: {datatype}. "
+            f"Must be one of: S_PARAMETER, Z_PARAMETER, Y_PARAMETER, or A_PARAMETER"
+        )
+    
+    return datatype
+
+
+def get_datatype_name(datatype):
+    """
+    Get a human-readable name for a datatype constant.
+    
+    Args:
+        datatype: The datatype constant
+        
+    Returns:
+        str: Human-readable name
+        
+    Example:
+        >>> from pysmithchart.constants import Z_PARAMETER
+        >>> get_datatype_name(Z_PARAMETER)
+        'Z_PARAMETER (Impedance)'
+    """
+    names = {
+        S_PARAMETER: "S_PARAMETER (Scattering/Reflection coefficient)",
+        Z_PARAMETER: "Z_PARAMETER (Impedance)",
+        Y_PARAMETER: "Y_PARAMETER (Admittance)", 
+        A_PARAMETER: "A_PARAMETER (Arbitrary/Direct)"
+    }
+    return names.get(datatype, f"Unknown datatype: {datatype}")
+
+
+def transform_to_impedance_space(data, datatype, axes):
+    """
+    Transform data from the specified parameter type to normalized impedance space.
+    
+    This is the central transformation logic used by plot(), text(), and annotate().
+    All parameter transformations should use this function for consistency.
+    
+    Args:
+        data: Complex number or array to transform
+        datatype: The parameter type (S_PARAMETER, Z_PARAMETER, Y_PARAMETER, or A_PARAMETER)
+        axes: The SmithAxes instance (needed for normalization and transform methods)
+        
+    Returns:
+        Complex number or array in normalized impedance space
+        
+    Raises:
+        ValueError: If datatype is invalid
+        
+    Example:
+        >>> Z = 50 + 25j  # Absolute impedance
+        >>> z = transform_to_impedance_space(Z, Z_PARAMETER, ax)
+        >>> # z will be (50+25j)/50 = 1+0.5j (normalized)
+    """
+    # Validate datatype
+    validate_datatype(datatype)
+    
+    if datatype == S_PARAMETER:
+        # S-parameters: Apply inverse Möbius transformation
+        # Check magnitude and warn if > 1
+        s_magnitude = np.abs(data)
+        if np.any(s_magnitude > 1):
+            import warnings
+            warnings.warn(
+                f"S-parameter magnitude |S| > 1 detected (max: {np.max(s_magnitude):.3f}). "
+                "Points outside the unit circle will not be visible on the Smith chart.",
+                UserWarning
+            )
+        # Convert S to normalized impedance: z = (1 + S) / (1 - S)
+        z = axes.moebius_inv_z(data, normalize=True)
+        
+    elif datatype == Z_PARAMETER:
+        # Z-parameters: Normalize by characteristic impedance
+        z = data / axes._get_key("axes.impedance")
+        
+    elif datatype == A_PARAMETER:
+        # A-parameters: Use as-is (already in impedance space)
+        z = data
+        
+    elif datatype == Y_PARAMETER:
+        # Y-parameters: Convert to impedance, then normalize
+        # Y is absolute admittance in Siemens
+        z = (1 / data) / axes._get_key("axes.impedance")
+    
+    else:
+        # Shouldn't reach here due to validation, but be safe
+        z = data
+    
+    return z
+
+
+# ============================================================================
+# Original Utility Functions
+# ============================================================================
 
 def calc_gamma(Z_0, Z_L):
     """Calculate the reflection coefficient from load impedance."""
@@ -172,53 +307,81 @@ def z_to_xy(z):
     return x, y
 
 
-# def z_to_xy(z):
-#     """Convert complex to pair of real numbers."""
-#     return z.real, z.imag
-
-
-def moebius_z(*args, norm):
+def moebius_transform(z, norm=1):
     """
-    Computes the Möbius transformation, typically used in Smith chart computations.
-
+    Apply Möbius transformation to impedance values (CANONICAL IMPLEMENTATION).
+    
+    This is the single source of truth for the Möbius transformation formula.
+    Maps impedance space to reflection coefficient space.
+    
+    Formula: S = 1 - 2*norm / (z + norm)
+    
     Args:
-        *args (tuple): Input arguments passed to the `xy_to_z` function. Refer to `xy_to_z`
-        for detailed input handling.
-
-            - A single complex number or an iterable representing complex values.
-            - Two arguments representing the real and imaginary parts of a complex number
-              or array of complex numbers.
-
-
-        norm (float): Normalization used in the Möbius transformation, typically 50Ω.
-
+        z (complex or array): Complex impedance value(s)
+        norm (float): Normalization constant
+            - Use 1 for normalized impedance
+            - Use Z0 (e.g., 50) for absolute impedance
+        
     Returns:
-        The Möbius-transformed complex number or array of complex numbers.
+        complex or array: Complex reflection coefficient value(s)
+        
+    Examples:
+        >>> # Normalized impedance to S-parameter
+        >>> z_norm = 1 + 0.5j
+        >>> s = moebius_transform(z_norm, norm=1)
+        
+        >>> # Absolute impedance to S-parameter  
+        >>> Z_abs = 50 + 25j
+        >>> s = moebius_transform(Z_abs, norm=50)
     """
-    z = xy_to_z(*args)
-    return 1 - 2 * norm / (z + norm)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        result = 1 - 2 * norm / (z + norm)
+    
+    # Replace any inf/nan with inf
+    if np.isscalar(result):
+        return np.inf if not np.isfinite(result) else result
+    else:
+        return np.where(np.isfinite(result), result, np.inf)
 
 
-def moebius_inv_z(*args, norm):
+def moebius_inverse_transform(s, norm=1):
     """
-    Computes the inverse Möbius transformation, typically used in Smith chart computations.
-
+    Apply inverse Möbius transformation to reflection coefficients (CANONICAL IMPLEMENTATION).
+    
+    This is the single source of truth for the inverse Möbius transformation formula.
+    Maps reflection coefficient space back to impedance space.
+    
+    Formula: Z = norm * (1 + S) / (1 - S)
+    
     Args:
-        *args (tuple): Input arguments passed to the `xy_to_z` function. Refer to `xy_to_z`
-        for detailed input handling.
-
-            - A single complex number or an iterable representing complex values.
-            - Two arguments representing the real and imaginary parts of a complex number
-              or array of complex numbers.
-
-        norm (float): Normalization used in the inverse Möbius transformation, typically 50Ω.
-
+        s (complex or array): Complex reflection coefficient value(s)
+        norm (float): Normalization constant
+            - Use 1 to get normalized impedance
+            - Use Z0 (e.g., 50) to get absolute impedance
+        
     Returns:
-        The inverse Möbius-transformed complex number or array of complex numbers.
+        complex or array: Complex impedance value(s)
+        
+    Examples:
+        >>> # S-parameter to normalized impedance
+        >>> s = 0.5 + 0.3j
+        >>> z_norm = moebius_inverse_transform(s, norm=1)
+        
+        >>> # S-parameter to absolute impedance
+        >>> s = 0.5 + 0.3j
+        >>> Z_abs = moebius_inverse_transform(s, norm=50)
     """
-    z = xy_to_z(*args)
-    z = np.where(z == 1, 1 - SC_EPSILON, z)  # avoid division by 0
-    return norm * (1 + z) / (1 - z)
+    # Avoid division by zero when s == 1
+    s_safe = np.where(s == 1, 1 - SC_EPSILON, s) if hasattr(s, '__iter__') else (1 - SC_EPSILON if s == 1 else s)
+    
+    with np.errstate(divide="ignore", invalid="ignore"):
+        result = norm * (1 + s_safe) / (1 - s_safe)
+    
+    # Replace any inf/nan with SC_INFINITY
+    if np.isscalar(result):
+        return SC_INFINITY if not np.isfinite(result) else result
+    else:
+        return np.where(np.isfinite(result), result, SC_INFINITY)
 
 
 def ang_to_c(ang, radius=1):
