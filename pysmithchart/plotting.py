@@ -89,20 +89,22 @@ class PlottingMixin:
         """
         datatype = kwargs.pop("datatype", self._get_key("plot.default.datatype"))
         if datatype not in [S_PARAMETER, Z_PARAMETER, A_PARAMETER, Y_PARAMETER]:
-            raise ValueError(f"Invalid datatype: {datatype}. Must be S_PARAMETER, Z_PARAMETER, A_PARAMETER, or Y_PARAMETER")
+            raise ValueError(
+                f"Invalid datatype: {datatype}. Must be S_PARAMETER, Z_PARAMETER, A_PARAMETER, or Y_PARAMETER"
+            )
 
         # Parse arguments into x, y pairs and other args (like format strings)
         new_args = ()
         i = 0
         while i < len(args):
             arg = args[i]
-            
+
             # If it's a string (format specifier), pass through
             if isinstance(arg, str):
                 new_args += (arg,)
                 i += 1
                 continue
-            
+
             # Check if it's a complex number or array of complex numbers
             is_complex = False
             if isinstance(arg, Number):
@@ -113,7 +115,7 @@ class PlottingMixin:
                     is_complex = np.iscomplexobj(arr)
                 except (ValueError, TypeError):
                     pass
-            
+
             if is_complex:
                 # Handle complex input: convert to array and split into x, y
                 if isinstance(arg, Number):
@@ -128,18 +130,18 @@ class PlottingMixin:
                     # We have two consecutive non-string args - treat as x, y
                     x_arg = arg
                     y_arg = args[i + 1]
-                    
+
                     # Convert to arrays
                     if isinstance(x_arg, Number):
                         x_arr = np.array([x_arg])
                     else:
                         x_arr = np.asarray(x_arg)
-                    
+
                     if isinstance(y_arg, Number):
                         y_arr = np.array([y_arg])
                     else:
                         y_arr = np.asarray(y_arg)
-                    
+
                     new_args += (x_arr, y_arr)
                     i += 2
                 else:
@@ -191,23 +193,24 @@ class PlottingMixin:
                 s_magnitude = np.abs(cdata)
                 if np.any(s_magnitude > 1):
                     import warnings
+
                     warnings.warn(
                         f"S-parameter magnitude |S| > 1 detected (max: {np.max(s_magnitude):.3f}). "
                         "Points outside the unit circle will not be visible on the Smith chart.",
-                        UserWarning
+                        UserWarning,
                     )
                 # Apply inverse Möbius with norm=1 (always normalized)
                 # z = (1 + S) / (1 - S)
                 z = self.moebius_inv_z(cdata, normalize=True)
-                
+
             elif datatype == Z_PARAMETER:
                 # Z-parameters: Always normalize by Z₀
                 z = cdata / self._get_key("axes.impedance")
-                
+
             elif datatype == A_PARAMETER:
                 # A-parameters: Use as-is, no transformation
                 z = cdata
-                
+
             elif datatype == Y_PARAMETER:
                 # Y-parameters: Convert to impedance, then normalize
                 # Y is absolute admittance in Siemens, convert to absolute Z, then normalize
@@ -271,7 +274,9 @@ class PlottingMixin:
 
             # Validate datatype
             if datatype not in [S_PARAMETER, Z_PARAMETER, Y_PARAMETER, A_PARAMETER]:
-                raise ValueError(f"Invalid datatype: {datatype}. Must be S_PARAMETER, Z_PARAMETER, Y_PARAMETER, or A_PARAMETER")
+                raise ValueError(
+                    f"Invalid datatype: {datatype}. Must be S_PARAMETER, Z_PARAMETER, Y_PARAMETER, or A_PARAMETER"
+                )
 
             # Transform coordinates using the helper method
             x_transformed, y_transformed = self._transform_coordinates(x, y, datatype)
@@ -327,7 +332,9 @@ class PlottingMixin:
 
             # Validate datatype for xy
             if datatype not in [S_PARAMETER, Z_PARAMETER, Y_PARAMETER, A_PARAMETER]:
-                raise ValueError(f"Invalid datatype: {datatype}. Must be S_PARAMETER, Z_PARAMETER, Y_PARAMETER, or A_PARAMETER")
+                raise ValueError(
+                    f"Invalid datatype: {datatype}. Must be S_PARAMETER, Z_PARAMETER, Y_PARAMETER, or A_PARAMETER"
+                )
 
             # Transform xy coordinates (the point being annotated)
             xy_transformed = self._transform_coordinates(xy[0], xy[1], datatype)
@@ -349,7 +356,9 @@ class PlottingMixin:
 
                 # Validate datatype_text
                 if datatype_text not in [S_PARAMETER, Z_PARAMETER, Y_PARAMETER, A_PARAMETER]:
-                    raise ValueError(f"Invalid datatype_text: {datatype_text}. Must be S_PARAMETER, Z_PARAMETER, Y_PARAMETER, or A_PARAMETER")
+                    raise ValueError(
+                        f"Invalid datatype_text: {datatype_text}. Must be S_PARAMETER, Z_PARAMETER, Y_PARAMETER, or A_PARAMETER"
+                    )
 
                 # Transform xytext coordinates
                 xytext_transformed = self._transform_coordinates(xytext[0], xytext[1], datatype_text)

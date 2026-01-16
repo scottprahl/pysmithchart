@@ -109,31 +109,31 @@ class AxesCore:
         self._normalize = None
         self._current_zorder = None
         self.scParams = copy.deepcopy(SC_DEFAULT_PARAMS)
-        
+
         # Extract datatype before processing other kwargs
-        datatype = kwargs.pop('datatype', None)
-        
+        datatype = kwargs.pop("datatype", None)
+
         axes_kwargs = {}
         for key in kwargs.copy():
             key_dot = key.replace("_", ".")
             if not (key_dot in self.scParams or key_dot in RC_DEFAULT_PARAMS):
                 axes_kwargs[key] = kwargs.pop(key)  # Changed from key_dot to key
-        
+
         self.update_scParams(**kwargs)
-        
+
         # Set default datatype if provided
         if datatype is not None:
             self.scParams["plot.default.datatype"] = datatype
-        
+
         if self._get_key("init.updaterc"):
             for key, value in RC_DEFAULT_PARAMS.items():
                 if mp.rcParams[key] == mp.rcParamsDefault[key]:
                     mp.rcParams[key] = value
-        
+
         Axes.__init__(self, *args, **axes_kwargs)
         self.set_aspect(1, adjustable="box", anchor="C")
         self.tick_params(axis="both", which="both", bottom=False, top=False, left=False, right=False)
-    
+
     def _get_key(self, key):
         """Get value for key from the local dictionary or the global matplotlib rcParams."""
         if key in self.scParams:

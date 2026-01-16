@@ -203,7 +203,7 @@ class TransformMixin:
             >>> s = ax.moebius_z(z)  # Convert to S-parameter
         """
         from pysmithchart import utils
-        
+
         if normalize is None:
             normalize = self._normalize
 
@@ -243,7 +243,7 @@ class TransformMixin:
             >>> z = ax.moebius_inv_z(s)  # Convert to impedance
         """
         from pysmithchart import utils
-        
+
         if normalize is None:
             normalize = self._normalize
 

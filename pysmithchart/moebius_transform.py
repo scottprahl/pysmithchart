@@ -95,7 +95,7 @@ class MoebiusTransform(BaseMoebiusTransform):
                     scale = 1j * self.axes._get_key("axes.impedance")  # pylint: disable=protected-access
                 zm = 1 + scale / y[0]
             d = 2 * abs(zm - 1)
-            
+
             # For y_gridlines, calculate the full arc span
             # The arc should go from the leftmost point to the rightmost point on the circle
             if linetype == "y_gridline":
@@ -106,7 +106,7 @@ class MoebiusTransform(BaseMoebiusTransform):
                 # The full arc should span from one side to the other
                 # For a reactance circle, this is typically from -180° to 0° or 0° to 180°
                 # depending on sign, but let's calculate based on actual geometry
-                
+
                 # The arc goes from the leftmost to rightmost point
                 # In S-parameter space, the leftmost point is at x=0 (which maps to s=-1)
                 # Calculate where the line at x=0 intersects our circle
@@ -115,15 +115,15 @@ class MoebiusTransform(BaseMoebiusTransform):
                 # The circle might complete before reaching infinity
                 # Calculate the rightmost intersection: where the circle intersects Re(z)=1 (right edge)
                 # or where it completes (Im(z)=0)
-                
+
                 # Simpler approach: use a very large x value to approximate infinity
                 z_right = self.axes.moebius_z(SC_INFINITY, y[0])
-                
+
                 ang0, ang1 = np.angle([z_left - zm, z_right - zm], deg=True) % 360
             else:
                 # For x_gridlines, use the transformed endpoints as before
                 ang0, ang1 = np.angle(z - zm, deg=True) % 360
-            
+
             reverse = ang0 > ang1
             if reverse:
                 ang0, ang1 = (ang1, ang0)

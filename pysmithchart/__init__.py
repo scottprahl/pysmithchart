@@ -57,4 +57,3 @@ __url__ = "https://github.com/scottprahl/pysmithchart.git"
 
 if "site-packages" in __file__:
     raise RuntimeError("pysmithchart is not running from a development checkout")
-
