@@ -40,7 +40,7 @@ PYROMA          := $(PYTHON) -m pyroma
 RSTCHECK        := $(PYTHON) -m rstcheck
 YAMLLINT        := $(PYTHON) -m yamllint
 
-PYTEST_OPTS     := -q
+PYTEST_OPTS     := -x
 SPHINX_OPTS     := -T -E -b html -d $(DOCS_DIR)/_build/doctrees -D language=en
 NOTEBOOK_RUN    := $(PYTEST) --verbose tests/all_test_notebooks.py
 
@@ -86,9 +86,9 @@ $(VENV)/.ready: Makefile $(PYPROJECT)
 	@if [ ! -d "$(VENV)" ]; then \
 		"$(PY)" -m venv "$(VENV)"; \
 	fi
-	@$(PYTHON) -m pip -q install --upgrade pip wheel
+	@$(PYTHON) -m pip install --upgrade pip wheel
 	@echo "==> Installing $(PACKAGE) + dev extras"
-	@$(PYTHON) -m pip install -q -e ".[dev,docs,lite]"
+	@$(PYTHON) -m pip install -e ".[dev,docs,lite]"
 	@touch "$(VENV)/.ready"
 	@echo "✅ venv ready"
 
@@ -102,7 +102,14 @@ dist: $(VENV)/.ready
 	
 .PHONY: test
 test: $(VENV)/.ready
-	$(PYTEST) $(PYTEST_OPTS) tests
+	$(PYTEST) $(PYTEST_OPTS) tests/test_annotate.py
+	$(PYTEST) $(PYTEST_OPTS) tests/test_noergaard.py
+	$(PYTEST) $(PYTEST_OPTS) tests/test_schang.py
+	$(PYTEST) $(PYTEST_OPTS) tests/test_simple.py
+	$(PYTEST) $(PYTEST_OPTS) tests/test_text.py
+	$(PYTEST) $(PYTEST_OPTS) tests/test_vmeijin_full.py
+	$(PYTEST) $(PYTEST_OPTS) tests/test_vmeijin_short.py
+	$(PYTEST) $(PYTEST_OPTS) tests/test_xy_to_z.py
 
 .PHONY: note-test
 note-test: $(VENV)/.ready
