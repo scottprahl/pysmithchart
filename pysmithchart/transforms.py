@@ -3,7 +3,7 @@
 import numpy as np
 from matplotlib.transforms import Affine2D, BboxTransformTo
 
-from pysmithchart import Z_PARAMETER, Y_PARAMETER, S_PARAMETER
+from pysmithchart import IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, REFLECTANCE_DOMAIN
 from pysmithchart.constants import SC_INFINITY
 from pysmithchart import utils
 from pysmithchart.moebius_transform import MoebiusTransform
@@ -40,41 +40,24 @@ class TransformMixin:
         # Check if it's the data transform
         return coord_system is self.transData
 
-    def _transform_coordinates(self, x, y, datatype):
+    def _transform_coordinates(self, x, y, domain):
         """
-        Transform coordinates from specified datatype to impedance space.
+        Transform coordinates from specified domain to impedance space.
 
-        This is the core transformation logic used by plot(), text(), and annotate().
-        It converts coordinates from S, Y, or Z parameter space into the impedance
-        space used by the Smith chart, applying normalization as needed.
+        This method delegates to the unified _apply_domain_transform() function
+        for consistent coordinate transformation across all plotting methods.
 
         Args:
             x (float or array): Real part of coordinate(s).
             y (float or array): Imaginary part of coordinate(s).
-            datatype (str): Coordinate type (Z_PARAMETER, Y_PARAMETER, or S_PARAMETER).
+            domain (str): Coordinate type (IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, REFLECTANCE_DOMAIN, ABSOLUTE_DOMAIN).
 
         Returns:
             tuple: (x_impedance, y_impedance) in impedance space.
         """
-        # Convert to complex
-        z = x + 1j * y
-
-        # Transform based on datatype
-        if datatype == S_PARAMETER:
-            z_impedance = self.moebius_inv_z(z)
-        elif datatype == Y_PARAMETER:
-            z_impedance = 1 / z
-        else:  # Z_PARAMETER
-            z_impedance = z
-
-        # Apply normalization if needed
-        if self._normalize and datatype == Z_PARAMETER:
-            z_impedance /= self._get_key("axes.impedance")
-
-        # Extract x, y from impedance
-        x_impedance, y_impedance = utils.z_to_xy(z_impedance)
-
-        return (x_impedance, y_impedance)
+        # Delegate to unified transformation function
+        # Suppress S-parameter warnings for text/annotate (warn_s_parameter=False)
+        return self._apply_domain_transform(x, y, domain=domain, warn_s_parameter=False)
 
     def _set_lim_and_transforms(self):
         """
@@ -205,7 +188,7 @@ class TransformMixin:
         from pysmithchart import utils
 
         if normalize is None:
-            normalize = self._normalize
+            normalize = True
 
         # Parse arguments to get z
         if len(args) == 1:
@@ -216,7 +199,7 @@ class TransformMixin:
             raise ValueError("Invalid number of arguments")
 
         # Determine normalization value
-        z0 = self._get_key("axes.impedance")
+        z0 = self._get_key("axes.Z0")
         norm = 1 if normalize else z0
 
         # Call canonical implementation from utils
@@ -245,7 +228,7 @@ class TransformMixin:
         from pysmithchart import utils
 
         if normalize is None:
-            normalize = self._normalize
+            normalize = True
 
         # Parse arguments to get s
         if len(args) == 1:
@@ -256,7 +239,7 @@ class TransformMixin:
             raise ValueError("Invalid number of arguments")
 
         # Determine normalization value
-        z0 = self._get_key("axes.impedance")
+        z0 = self._get_key("axes.Z0")
         norm = 1 if normalize else z0
 
         # Call canonical implementation from utils

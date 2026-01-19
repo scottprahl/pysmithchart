@@ -6,12 +6,12 @@ import numpy as np
 from .constants import SC_EPSILON, SC_INFINITY
 from .utils import ang_to_c
 
-__all__ = ["RealMaxNLocator", "ImagMaxNLocator", "SmithAutoMinorLocator"]
+__all__ = ["MajorXLocator", "MajorYLocator", "MinorLocator"]
 
 
-class RealMaxNLocator(Locator):
+class MajorXLocator(Locator):
     """
-    A locator for the real axis on the Smith chart.
+    A locator for the real (resistance/X) axis on the Smith chart.
 
     Attributes:
         axes (SmithAxes): The parent Smith chart axes to which this locator applies.
@@ -21,7 +21,7 @@ class RealMaxNLocator(Locator):
     """
 
     def __init__(self, axes, n, precision=None):
-        """Initialize the RealMaxNLocator."""
+        """Initialize the MajorXLocator."""
         super().__init__()
 
         self.axes = axes
@@ -114,17 +114,17 @@ class RealMaxNLocator(Locator):
         return self.axes.moebius_inv_z(x)
 
 
-class ImagMaxNLocator(RealMaxNLocator):
+class MajorYLocator(MajorXLocator):
     """
-    Locator for the imaginary axis of a Smith chart.
+    Locator for the imaginary (reactance/Y) axis of a Smith chart.
 
     This class generates evenly spaced, nicely rounded tick values for the imaginary
-    axis of a Smith chart. It extends the `RealMaxNLocator` class and adapts it for
+    axis of a Smith chart. It extends the `MajorXLocator` class and adapts it for
     handling reactance values.
     """
 
     def __init__(self, axes, n, precision=None):
-        """Initialize the ImagMaxNLocator."""
+        """Initialize the MajorYLocator."""
         super().__init__(axes, n // 2, precision)
 
     def __call__(self):
@@ -147,33 +147,42 @@ class ImagMaxNLocator(RealMaxNLocator):
         return np.imag(-self.axes.moebius_inv_z(ang_to_c(np.pi + np.array(x))))
 
 
-class SmithAutoMinorLocator(AutoMinorLocator):
+class MinorLocator(AutoMinorLocator):
     """
-    Automatic minor tick locator for Smith chart axes.
+    Minor tick locator for Smith chart axes.
 
-    This locator generates evenly spaced minor ticks between major tick values,
-    specifically for use with `SmithAxes`.
+    This locator generates evenly spaced minor ticks between major tick values.
+    It supports both fixed and automatic modes:
+
+    - Fixed mode (n=int): Uses the same number of divisions for all intervals
+    - Automatic mode (n=None): Adapts divisions per interval based on spacing
 
     Attributes:
-        ndivs (int): The number of intermediate ticks between major tick intervals.
+        ndivs (int or None): The number of divisions between major tick intervals,
+                            or None for automatic mode.
         _ticks (numpy.ndarray or None): Cached array of computed minor tick values.
 
     Args:
-        n (int, optional):
-            The number of intermediate ticks between major tick values. Must be a positive integer.
-            Defaults to 4.
+        n (int or None, optional):
+            The number of divisions between major tick values.
+            - If an integer: use exactly that many divisions for all intervals.
+            - If None: automatically compute divisions per interval based on spacing.
+            Defaults to None (automatic).
     """
 
-    def __init__(self, n=4):
+    def __init__(self, n=None):
         """
-        Initialize the SmithAutoMinorLocator.
+        Initialize the MinorLocator.
 
         Args:
-            n (int, optional):
-                The number of intermediate ticks between major tick values. Must be a
-                positive integer. Defaults to 4.
+            n (int or None, optional):
+                The number of divisions between major tick values.
+                - If an integer: use exactly that many divisions for all intervals.
+                - If None: automatically compute divisions per interval based on spacing.
+                Must be a positive integer if provided. Defaults to None (automatic).
         """
-        assert isinstance(n, int) and n > 0
+        if n is not None:
+            assert isinstance(n, int) and n > 0
         super().__init__(n=n)
         self._ticks = None
 
@@ -185,14 +194,40 @@ class SmithAutoMinorLocator(AutoMinorLocator):
         """
 
     def __call__(self):
-        """Compute and return minor tick positions."""
+        """Compute and return minor tick positions.
+
+        Ticks are recomputed on every call to ensure they stay synchronized
+        with the current ndivs setting and major tick locations.
+
+        If ndivs is None (automatic mode), divisions are computed adaptively
+        per interval to maintain uniform spacing within each major interval.
+        """
         locs = self.axis.get_majorticklocs()
 
-        if self._ticks is not None:
-            return self._ticks
+        if self.ndivs is None:
+            # Automatic mode: compute divisions per interval based on span
+            minor_ticks = []
+            for p0, p1 in zip(locs[:-1], locs[1:]):
+                span = abs(p1 - p0)
+                # Choose divisions based on span magnitude
+                # Smaller spans get more divisions for consistent visual density
+                if span < 0.1:
+                    n = 5
+                elif span < 0.5:
+                    n = 4
+                elif span < 2.0:
+                    n = 3
+                else:
+                    n = 2
+                # Generate uniform divisions within this interval
+                interval_ticks = np.linspace(p0, p1, n + 1)[1:-1]
+                minor_ticks.extend(interval_ticks)
+            self._ticks = np.array(minor_ticks)
+        else:
+            # Fixed mode: use same divisions for all intervals
+            self._ticks = np.hstack([np.linspace(p0, p1, self.ndivs + 1)[1:-1] for p0, p1 in zip(locs[:-1], locs[1:])])
 
-        self._ticks = np.hstack([np.linspace(p0, p1, self.ndivs + 1)[1:-1] for p0, p1 in zip(locs[:-1], locs[1:])])
-        return self._ticks  # Ensures Matplotlib receives the computed ticks
+        return self._ticks
 
     def get_ticklocs(self):
         """Return the computed minor tick locations without filtering."""

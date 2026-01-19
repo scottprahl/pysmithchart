@@ -89,11 +89,7 @@ class MoebiusTransform(BaseMoebiusTransform):
                 zm = 0.5 * (1 + self.axes.moebius_z(x[0]))
             else:
                 assert y[0] == y[1]
-                if self.axes._normalize:  # pylint: disable=protected-access
-                    scale = 1j
-                else:
-                    scale = 1j * self.axes._get_key("axes.impedance")  # pylint: disable=protected-access
-                zm = 1 + scale / y[0]
+                zm = 1 + 1j / y[0]
             d = 2 * abs(zm - 1)
 
             # For y_gridlines, calculate the full arc span

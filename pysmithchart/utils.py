@@ -1,48 +1,79 @@
 """
-This module provides utility functions for computations related to Smith charts.
+Utility functions for Smith chart computations.
 
-Functions:
-    validate_datatype(datatype, allow_none):
-        Validates that a datatype parameter is one of the valid types.
+This module provides mathematical utilities, transformations, and helper functions
+for working with Smith charts and RF impedance calculations.
 
-    get_datatype_name(datatype):
-        Returns a human-readable name for a datatype constant.
+Public Functions:
+    Domain Validation:
+        validate_domain(domain, allow_none): Validate domain parameter
+        get_domain_name(domain): Get human-readable domain name
 
-    transform_to_impedance_space(data, datatype, axes):
-        Centralized transformation logic from any parameter type to impedance space.
+    Complex Number Utilities:
+        xy_to_z(xy): Convert x,y components to complex
+        z_to_xy(z): Split complex into x,y components
+        split_complex(z): Alias for z_to_xy
+        cs(z, N): Format complex number as string
 
-    cs(z, N=5):
-        Converts a complex number to a formatted string for printing.
+    Möbius Transformations:
+        moebius_transform(z, norm): Forward Möbius transform (Z → Γ)
+        moebius_inverse_transform(s, norm): Inverse Möbius transform (Γ → Z)
+        moebius_z(z, norm, normalize): Legacy forward transform
+        moebius_inv_z(s, norm, normalize): Legacy inverse transform
 
-    xy_to_z(xy):
-        Converts real and imaginary components or a complex number to a complex scalar or array.
+    RF Calculations:
+        calc_gamma(Z_0, Z_L): Calculate reflection coefficient
+        calc_vswr(Z_0, Z_L): Calculate VSWR from impedances
+        calc_load(Z_0, gamma): Calculate load impedance from Γ
 
-    z_to_xy(z):
-        Splits a complex number into its real and imaginary components.
+    Rotation Functions:
+        rotate_by_wavelength(Z, wavelength, Z0, direction): Rotate by electrical length
+        rotate_toward_real(Z, target_real, Z0, solution): Rotate to match resistance
+        rotate_toward_imag(Z, target_imag, Z0, solution): Rotate to match reactance
 
-    moebius_inv_z(args, norm):
-        Computes the inverse Möbius transformation, typically used in Smith chart computations.
+    Angle/Wavelength Conversions:
+        ang_to_c(ang, radius): Angle to complex on circle
+        lambda_to_rad(lmb): Wavelength fraction to radians
+        rad_to_lambda(rad): Radians to wavelength fraction
 
-    ang_to_c(ang, radius=1):
-        Converts an angle to a complex number on a circle with the specified radius.
-
-    lambda_to_rad(lmb):
-        Converts a wavelength fraction to radians.
-
-    rad_to_lambda(rad):
-        Converts an angle in radians to a wavelength fraction.
-
-    split_complex(z):
-        Splits a complex number into its real and imaginary components.
-
-    vswr_rotation(x, y, ...):
-        Rotates a point on the Smith chart to a specified destination or orientation.
+For detailed documentation, see individual function docstrings.
 """
 
 from collections.abc import Iterable
 import numpy as np
 from .constants import SC_EPSILON, SC_INFINITY
-from .constants import S_PARAMETER, Z_PARAMETER, Y_PARAMETER, A_PARAMETER
+from .constants import REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, ABSOLUTE_DOMAIN
+
+
+# Public API
+__all__ = [
+    # Domain validation
+    'validate_domain',
+    'get_domain_name',
+    # Complex utilities
+    'xy_to_z',
+    'z_to_xy',
+    'split_complex',
+    'cs',
+    # Möbius transforms
+    'moebius_transform',
+    'moebius_inverse_transform',
+    'moebius_z',
+    'moebius_inv_z',
+    # RF calculations
+    'calc_gamma',
+    'calc_vswr',
+    'calc_load',
+    # Rotation functions
+    'rotate_by_wavelength',
+    'rotate_toward_real',
+    'rotate_toward_imag',
+    # Angle/wavelength conversions
+    'ang_to_c',
+    'lambda_to_rad',
+    'rad_to_lambda',
+    'choose_minor_divider',
+]
 
 
 # ============================================================================
@@ -50,139 +81,288 @@ from .constants import S_PARAMETER, Z_PARAMETER, Y_PARAMETER, A_PARAMETER
 # ============================================================================
 
 
-def validate_datatype(datatype, allow_none=False):
+def validate_domain(domain, allow_none=False):
     """
-    Validate that a datatype parameter is valid.
+    Validate that a domain parameter is valid.
 
     Args:
-        datatype: The datatype to validate (S_PARAMETER, Z_PARAMETER, Y_PARAMETER, or A_PARAMETER)
+        domain: The domain to validate (REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, or ABSOLUTE_DOMAIN)
         allow_none (bool): If True, None is considered valid
 
     Returns:
-        The validated datatype
+        The validated domain
 
     Raises:
-        ValueError: If datatype is invalid
+        ValueError: If domain is invalid
 
     Example:
-        >>> from pysmithchart.constants import Z_PARAMETER
-        >>> validate_datatype(Z_PARAMETER)
+        >>> from pysmithchart.constants import IMPEDANCE_DOMAIN
+        >>> validate_domain(IMPEDANCE_DOMAIN)
         'Z'
     """
-    valid_types = [S_PARAMETER, Z_PARAMETER, Y_PARAMETER, A_PARAMETER]
+    valid_types = [REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, ABSOLUTE_DOMAIN]
 
-    if datatype is None and allow_none:
+    if domain is None and allow_none:
         return None
 
-    if datatype not in valid_types:
+    if domain not in valid_types:
         raise ValueError(
-            f"Invalid datatype: {datatype}. " f"Must be one of: S_PARAMETER, Z_PARAMETER, Y_PARAMETER, or A_PARAMETER"
+            f"Invalid domain: {domain}. "
+            f"Must be one of: REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, or ABSOLUTE_DOMAIN"
         )
 
-    return datatype
+    return domain
 
 
-def get_datatype_name(datatype):
+def get_domain_name(domain):
     """
-    Get a human-readable name for a datatype constant.
+    Get a human-readable name for a domain constant.
 
     Args:
-        datatype: The datatype constant
+        domain: The domain constant
 
     Returns:
         str: Human-readable name
 
     Example:
-        >>> from pysmithchart.constants import Z_PARAMETER
-        >>> get_datatype_name(Z_PARAMETER)
-        'Z_PARAMETER (Impedance)'
+        >>> from pysmithchart.constants import IMPEDANCE_DOMAIN
+        >>> get_domain_name(IMPEDANCE_DOMAIN)
+        'IMPEDANCE_DOMAIN (Impedance)'
     """
     names = {
-        S_PARAMETER: "S_PARAMETER (Scattering/Reflection coefficient)",
-        Z_PARAMETER: "Z_PARAMETER (Impedance)",
-        Y_PARAMETER: "Y_PARAMETER (Admittance)",
-        A_PARAMETER: "A_PARAMETER (Arbitrary/Direct)",
+        REFLECTANCE_DOMAIN: "REFLECTANCE_DOMAIN (Scattering/Reflection coefficient)",
+        IMPEDANCE_DOMAIN: "IMPEDANCE_DOMAIN (Impedance)",
+        ADMITTANCE_DOMAIN: "ADMITTANCE_DOMAIN (Admittance)",
+        ABSOLUTE_DOMAIN: "ABSOLUTE_DOMAIN (Arbitrary/Direct)",
     }
-    return names.get(datatype, f"Unknown datatype: {datatype}")
+    return names.get(domain, f"Unknown domain: {domain}")
 
 
-def transform_to_impedance_space(data, datatype, axes):
-    """
-    Transform data from the specified parameter type to normalized impedance space.
+def calc_rho(vswr):
+    """Converts VSWR to reflection-coefficient magnitude |Gamma|.
 
-    This is the central transformation logic used by plot(), text(), and annotate().
-    All parameter transformations should use this function for consistency.
+    VSWR and the reflection coefficient magnitude are related (for a lossless line) by:
+
+        VSWR = (1 + |Gamma|) / (1 - |Gamma|)
+
+    Solving for |Gamma| gives:
+
+        |Gamma| = (VSWR - 1) / (VSWR + 1)
+
+    This function accepts either a scalar or an array-like VSWR and returns the
+    corresponding scalar or NumPy array of |Gamma| values.
 
     Args:
-        data: Complex number or array to transform
-        datatype: The parameter type (S_PARAMETER, Z_PARAMETER, Y_PARAMETER, or A_PARAMETER)
-        axes: The SmithAxes instance (needed for normalization and transform methods)
+        vswr: Voltage standing wave ratio(s). Must satisfy VSWR >= 1. May be a
+            float or any array-like object accepted by `numpy.asarray`.
 
     Returns:
-        Complex number or array in normalized impedance space
+        The reflection-coefficient magnitude(s) |Gamma|. The return type matches
+        the input shape:
+        - If `vswr` is a scalar, returns a scalar-like NumPy value.
+        - If `vswr` is array-like, returns an `ndarray` of the same shape.
+
+        Values satisfy 0 <= |Gamma| < 1 for finite VSWR. (As VSWR -> infinity,
+        |Gamma| -> 1.)
 
     Raises:
-        ValueError: If datatype is invalid
+        ValueError: If any VSWR value is < 1.
 
-    Example:
-        >>> Z = 50 + 25j  # Absolute impedance
-        >>> z = transform_to_impedance_space(Z, Z_PARAMETER, ax)
-        >>> # z will be (50+25j)/50 = 1+0.5j (normalized)
+    Examples:
+        Convert a single VSWR value:
+
+            rho = calc_rho(2.0)     # 0.333...
+
+        Convert an array of values:
+
+            vswrs = np.array([1.0, 1.5, 2.0, 3.0])
+            rho = calc_rho(vswrs)
+
+    Notes:
+        - VSWR = 1 corresponds to a perfect match (|Gamma| = 0).
+        - This mapping assumes the standard lossless relationship between VSWR
+          and |Gamma|.
     """
-    # Validate datatype
-    validate_datatype(datatype)
-
-    if datatype == S_PARAMETER:
-        # S-parameters: Apply inverse Möbius transformation
-        # Check magnitude and warn if > 1
-        s_magnitude = np.abs(data)
-        if np.any(s_magnitude > 1):
-            import warnings
-
-            warnings.warn(
-                f"S-parameter magnitude |S| > 1 detected (max: {np.max(s_magnitude):.3f}). "
-                "Points outside the unit circle will not be visible on the Smith chart.",
-                UserWarning,
-            )
-        # Convert S to normalized impedance: z = (1 + S) / (1 - S)
-        z = axes.moebius_inv_z(data, normalize=True)
-
-    elif datatype == Z_PARAMETER:
-        # Z-parameters: Normalize by characteristic impedance
-        z = data / axes._get_key("axes.impedance")
-
-    elif datatype == A_PARAMETER:
-        # A-parameters: Use as-is (already in impedance space)
-        z = data
-
-    elif datatype == Y_PARAMETER:
-        # Y-parameters: Convert to impedance, then normalize
-        # Y is absolute admittance in Siemens
-        z = (1 / data) / axes._get_key("axes.impedance")
-
-    else:
-        # Shouldn't reach here due to validation, but be safe
-        z = data
-
-    return z
+    v = np.asarray(vswr)
+    if np.any(v < 1):
+        raise ValueError("VSWR must be >= 1.")
+    return (v - 1) / (v + 1)
 
 
-# ============================================================================
-# Original Utility Functions
-# ============================================================================
+def calc_vswr_from_rho(rho):
+    """Converts reflection-coefficient magnitude |Gamma| to VSWR.
+
+    For a lossless line, VSWR and reflection coefficient magnitude are related by:
+
+        VSWR = (1 + |Gamma|) / (1 - |Gamma|)
+
+    This function accepts either a scalar or an array-like |Gamma| magnitude and
+    returns the corresponding scalar or NumPy array of VSWR values.
+
+    Args:
+        rho: Reflection-coefficient magnitude(s) |Gamma|. Must satisfy
+            0 <= rho < 1. May be a float or any array-like object accepted by
+            `numpy.asarray`.
+
+    Returns:
+        VSWR value(s). The return type matches the input shape:
+        - If `rho` is a scalar, returns a scalar-like NumPy value.
+        - If `rho` is array-like, returns an `ndarray` of the same shape.
+
+        Values satisfy 1 <= VSWR < infinity for valid rho. (As rho -> 1,
+        VSWR -> infinity.)
+
+    Raises:
+        ValueError: If any rho value is < 0 or >= 1.
+
+    Examples:
+        Convert a single magnitude:
+
+            vswr = calc_vswr_from_rho(0.2)   # 1.5
+
+        Convert an array of magnitudes:
+
+            rho = np.array([0.0, 0.2, 0.5])
+            vswr = calc_vswr_from_rho(rho)
+
+    Notes:
+        - rho = 0 corresponds to a perfect match (VSWR = 1).
+        - rho values at or above 1 are non-physical for passive terminations
+          and cause a divide-by-zero or negative denominator in the VSWR formula,
+          so they are rejected.
+    """
+    r = np.asarray(rho)
+    if np.any(r < 0) or np.any(r >= 1):
+        raise ValueError("|Gamma| must satisfy 0 <= rho < 1.")
+    return (1 + r) / (1 - r)
+
+
+def calc_vswr(Z_0, Z_L):
+    """Computes VSWR for a load impedance referenced to Z0.
+
+    This is a convenience wrapper that computes the reflection coefficient:
+
+        Gamma = (Z_L - Z_0) / (Z_L + Z_0)
+
+    then converts its magnitude to VSWR:
+
+        VSWR = (1 + |Gamma|) / (1 - |Gamma|)
+
+    Args:
+        Z_0: Reference (characteristic) impedance Z0 in ohms. Typically a real,
+            positive number (e.g., 50 or 75). May be complex, but many
+            transmission-line interpretations assume real Z0.
+        Z_L: Load impedance in ohms. May be complex.
+
+    Returns:
+        The VSWR (a real, non-negative float). For a perfect match, VSWR = 1.
+        As the mismatch approaches |Gamma| -> 1, VSWR grows without bound.
+
+    Raises:
+        ZeroDivisionError: If `Z_L + Z_0` evaluates to zero (reflection
+            coefficient is singular).
+        ValueError: If `Z_0` is zero (not a valid reference impedance).
+
+    Examples:
+        Matched load:
+
+            calc_vswr(50, 50 + 0j)     # 1.0
+
+        Reactive mismatch:
+
+            calc_vswr(50, 50 + 1j*25)
+
+    Notes:
+        - This function assumes the standard lossless relationship between VSWR
+          and |Gamma|.
+        - If you already have Gamma, prefer `calc_vswr_from_rho(abs(Gamma))` or,
+          if you add it, a direct `calc_vswr_from_gamma(Gamma)` helper.
+    """
+    if Z_0 == 0:
+        raise ValueError("Z_0 must be non-zero.")
+    gamma = calc_gamma(Z_0, Z_L)
+    return (1 + abs(gamma)) / (1 - abs(gamma))
 
 
 def calc_gamma(Z_0, Z_L):
-    """Calculate the reflection coefficient from load impedance."""
-    zl = Z_L / Z_0
-    gamma = (zl - 1) / (1 + zl)
-    return gamma
+    """Computes the reflection coefficient Gamma for a load impedance.
+
+    The reflection coefficient is defined as:
+
+        Gamma = (Z_L - Z_0) / (Z_L + Z_0)
+
+    where Z0 is the reference (characteristic) impedance and ZL is the load
+    impedance.
+
+    Args:
+        Z_0: Reference (characteristic) impedance Z0 in ohms. Typically real and
+            positive (e.g., 50 or 75).
+        Z_L: Load impedance ZL in ohms. May be complex.
+
+    Returns:
+        The complex reflection coefficient Gamma.
+
+    Raises:
+        ZeroDivisionError: If `Z_L + Z_0` evaluates to zero.
+        ValueError: If `Z_0` is zero (not a valid reference impedance).
+
+    Examples:
+        A matched load has Gamma = 0:
+
+            calc_gamma(50, 50)     # 0j
+
+        A short circuit (ZL = 0) yields Gamma = -1:
+
+            calc_gamma(50, 0)      # -1+0j
+
+        An open circuit (ZL -> infinity) approaches Gamma -> +1.
+
+    Notes:
+        - |Gamma| <= 1 for passive loads when Z0 is real and positive.
+        - Gamma is the natural quantity to plot in `REFLECTANCE_DOMAIN`.
+    """
+    if Z_0 == 0:
+        raise ValueError("Z_0 must be non-zero.")
+    return (Z_L - Z_0) / (Z_L + Z_0)
 
 
 def calc_load(Z_0, gamma):
-    """Calculate the load impedance given the reflection coefficient."""
-    Z_L = Z_0 * (gamma + 1) / (1 - gamma)
-    return Z_L
+    """Computes the load impedance ZL from reflection coefficient Gamma.
+
+    This is the inverse relationship of `calc_gamma`:
+
+        Z_L = Z_0 * (1 + Gamma) / (1 - Gamma)
+
+    Args:
+        Z_0: Reference (characteristic) impedance Z0 in ohms. Typically real and
+            positive (e.g., 50 or 75).
+        gamma: Complex reflection coefficient Gamma.
+
+    Returns:
+        The load impedance ZL in ohms (complex in general).
+
+    Raises:
+        ZeroDivisionError: If `1 - gamma` evaluates to zero (Gamma = 1).
+        ValueError: If `Z_0` is zero (not a valid reference impedance).
+
+    Examples:
+        Recover ZL from Gamma:
+
+            g = calc_gamma(50, 100 + 1j*25)
+            ZL = calc_load(50, g)
+
+        Gamma = 1 corresponds to an open circuit (ZL -> infinity) and is
+        singular in this formula.
+
+    Notes:
+        - If `gamma` is exactly 1, the returned impedance is unbounded; this
+          function will raise a division error.
+        - This function is useful when converting measured/simulated S11 (Gamma)
+          back into impedance for matching calculations.
+    """
+    if Z_0 == 0:
+        raise ValueError("Z_0 must be non-zero.")
+    return Z_0 * (gamma + 1) / (1 - gamma)
 
 
 def cs_scalar(z, N=5):
@@ -406,119 +586,380 @@ def split_complex(z):
     return [np.real(z), np.imag(z)]
 
 
-def vswr_rotation(x, y, impedance=1, real=None, imag=None, lambda_rotation=None, solution2=True, direction="clockwise"):
+def rotate_by_wavelength(Z, wavelength, Z0=50, direction='toward_load'):
     """
-    Rotates a point `(x, y)` on the Smith chart to a specified destination or orientation.
+    Rotate an impedance by a specified electrical length (in wavelengths).
 
-    This function computes the rotation needed to move a point `p = (x, y)` to a specified destination on
-    the Smith chart. The destination can be defined by matching the real part, the imaginary part,
-    or a specified rotation angle. If no destination is defined, the function computes a full rotation.
-
-    Multiple solutions may exist, and you can specify which solution to use. If no solution exists,
-    a `ValueError` is raised.
+    Moving along a transmission line rotates the impedance around the center
+    of the Smith chart at constant |Γ|.
 
     Args:
-        x (float): Real part of the input point.
-        y (float): Imaginary part of the input point.
-        impedance (float, optional): Impedance value for normalization. Defaults to 1.
-        real (float, optional): Rotate until the real part of the input matches this value.
-            Must be a non-negative float. Defaults to None.
-        imag (float, optional): Rotate until the imaginary part of the input matches this value.
-            Can be any float. Defaults to None.
-        lambda_rotation (float, optional): Specify a fixed rotation angle in terms of wavelengths
-            (e.g., 0.25 corresponds to 180 degrees). Defaults to None.
-        solution2 (bool, optional): Determines which solution to use when `real` or `imag` is specified:
-            - If `real` is set: Selects the solution with a negative imaginary part if `solution2` is True.
-            - If `imag` is set: Selects the solution closer to infinity if `solution2` is True.
-            Has no effect if `lambda_rotation` is set. Defaults to True.
-        direction (str, optional): Rotation direction. Must be one of:
-            - `'clockwise'` or `'cw'`: Rotate in the clockwise direction.
-            - `'counterclockwise'` or `'ccw'`: Rotate in the counterclockwise direction.
-            Defaults to `'clockwise'`.
-
-    Raises:
-        ValueError: If:
-            - The rotation destination is unreachable.
-            - More than one destination is specified (e.g., both `real` and `imag` are set).
-            - An invalid `direction` value is provided.
+        Z (complex): Input impedance in Ohms.
+        wavelength (float): Electrical length in wavelengths (e.g., 0.25 for λ/4).
+            Positive rotates toward load, negative toward generator.
+        Z0 (float): Characteristic impedance (default: 50Ω).
+        direction (str): 'toward_load' (default) or 'toward_generator'.
 
     Returns:
-        tuple: A tuple `(z0, z1, lambda_rotation)` containing:
-            - `z0 (complex)`: The input point converted to a complex number, `z0 = x + y * 1j`.
-            - `z1 (complex)`: The destination point as a complex number after rotation.
-            - `lambda_rotation (float)`: The rotation angle in terms of wavelengths
-               (e.g., 0.5 for 180 degrees).
+        complex: Rotated impedance in Ohms.
+
+    Examples:
+        >>> # Rotate 75+50j by λ/8 toward load
+        >>> Z_new = rotate_by_wavelength(75+50j, 0.125, Z0=50)
+
+        >>> # Rotate by λ/4 toward generator
+        >>> Z_new = rotate_by_wavelength(75+50j, 0.25, direction='toward_generator')
 
     Notes:
-        - If no destination is set (`real`, `imag`, or `lambda_rotation`), a full turn is performed.
-        - If multiple destinations are set, a `ValueError` is raised.
+        - λ/4 rotation transforms Z → Z0²/Z
+        - λ/2 rotation returns to the same impedance
+        - Phase rotation: θ = 4π * wavelength (radians)
     """
-    if direction in ["clockwise", "cw"]:
-        cw = True
-    elif direction in ["counterclockwise", "ccw"]:
-        cw = False
+    # Convert to normalized impedance
+    z = Z / Z0
+
+    # Convert to reflection coefficient
+    gamma = moebius_transform(z, norm=1)
+
+    # Calculate rotation angle in radians
+    # 1 wavelength = 2π electrical radians, full circle = 4π phase rotation
+    angle = 4 * np.pi * wavelength
+
+    # Apply direction
+    if direction == 'toward_generator':
+        angle = -angle
+    elif direction != 'toward_load':
+        raise ValueError("direction must be 'toward_load' or 'toward_generator'")
+
+    # Rotate the reflection coefficient
+    gamma_rotated = gamma * np.exp(1j * angle)
+
+    # Convert back to normalized impedance
+    z_rotated = moebius_inverse_transform(gamma_rotated, norm=1)
+
+    # Convert back to Ohms
+    return z_rotated * Z0
+
+
+def rotate_toward_real(Z, target_real, Z0=50, solution='closer'):
+    """
+    Rotate an impedance to match a target real part.
+
+    Finds the rotation along the constant-VSWR circle that results in the
+    specified real part of impedance.
+
+    Args:
+        Z (complex): Input impedance in Ohms.
+        target_real (float): Desired real part in Ohms.
+        Z0 (float): Characteristic impedance (default: 50Ω).
+        solution (str): Which solution to use if two exist:
+            'closer' - shorter rotation (default)
+            'farther' - longer rotation
+            'positive_imag' - solution with positive imaginary part
+            'negative_imag' - solution with negative imaginary part
+
+    Returns:
+        complex: Rotated impedance with the target real part.
+
+    Raises:
+        ValueError: If target_real is not reachable on the constant-VSWR circle.
+
+    Examples:
+        >>> # Rotate 75+50j to have real part = 50Ω
+        >>> Z_new = rotate_toward_real(75+50j, 50, Z0=50)
+
+        >>> # Get the solution with positive reactance
+        >>> Z_new = rotate_toward_real(75+50j, 50, solution='positive_imag')
+
+    Notes:
+        Not all real parts are reachable - the target must lie on the constant-VSWR circle.
+    """
+    # Normalize
+    z = Z / Z0
+    r_target = target_real / Z0
+
+    # Convert to reflection coefficient to get |Γ|
+    gamma = moebius_transform(z, norm=1)
+    gamma_mag = np.abs(gamma)
+
+    # On a constant-|Γ| circle, we need to find z = r_target + jx such that |Γ(z)| = gamma_mag
+    # Γ(z) = (z - 1) / (z + 1)
+    # |Γ|² = |z - 1|² / |z + 1|²
+    # Let z = r + jx, then:
+    # |Γ|² = [(r-1)² + x²] / [(r+1)² + x²]
+    #
+    # Solving for x given r and |Γ|:
+    # |Γ|² [(r+1)² + x²] = (r-1)² + x²
+    # |Γ|² (r+1)² + |Γ|² x² = (r-1)² + x²
+    # x² (|Γ|² - 1) = (r-1)² - |Γ|² (r+1)²
+    # x² = [(r-1)² - |Γ|² (r+1)²] / (|Γ|² - 1)
+
+    numerator = (r_target - 1)**2 - gamma_mag**2 * (r_target + 1)**2
+    denominator = gamma_mag**2 - 1
+
+    # Check if denominator is too small (|Γ| ≈ 1, edge of chart)
+    if np.abs(denominator) < 1e-10:
+        raise ValueError(f"Target real={target_real}Ω not reachable (|Γ| ≈ 1, edge of chart)")
+
+    x_squared = numerator / denominator
+
+    # Check if solution exists (x² must be non-negative)
+    if x_squared < -1e-10:  # Small negative tolerance for numerical errors
+        raise ValueError(
+            f"Target real={target_real}Ω not reachable on constant-VSWR circle. "
+            f"VSWR={(1+gamma_mag)/(1-gamma_mag):.2f}, |Γ|={gamma_mag:.3f}"
+        )
+
+    # Handle near-zero case
+    if x_squared < 0:
+        x_squared = 0
+
+    x_mag = np.sqrt(x_squared)
+
+    # Two solutions: +x and -x
+    z_pos = r_target + 1j * x_mag
+    z_neg = r_target - 1j * x_mag
+
+    # Select solution based on criterion
+    gamma_current = gamma
+    gamma_pos = moebius_transform(z_pos, norm=1)
+    gamma_neg = moebius_transform(z_neg, norm=1)
+
+    if solution == 'positive_imag':
+        result = z_pos
+    elif solution == 'negative_imag':
+        result = z_neg
+    elif solution == 'closer':
+        # Choose shorter rotation (smaller phase change)
+        angle_current = np.angle(gamma_current)
+        angle_pos = np.angle(gamma_pos)
+        angle_neg = np.angle(gamma_neg)
+
+        # Calculate angular distances
+        diff_pos = np.abs(angle_pos - angle_current)
+        diff_neg = np.abs(angle_neg - angle_current)
+
+        # Normalize to [-π, π]
+        if diff_pos > np.pi:
+            diff_pos = 2*np.pi - diff_pos
+        if diff_neg > np.pi:
+            diff_neg = 2*np.pi - diff_neg
+
+        result = z_pos if diff_pos < diff_neg else z_neg
+    elif solution == 'farther':
+        # Choose longer rotation
+        angle_current = np.angle(gamma_current)
+        angle_pos = np.angle(gamma_pos)
+        angle_neg = np.angle(gamma_neg)
+
+        diff_pos = np.abs(angle_pos - angle_current)
+        diff_neg = np.abs(angle_neg - angle_current)
+
+        if diff_pos > np.pi:
+            diff_pos = 2*np.pi - diff_pos
+        if diff_neg > np.pi:
+            diff_neg = 2*np.pi - diff_neg
+
+        result = z_pos if diff_pos > diff_neg else z_neg
     else:
-        raise ValueError("Direction must be 'clockwise', 'cw', 'counterclockwise', or 'ccw'")
+        raise ValueError("solution must be 'closer', 'farther', 'positive_imag', or 'negative_imag'")
 
-    # Default cases for rotation angle calculations
-    invert = False
-    ang_0 = 0.0
-    ang = 0.0
-    check = 0
-    z = x + y * 1j
-    z0 = moebius_z(z, norm=impedance)
+    return result * Z0
 
-    if real is not None or imag is not None:
-        a = np.abs(z0)
 
-        if real is not None:
-            assert real > 0, "Real destination must be positive."
-            check += 1
+def rotate_toward_imag(Z, target_imag, Z0=50, solution='closer'):
+    """
+    Rotate an impedance to match a target imaginary part (reactance).
 
-            b = 0.5 * (1 - moebius_z(real, norm=impedance))
-            c = 1 - b
-            ang_0 = 0
+    Finds the rotation along the constant-VSWR circle that results in the
+    specified imaginary part of impedance.
 
-            if real < 0 or abs(moebius_z(real, norm=impedance)) > a:
-                raise ValueError("The specified real destination is not reachable.")
+    Args:
+        Z (complex): Input impedance in Ohms.
+        target_imag (float): Desired imaginary part in Ohms (reactance).
+            Positive for inductive, negative for capacitive.
+        Z0 (float): Characteristic impedance (default: 50Ω).
+        solution (str): Which solution to use if two exist:
+            'closer' - shorter rotation (default)
+            'farther' - longer rotation
+            'higher_real' - solution with higher real part
+            'lower_real' - solution with lower real part
 
-            invert = solution2
+    Returns:
+        complex: Rotated impedance with the target imaginary part.
 
-        if imag is not None:
-            check += 1
+    Raises:
+        ValueError: If target_imag is not reachable on the constant-VSWR circle.
 
-            b = impedance / imag if imag != 0 else float("SC_INFINITY")
-            c = np.sqrt(1 + b**2)
-            ang_0 = np.arctan(b)
+    Examples:
+        >>> # Rotate 75+50j to have reactance = 25Ω
+        >>> Z_new = rotate_toward_imag(75+50j, 25, Z0=50)
 
-            if c > a + abs(b):
-                raise ValueError("The specified imaginary destination is not reachable.")
+        >>> # Get the solution with higher resistance
+        >>> Z_new = rotate_toward_imag(75+50j, 25, solution='higher_real')
+    """
+    # Normalize
+    z = Z / Z0
+    x_target = target_imag / Z0
 
-            invert = solution2 != (imag < 0)
+    # Convert to reflection coefficient
+    gamma = moebius_transform(z, norm=1)
+    gamma_mag = np.abs(gamma)
 
-        gamma = np.arccos((a**2 + c**2 - b**2) / (2 * a * c)) % (2 * np.pi)
-        if invert:
-            gamma = -gamma
-        gamma = (ang_0 + gamma) % (2 * np.pi)
+    # Target point on the constant reactance circle
+    # For constant X, we need to find where our constant-VSWR circle intersects
+    # This is more complex as constant X forms arcs, not circles in Γ-space
 
-        ang_z = np.angle(z0) % (2 * np.pi)
-        ang = (gamma - ang_z) % (2 * np.pi)
+    # Parametrize: try different real parts and find which gives target imaginary
+    # Use binary search or Newton's method
 
-        if cw:
-            ang -= 2 * np.pi
+    # Simpler approach: sweep angles and find closest match
+    angles = np.linspace(0, 2*np.pi, 1000)
+    gammas = gamma_mag * np.exp(1j * angles)
+    zs = moebius_inverse_transform(gammas, norm=1)
 
-    if lambda_rotation is not None:
-        check += 1
-        ang = lambda_to_rad(lambda_rotation)
-        if cw:
-            ang = -ang
+    imag_parts = np.imag(zs)
+    idx = np.argmin(np.abs(imag_parts - x_target))
 
-    if check > 1:
-        s = "Too many destinations specified. Specify only one of"
-        s += "`real`, `imag`, or `lambda_rotation`."
-        raise ValueError(s)
+    # Check if reachable
+    if np.abs(imag_parts[idx] - x_target) > 0.1:  # tolerance
+        raise ValueError(
+            f"Target imag={target_imag}Ω not reachable on constant-VSWR circle. "
+            f"Closest achievable: {imag_parts[idx]*Z0:.1f}Ω"
+        )
 
-    if check == 0:
-        ang = 2 * np.pi
+    # Find the two closest solutions (on opposite sides)
+    sorted_idx = np.argsort(np.abs(imag_parts - x_target))
+    candidates = []
+    for i in sorted_idx[:10]:  # Check top 10 matches
+        if np.abs(imag_parts[i] - x_target) < 0.1:
+            candidates.append((i, zs[i]))
 
-    return (z, moebius_inv_z(z0 * ang_to_c(ang), norm=impedance), rad_to_lambda(ang))
+    if len(candidates) < 2:
+        # Only one solution found
+        return zs[idx] * Z0
+
+    # We have multiple solutions, pick based on criterion
+    angle_current = np.angle(gamma)
+
+    if solution == 'higher_real':
+        result = max(candidates, key=lambda x: np.real(x[1]))[1]
+    elif solution == 'lower_real':
+        result = min(candidates, key=lambda x: np.real(x[1]))[1]
+    elif solution in ['closer', 'farther']:
+        # Calculate angular distances
+        diffs = [(np.abs(np.angle(gamma_mag * np.exp(1j * angles[i]) / gamma)), z)
+                 for i, z in candidates]
+        if solution == 'closer':
+            result = min(diffs, key=lambda x: x[0])[1]
+        else:  # farther
+            result = max(diffs, key=lambda x: x[0])[1]
+    else:
+        raise ValueError("solution must be 'closer', 'farther', 'higher_real', or 'lower_real'")
+
+    return result * Z0
+
+def choose_minor_divider(
+    p0,
+    p1,
+    candidates,
+    threshold,
+    map_func,
+    *,
+    max_divisions=None,
+    prefer_aligned=True,
+    prefer_nice=True,
+    tol=1e-9,
+):
+    """Choose a minor-grid divider that yields visually acceptable spacing.
+
+    This is the shared algorithm used by both fancy and non-fancy minor grids.
+
+    The divider is selected from `candidates` by testing each candidate divider `d`
+    via the *minimum adjacent distance* in mapped (Moebius) space over the entire
+    interval [p0, p1]. Candidates that do not meet `threshold` are rejected.
+
+    Among acceptable candidates, the selection prefers:
+      1) aligned endpoints (both endpoints are integer multiples of the implied step),
+      2) "nice" decimal steps (mantissas in {1, 2, 2.5, 5} × 10^n),
+      3) larger divider counts.
+
+    Args:
+        p0, p1:
+            Interval endpoints, with p1 > p0.
+        candidates:
+            Iterable of integer candidate division counts (e.g. [1, 2, 3, 4, 5, 10]).
+        threshold:
+            Minimum acceptable adjacent spacing in mapped space.
+        map_func:
+            Callable ``map_func(p) -> complex`` mapping a parameter value to a
+            complex coordinate (e.g., Moebius-space point).
+        max_divisions:
+            If provided, ignore candidates greater than this value.
+        prefer_aligned:
+            If True, prefer candidates where both endpoints are close to integer
+            multiples of the implied step.
+        prefer_nice:
+            If True, prefer "nice" decimal steps (mantissas in {1, 2, 2.5, 5}×10^n).
+        tol:
+            Tolerance used for alignment checks.
+
+    Returns:
+        int: Chosen division count. Falls back to the smallest candidate if none
+        satisfy the threshold.
+    """
+    p0 = float(p0)
+    p1 = float(p1)
+    if p1 <= p0:
+        raise ValueError('p1 must be greater than p0')
+
+    cand = [int(c) for c in candidates]
+    cand = sorted({c for c in cand if c > 0})
+    if not cand:
+        raise ValueError('candidates must contain at least one positive integer')
+
+    if max_divisions is not None:
+        max_divisions = int(max_divisions)
+        cand2 = [c for c in cand if c <= max_divisions]
+        cand = cand2 or [max_divisions]
+
+    def _is_close_to_int(x: float) -> bool:
+        return abs(x - round(x)) <= tol
+
+    def _is_nice_step(step: float) -> bool:
+        step = abs(float(step))
+        if step == 0:
+            return False
+        exp = np.floor(np.log10(step))
+        mant = step / (10.0 ** exp)
+        for m in (1.0, 2.0, 2.5, 5.0, 10.0):
+            if abs(mant - m) <= 1e-12:
+                return True
+        # allow small floating drift
+        for m in (1.0, 2.0, 2.5, 5.0, 10.0):
+            if abs(mant - m) / m <= 1e-6:
+                return True
+        return False
+
+    def _min_mapped_spacing(div: int) -> float:
+        pts = np.linspace(p0, p1, div + 1)
+        zs = np.array([map_func(p) for p in pts])
+        if zs.size < 2:
+            return 0.0
+        return float(np.min(np.abs(np.diff(zs))))
+
+    ok = [d for d in cand if _min_mapped_spacing(d) > threshold]
+    if not ok:
+        return cand[0]
+
+    def _score(div: int):
+        step = (p1 - p0) / div
+        aligned = _is_close_to_int(p0 / step) and _is_close_to_int(p1 / step)
+        nice = _is_nice_step(step)
+        return (
+            aligned if prefer_aligned else True,
+            nice if prefer_nice else True,
+            div,
+        )
+
+    return max(ok, key=_score)

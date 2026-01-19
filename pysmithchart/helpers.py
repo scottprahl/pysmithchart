@@ -1,25 +1,176 @@
 """Helper and utility methods for SmithAxes."""
 
+import numpy as np
+from numbers import Number
+from collections.abc import Iterable
 from matplotlib.axes import Axes
 from matplotlib.patches import Circle
 from matplotlib.spines import Spine
 
-from pysmithchart.constants import SC_TWICE_INFINITY
+from pysmithchart import utils
+from pysmithchart.constants import SC_TWICE_INFINITY, REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ABSOLUTE_DOMAIN, ADMITTANCE_DOMAIN
 
 
 class HelpersMixin:
     """Mixin class providing helper methods for SmithAxes."""
 
+    def _apply_domain_transform(self, x, y=None, domain=None, warn_s_parameter=True):
+        """
+        Apply domain transformation to convert input coordinates to normalized impedance.
+
+        This unified function handles all domain transformations for plot(), scatter(),
+        text(), and annotate() methods.
+
+        Args:
+            x: Real part(s), or complex impedance/admittance/S-parameter value(s).
+               Can be scalar, array, or complex.
+            y: Imaginary part(s). Ignored if x is complex. If None and x is real, y defaults to 0.
+            domain: One of REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ABSOLUTE_DOMAIN, ADMITTANCE_DOMAIN.
+                    If None, uses plot.default.domain from scParams.
+            warn_s_parameter: If True, warn when |S| > 1 (default: True).
+                             Set to False to suppress warnings.
+
+        Returns:
+            tuple: (x_transformed, y_transformed) in normalized impedance space,
+                   ready for plotting. Both are numpy arrays or scalars matching input type.
+
+        Examples:
+            >>> # Scalar impedance
+            >>> x, y = ax._apply_domain_transform(50, 25, domain=IMPEDANCE_DOMAIN)
+
+            >>> # Array of complex S-parameters
+            >>> x, y = ax._apply_domain_transform([0.5+0.3j, -0.2-0.1j], domain=REFLECTANCE_DOMAIN)
+
+            >>> # Scalar complex admittance
+            >>> x, y = ax._apply_domain_transform(0.02+0.01j, domain=ADMITTANCE_DOMAIN)
+        """
+        # Get default domain if not specified
+        if domain is None:
+            domain = self._get_key("plot.default.domain")
+
+        # Validate domain
+        domain = utils.validate_domain(domain)
+
+        # Track if input was scalar for proper output format
+        is_scalar_input = isinstance(x, Number)
+
+        # Handle complex input vs separate x, y
+        is_complex = False
+        if isinstance(x, Number):
+            is_complex = np.iscomplexobj(x)
+        elif isinstance(x, Iterable):
+            try:
+                arr = np.asarray(x)
+                is_complex = np.iscomplexobj(arr)
+            except (ValueError, TypeError):
+                pass
+
+        if is_complex:
+            # Complex input - convert to complex array
+            if isinstance(x, Number):
+                cdata = np.array([x])
+            else:
+                cdata = np.asarray(x)
+        else:
+            # Separate x and y inputs
+            if isinstance(x, Number):
+                x_arr = np.array([x])
+            else:
+                x_arr = np.asarray(x)
+
+            if y is None:
+                y_arr = np.zeros_like(x_arr)
+            elif isinstance(y, Number):
+                y_arr = np.array([y])
+            else:
+                y_arr = np.asarray(y)
+
+            # Suppress warnings for inf/nan arithmetic (expected in edge cases)
+            # Suppress warnings for inf/nan arithmetic (expected in edge cases)
+            with np.errstate(invalid='ignore', divide='ignore'):
+                cdata = x_arr + 1j * y_arr
+
+        # Handle special cases: infinity maps to edges of Smith chart
+        # Real(Z) = inf or |Z| = inf → right edge at (1, 0) in normalized space
+        is_inf = np.isinf(np.real(cdata)) | np.isinf(np.abs(cdata))
+
+        # Apply domain transformation (suppress inf/nan warnings)
+        with np.errstate(invalid='ignore', divide='ignore'):
+            if domain == REFLECTANCE_DOMAIN:
+                # S-parameters: Check magnitude and warn if > 1
+                if warn_s_parameter:
+                    s_magnitude = np.abs(cdata)
+                    if np.any(s_magnitude > 1):
+                        import warnings
+                        warnings.warn(
+                            f"S-parameter magnitude |S| > 1 detected (max: {np.max(s_magnitude):.3f}). "
+                            "Points outside the unit circle will not be visible on the Smith chart.",
+                            UserWarning,
+                        )
+                # Apply inverse Möbius: z = (1 + S) / (1 - S)
+                z = self.moebius_inv_z(cdata, normalize=True)
+
+            elif domain == IMPEDANCE_DOMAIN:
+                # Z-parameters: Normalize by Z₀
+                z = cdata / self._get_key("axes.Z0")
+
+            elif domain == ABSOLUTE_DOMAIN:
+                # A-parameters: Already normalized, use as-is
+                z = cdata
+
+            elif domain == ADMITTANCE_DOMAIN:
+                # Y-parameters: Convert to impedance, then normalize
+                z = (1 / cdata) / self._get_key("axes.Z0")
+
+            else:
+                # Should never reach here due to validation above
+                z = cdata
+
+        # Map infinity values to right edge of Smith chart (1, 0)
+        # This represents open circuit (infinite impedance)
+        if np.any(is_inf):
+            if np.isscalar(z):
+                if is_inf:
+                    z = 1.0 + 0j
+            else:
+                z = np.where(is_inf, 1.0 + 0j, z)
+
+        # Convert to x, y coordinates
+        x_transformed, y_transformed = utils.z_to_xy(z)
+
+        # Return scalars if input was scalar
+        if is_scalar_input:
+            return float(x_transformed[0]), float(y_transformed[0])
+        else:
+            return x_transformed, y_transformed
+
     def _gen_axes_patch(self):
         """Generate the patch used to draw the Smith chart axes."""
         r = self._get_key("axes.radius") + 0.015
-        c = self._get_key("grid.major.color.x")
-        return Circle((0.5, 0.5), r, edgecolor=c)
+        if not self._get_key("grid.outer.enable"):
+            # Return an invisible patch while preserving the circular clipping.
+            return Circle((0.5, 0.5), r, edgecolor="none", facecolor="none")
+
+        return Circle(
+            (0.5, 0.5),
+            r,
+            edgecolor=self._get_key("grid.outer.color"),
+            linestyle=self._get_key("grid.outer.linestyle"),
+            linewidth=self._get_key("grid.outer.linewidth"),
+            alpha=self._get_key("grid.outer.alpha"),
+            facecolor="none",
+        )
 
     def _gen_axes_spines(self, locations=None, offset=0.0, units="inches"):
         """Generate the spines for the circular Smith chart axes."""
         spine = Spine.circular_spine(self, (0.5, 0.5), self._get_key("axes.radius"))
-        spine.set_edgecolor(self._get_key("grid.major.color.x"))
+        if self._get_key("grid.outer.enable"):
+            spine.set_edgecolor(self._get_key("grid.outer.color"))
+            spine.set_linestyle(self._get_key("grid.outer.linestyle"))
+            spine.set_linewidth(self._get_key("grid.outer.linewidth"))
+            spine.set_alpha(self._get_key("grid.outer.alpha"))
+        else:
+            spine.set_edgecolor("none")
         return {self.name: spine}
 
     def set_xscale(self, *args, **kwargs):

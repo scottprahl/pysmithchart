@@ -8,10 +8,10 @@ as well as numerical tolerances.
 
 Parameter Types
 ---------------
-- ``S_PARAMETER``: Indicates scattering parameters (reflection coefficient Γ).
-- ``Z_PARAMETER``: Indicates impedance parameters (always normalized by Z₀).
-- ``A_PARAMETER``: Indicates absolute/unnormalized values (plotted as-is).
-- ``Y_PARAMETER``: Indicates admittance parameters.
+- ``REFLECTANCE_DOMAIN``: Indicates scattering parameters (reflection coefficient Γ).
+- ``IMPEDANCE_DOMAIN``: Indicates impedance parameters (always normalized by Z₀).
+- ``ABSOLUTE_DOMAIN``: Indicates absolute/unnormalized values (plotted as-is).
+- ``ADMITTANCE_DOMAIN``: Indicates admittance parameters.
 
 Numerical Constants
 -------------------
@@ -51,7 +51,7 @@ Axes Settings:
 
 - ``axes.xlabel.rotation`` (int): Rotation angle for x-axis labels (default: 90).
 - ``axes.xlabel.fancybox`` (dict): Parameters for the label background box.
-- ``axes.impedance`` (int): Reference impedance for normalization (default: 50).
+- ``axes.Z0`` (int): Reference impedance for normalization (default: 50).
 - ``axes.radius`` (float): Radius of the plotting area (default: 0.43).
 - ``axes.normalize`` (bool): If True, normalize the chart to the reference impedance.
 - ``axes.normalize.label`` (bool): If True, display a normalization label.
@@ -69,8 +69,8 @@ Major Grid:
 - ``grid.major.linestyle`` (str): Line style.
 - ``grid.major.linewidth`` (int): Line width.
 - ``grid.major.color`` (str): Color of grid lines (also set for color.x and color.y).
-- ``grid.major.xmaxn`` (int): Maximum intervals on the real axis.
-- ``grid.major.ymaxn`` (int): Maximum intervals on the imaginary axis.
+- ``grid.major.xdivisions`` (int): Maximum divisions on the real axis.
+- ``grid.major.ydivisions`` (int): Maximum divisions on the imaginary axis.
 - ``grid.major.fancy`` (bool): Use fancy grid drawing.
 - ``grid.major.fancy.threshold`` (tuple): Threshold for fancy grid styling.
 
@@ -81,8 +81,10 @@ Minor Grid:
 - ``grid.minor.dashes`` (list): Dash style pattern.
 - ``grid.minor.linewidth`` (float): Line width.
 - ``grid.minor.color`` (str): Color for grid lines (also set for color.x and color.y).
-- ``grid.minor.xauto`` (int): Automatic interval count for the real axis.
-- ``grid.minor.yauto`` (int): Automatic interval count for the imaginary axis.
+- ``grid.minor.xdivisions`` (int or None): Number of divisions between major ticks on the real axis.
+  If None, divisions are computed automatically per interval for uniform spacing.
+- ``grid.minor.ydivisions`` (int or None): Number of divisions between major ticks on the imaginary axis.
+  If None, divisions are computed automatically per interval for uniform spacing.
 - ``grid.minor.fancy`` (bool): Use fancy minor grid styling.
 - ``grid.minor.fancy.dividers`` (list): Dividers for the fancy grid.
 - ``grid.minor.fancy.threshold`` (int): Threshold for switching to the next divider.
@@ -91,11 +93,7 @@ Plot Settings:
 
 - ``plot.zorder`` (int): Z-order for plot lines.
 - ``plot.marker.default`` (str): Default marker for line points.
-- ``plot.marker.start`` (str): Marker for the first point (requires marker hack).
-- ``plot.marker.end`` (str): Marker for the last point (requires marker hack).
-- ``plot.marker.hack`` (bool): Enable the marker hack that uses code injection.
-- ``plot.marker.rotate`` (bool): Rotate the end marker in the direction of the line.
-- ``plot.default.datatype``: Default datatype for plots (S, Z, or Y parameter).
+- ``plot.default.domain``: Default domain for plots (REFLECTION, IMPEDANCE, ADMITTANCE, or ABSOLUTE).
 - ``plot.default.interpolation`` (int): Number of interpolated steps between points.
 
 Symbol Settings:
@@ -112,10 +110,10 @@ Additional Parameter:
 # =============================================================================
 # Numerical Constants
 # =============================================================================
-S_PARAMETER = "S"
-Z_PARAMETER = "Z"
-A_PARAMETER = "A"
-Y_PARAMETER = "Y"
+REFLECTANCE_DOMAIN = "S"
+IMPEDANCE_DOMAIN = "Z"
+ABSOLUTE_DOMAIN = "A"
+ADMITTANCE_DOMAIN = "Y"
 
 SC_EPSILON = 1e-7
 SC_INFINITY = 1e9
@@ -158,16 +156,30 @@ SC_DEFAULT_PARAMS = {
         "mutation_aspect": 0.75,
         "alpha": 1,
     },
-    "axes.impedance": 50,
+    "axes.Z0": 50,
     "axes.radius": 0.43,
     "axes.normalize": True,
     "axes.normalize.label": True,
-    "axes.normalize.label.position.x": 0.98,  #  left
-    "axes.normalize.label.position.y": 0.98,  #  bottom
+    "axes.normalize.label.position.x": 0.02,  #  left
+    "axes.normalize.label.position.y": 0.02,  #  bottom
     "axes.ylabel.correction": (-1.5, 0, 0),
     # Grid settings
     "grid.zorder": 1,
     "grid.locator.precision": 2,
+
+    # Outer boundary (Smith-chart frame)
+    #
+    # The outer boundary is rendered as the axes patch/spine (a circle). It is
+    # configurable via the Smith-chart parameter system so that documentation
+    # examples can rely on a single reusable parameter dictionary.
+    #
+    # Defaults are selected to preserve the historical look where the boundary
+    # matched the major grid color.
+    "grid.outer.enable": True,
+    "grid.outer.color": "0.2",
+    "grid.outer.linestyle": "-",
+    "grid.outer.linewidth": 1,
+    "grid.outer.alpha": 1.0,
     # Major grid settings
     "grid.major.enable": True,
     "grid.major.linestyle": "-",
@@ -175,8 +187,9 @@ SC_DEFAULT_PARAMS = {
     "grid.major.color": "0.2",
     "grid.major.color.x": "0.2",
     "grid.major.color.y": "0.2",
-    "grid.major.xmaxn": 10,
-    "grid.major.ymaxn": 16,
+    "grid.major.alpha": 1.0,
+    "grid.major.xdivisions": 10,
+    "grid.major.ydivisions": 16,
     "grid.major.fancy": True,
     "grid.major.fancy.threshold": (100, 50),
     # Minor grid settings
@@ -188,19 +201,16 @@ SC_DEFAULT_PARAMS = {
     "grid.minor.color": "0.4",
     "grid.minor.color.x": "0.4",
     "grid.minor.color.y": "0.4",
-    "grid.minor.xauto": 4,
-    "grid.minor.yauto": 4,
+    "grid.minor.alpha": 1.0,
+    "grid.minor.xdivisions": None,
+    "grid.minor.ydivisions": None,
     "grid.minor.fancy": True,
-    "grid.minor.fancy.dividers": [1, 2, 3, 5, 10, 20],
+    "grid.minor.fancy.dividers": [1, 2, 3, 4, 5, 10, 20],
     "grid.minor.fancy.threshold": 35,
     # Plot settings
     "plot.zorder": 4,
     "plot.marker.default": "o",
-    "plot.marker.start": "s",
-    "plot.marker.end": "^",
-    "plot.marker.hack": False,  # Note: Uses code injection and may produce unexpected behavior.
-    "plot.marker.rotate": True,
-    "plot.default.datatype": Z_PARAMETER,
+    "plot.default.domain": IMPEDANCE_DOMAIN,
     "plot.default.interpolation": 5,
     # Initialization flag
     "init.updaterc": True,
