@@ -1,16 +1,32 @@
+pysmithchart
+============
+
 .. include:: ../README.rst
+
+Getting Started
+---------------
 
 .. toctree::
    :maxdepth: 2
 
-.. toctree::
-   :caption: Notebooks
-   :hidden:
+   01_quickstart
+   02_domains
 
-   overview.ipynb
-   basic.ipynb
-   vswr.ipynb
-   advanced.ipynb
+How-To Guides
+-------------
+
+.. toctree::
+   :maxdepth: 2
+
+   03_plotting_data
+   04_vswr_and_circles
+   05_transmission_lines
+   06_arrows_and_paths
+   07_impedance_matching
+   08_chart_customizing
+
+API
+-------------
 
 .. toctree::
    :caption: API
@@ -21,5 +37,16 @@
 .. toctree::
    :caption: Versions
    :hidden:
+
+Changelog
+-------------
+
+   changelog
+
+Versions
+--------
+
+.. toctree::
+   :maxdepth: 1
 
    changelog
