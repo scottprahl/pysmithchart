@@ -104,6 +104,8 @@ dist: $(VENV)/.ready
 test: $(VENV)/.ready
 	$(PYTEST) $(PYTEST_OPTS) tests/test_annotate.py
 	$(PYTEST) $(PYTEST_OPTS) tests/test_noergaard.py
+	$(PYTEST) $(PYTEST_OPTS) tests/test_rotation_functions.py
+	$(PYTEST) $(PYTEST_OPTS) tests/test_scatter.py
 	$(PYTEST) $(PYTEST_OPTS) tests/test_schang.py
 	$(PYTEST) $(PYTEST_OPTS) tests/test_simple.py
 	$(PYTEST) $(PYTEST_OPTS) tests/test_text.py
