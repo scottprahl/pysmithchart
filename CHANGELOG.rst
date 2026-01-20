@@ -1,5 +1,26 @@
-Changelog
+CHANGELOG
 =========
+
+Version 0.9.0
+-------------
+
+* Redid all the jupyter notebooks for documentation
+* Refactored monolithic ``axes.py`` (1,420 lines) into modular components
+* Renamed *_PARAMETER to *_DOMAIN and added new ABSOLUTE_DOMAIN to plot normalized impedances
+* added ``scatter()`` 
+* Fixed ``text()`` 
+* Fixed ``annotate()`` method to handle mixed coordinate systems correctly
+* added ``plot_constant_resistance``
+* added ``plot_constant_reactance``
+* added ``plot_constant_susceptance``
+* added ``plot_constant_conductance``
+* added ``plot_vswr``
+* added ``plot_rotation_path``
+* rationalized internal names for grid parameters and functions
+* Improved code organization with clear module boundaries
+* Enhanced docstrings throughout all modules
+* Better separation between initialization, transforms, grid, plotting, and helper functionality
+* Each module now has focused responsibility and clear public API
 
 0.5.0
 -----
@@ -45,7 +66,7 @@ Changelog
 * improved grid generation algorithm
 * plot() now also handles also single numbers and purely real data
 * plot() can now interpolate lines between points or generate an equidistant spacing
-* changed handling of input data and renormalization; now the actual datatype (S,Z,Y-Parameter) can be specified when calling plot()
+* changed handling of input data and renormalization; now the actual domain (S,Z,Y-Parameter) can be specified when calling plot()
 * changed behaviour for normalization and placement of the label
 * added some parameter checks
 * removed default matplotlib settings
