@@ -13,6 +13,7 @@ build/
 
 # Jupyter
 .ipynb_checkpoints/
+.jupyter
 
 # JupyterLite
 _site/
@@ -24,6 +25,7 @@ docs/_build/
 docs/api/
 tests/charts/
 todo.txt
+xxx/
 
 # GitHub Pages
 .gh-pages/
