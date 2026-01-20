@@ -3,7 +3,7 @@
 import numpy as np
 from matplotlib.lines import Line2D
 
-from pysmithchart.constants import SC_EPSILON, SC_INFINITY, SC_NEAR_INFINITY, SC_TWICE_INFINITY
+from pysmithchart.constants import SC_EPSILON, SC_INFINITY, SC_NEAR_INFINITY
 from pysmithchart.utils import choose_minor_divider
 
 

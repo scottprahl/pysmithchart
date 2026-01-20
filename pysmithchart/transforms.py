@@ -3,11 +3,8 @@
 import numpy as np
 from matplotlib.transforms import Affine2D, BboxTransformTo
 
-from pysmithchart import IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, REFLECTANCE_DOMAIN
-from pysmithchart.constants import SC_INFINITY
-from pysmithchart import utils
 from pysmithchart.moebius_transform import MoebiusTransform
-from pysmithchart.polar_transform import PolarTranslate
+from pysmithchart.constants import SC_TWICE_INFINITY
 
 
 class TransformMixin:
@@ -85,9 +82,6 @@ class TransformMixin:
             - `_yaxis_transform`: Combines `_yaxis_stretch` and `transData` for full y-axis mapping.
             - `_yaxis_text1_transform`: Combines `_yaxis_stretch` and `_yaxis_correction` for y label position
         """
-        from pysmithchart.constants import SC_TWICE_INFINITY
-        from pysmithchart.polar_transform import PolarTranslate
-
         r = self._get_key("axes.radius")
         self.transProjection = MoebiusTransform(self)
         self.transAffine = Affine2D().scale(r, r).translate(0.5, 0.5)

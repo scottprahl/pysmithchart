@@ -48,31 +48,29 @@ from .constants import REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, 
 # Public API
 __all__ = [
     # Domain validation
-    'validate_domain',
-    'get_domain_name',
+    "validate_domain",
+    "get_domain_name",
     # Complex utilities
-    'xy_to_z',
-    'z_to_xy',
-    'split_complex',
-    'cs',
+    "xy_to_z",
+    "z_to_xy",
+    "split_complex",
+    "cs",
     # Möbius transforms
-    'moebius_transform',
-    'moebius_inverse_transform',
-    'moebius_z',
-    'moebius_inv_z',
+    "moebius_transform",
+    "moebius_inverse_transform",
     # RF calculations
-    'calc_gamma',
-    'calc_vswr',
-    'calc_load',
+    "calc_gamma",
+    "calc_vswr",
+    "calc_load",
     # Rotation functions
-    'rotate_by_wavelength',
-    'rotate_toward_real',
-    'rotate_toward_imag',
+    "rotate_by_wavelength",
+    "rotate_toward_real",
+    "rotate_toward_imag",
     # Angle/wavelength conversions
-    'ang_to_c',
-    'lambda_to_rad',
-    'rad_to_lambda',
-    'choose_minor_divider',
+    "ang_to_c",
+    "lambda_to_rad",
+    "rad_to_lambda",
+    "choose_minor_divider",
 ]
 
 
@@ -586,7 +584,7 @@ def split_complex(z):
     return [np.real(z), np.imag(z)]
 
 
-def rotate_by_wavelength(Z, wavelength, Z0=50, direction='toward_load'):
+def rotate_by_wavelength(Z, wavelength, Z0=50, direction="toward_load"):
     """
     Rotate an impedance by a specified electrical length (in wavelengths).
 
@@ -626,9 +624,9 @@ def rotate_by_wavelength(Z, wavelength, Z0=50, direction='toward_load'):
     angle = 4 * np.pi * wavelength
 
     # Apply direction
-    if direction == 'toward_generator':
+    if direction == "toward_generator":
         angle = -angle
-    elif direction != 'toward_load':
+    elif direction != "toward_load":
         raise ValueError("direction must be 'toward_load' or 'toward_generator'")
 
     # Rotate the reflection coefficient
@@ -641,7 +639,7 @@ def rotate_by_wavelength(Z, wavelength, Z0=50, direction='toward_load'):
     return z_rotated * Z0
 
 
-def rotate_toward_real(Z, target_real, Z0=50, solution='closer'):
+def rotate_toward_real(Z, target_real, Z0=50, solution="closer"):
     """
     Rotate an impedance to match a target real part.
 
@@ -694,7 +692,7 @@ def rotate_toward_real(Z, target_real, Z0=50, solution='closer'):
     # x² (|Γ|² - 1) = (r-1)² - |Γ|² (r+1)²
     # x² = [(r-1)² - |Γ|² (r+1)²] / (|Γ|² - 1)
 
-    numerator = (r_target - 1)**2 - gamma_mag**2 * (r_target + 1)**2
+    numerator = (r_target - 1) ** 2 - gamma_mag**2 * (r_target + 1) ** 2
     denominator = gamma_mag**2 - 1
 
     # Check if denominator is too small (|Γ| ≈ 1, edge of chart)
@@ -725,11 +723,11 @@ def rotate_toward_real(Z, target_real, Z0=50, solution='closer'):
     gamma_pos = moebius_transform(z_pos, norm=1)
     gamma_neg = moebius_transform(z_neg, norm=1)
 
-    if solution == 'positive_imag':
+    if solution == "positive_imag":
         result = z_pos
-    elif solution == 'negative_imag':
+    elif solution == "negative_imag":
         result = z_neg
-    elif solution == 'closer':
+    elif solution == "closer":
         # Choose shorter rotation (smaller phase change)
         angle_current = np.angle(gamma_current)
         angle_pos = np.angle(gamma_pos)
@@ -741,12 +739,12 @@ def rotate_toward_real(Z, target_real, Z0=50, solution='closer'):
 
         # Normalize to [-π, π]
         if diff_pos > np.pi:
-            diff_pos = 2*np.pi - diff_pos
+            diff_pos = 2 * np.pi - diff_pos
         if diff_neg > np.pi:
-            diff_neg = 2*np.pi - diff_neg
+            diff_neg = 2 * np.pi - diff_neg
 
         result = z_pos if diff_pos < diff_neg else z_neg
-    elif solution == 'farther':
+    elif solution == "farther":
         # Choose longer rotation
         angle_current = np.angle(gamma_current)
         angle_pos = np.angle(gamma_pos)
@@ -756,9 +754,9 @@ def rotate_toward_real(Z, target_real, Z0=50, solution='closer'):
         diff_neg = np.abs(angle_neg - angle_current)
 
         if diff_pos > np.pi:
-            diff_pos = 2*np.pi - diff_pos
+            diff_pos = 2 * np.pi - diff_pos
         if diff_neg > np.pi:
-            diff_neg = 2*np.pi - diff_neg
+            diff_neg = 2 * np.pi - diff_neg
 
         result = z_pos if diff_pos > diff_neg else z_neg
     else:
@@ -767,7 +765,7 @@ def rotate_toward_real(Z, target_real, Z0=50, solution='closer'):
     return result * Z0
 
 
-def rotate_toward_imag(Z, target_imag, Z0=50, solution='closer'):
+def rotate_toward_imag(Z, target_imag, Z0=50, solution="closer"):
     """
     Rotate an impedance to match a target imaginary part (reactance).
 
@@ -813,8 +811,8 @@ def rotate_toward_imag(Z, target_imag, Z0=50, solution='closer'):
     # Parametrize: try different real parts and find which gives target imaginary
     # Use binary search or Newton's method
 
-    # Simpler approach: sweep angles and find closest match
-    angles = np.linspace(0, 2*np.pi, 1000)
+    # Simpler approach: sweep angles and find closest match FIXME
+    angles = np.linspace(0, 2 * np.pi, 100000)
     gammas = gamma_mag * np.exp(1j * angles)
     zs = moebius_inverse_transform(gammas, norm=1)
 
@@ -830,6 +828,7 @@ def rotate_toward_imag(Z, target_imag, Z0=50, solution='closer'):
 
     # Find the two closest solutions (on opposite sides)
     sorted_idx = np.argsort(np.abs(imag_parts - x_target))
+
     candidates = []
     for i in sorted_idx[:10]:  # Check top 10 matches
         if np.abs(imag_parts[i] - x_target) < 0.1:
@@ -842,15 +841,14 @@ def rotate_toward_imag(Z, target_imag, Z0=50, solution='closer'):
     # We have multiple solutions, pick based on criterion
     angle_current = np.angle(gamma)
 
-    if solution == 'higher_real':
+    if solution == "higher_real":
         result = max(candidates, key=lambda x: np.real(x[1]))[1]
-    elif solution == 'lower_real':
+    elif solution == "lower_real":
         result = min(candidates, key=lambda x: np.real(x[1]))[1]
-    elif solution in ['closer', 'farther']:
+    elif solution in ["closer", "farther"]:
         # Calculate angular distances
-        diffs = [(np.abs(np.angle(gamma_mag * np.exp(1j * angles[i]) / gamma)), z)
-                 for i, z in candidates]
-        if solution == 'closer':
+        diffs = [(np.abs(np.angle(gamma_mag * np.exp(1j * angles[i]) / gamma)), z) for i, z in candidates]
+        if solution == "closer":
             result = min(diffs, key=lambda x: x[0])[1]
         else:  # farther
             result = max(diffs, key=lambda x: x[0])[1]
@@ -858,6 +856,7 @@ def rotate_toward_imag(Z, target_imag, Z0=50, solution='closer'):
         raise ValueError("solution must be 'closer', 'farther', 'higher_real', or 'lower_real'")
 
     return result * Z0
+
 
 def choose_minor_divider(
     p0,
@@ -885,8 +884,10 @@ def choose_minor_divider(
       3) larger divider counts.
 
     Args:
-        p0, p1:
-            Interval endpoints, with p1 > p0.
+        p0:
+            Interval endpoint
+        p1:
+            Interval endpoint, with p1 > p0.
         candidates:
             Iterable of integer candidate division counts (e.g. [1, 2, 3, 4, 5, 10]).
         threshold:
@@ -911,12 +912,12 @@ def choose_minor_divider(
     p0 = float(p0)
     p1 = float(p1)
     if p1 <= p0:
-        raise ValueError('p1 must be greater than p0')
+        raise ValueError("p1 must be greater than p0")
 
     cand = [int(c) for c in candidates]
     cand = sorted({c for c in cand if c > 0})
     if not cand:
-        raise ValueError('candidates must contain at least one positive integer')
+        raise ValueError("candidates must contain at least one positive integer")
 
     if max_divisions is not None:
         max_divisions = int(max_divisions)
@@ -931,7 +932,7 @@ def choose_minor_divider(
         if step == 0:
             return False
         exp = np.floor(np.log10(step))
-        mant = step / (10.0 ** exp)
+        mant = step / (10.0**exp)
         for m in (1.0, 2.0, 2.5, 5.0, 10.0):
             if abs(mant - m) <= 1e-12:
                 return True

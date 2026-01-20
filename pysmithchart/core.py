@@ -5,11 +5,9 @@ import copy
 import numpy as np
 import matplotlib as mp
 from matplotlib.axes import Axes
-from matplotlib.transforms import Affine2D
 
-from pysmithchart import utils
 from pysmithchart.constants import SC_DEFAULT_PARAMS, RC_DEFAULT_PARAMS
-from pysmithchart.constants import SC_EPSILON, SC_INFINITY, SC_NEAR_INFINITY, SC_TWICE_INFINITY
+from pysmithchart.constants import SC_NEAR_INFINITY, SC_TWICE_INFINITY
 from pysmithchart.formatters import RealFormatter, ImagFormatter
 from pysmithchart.locators import MajorXLocator, MajorYLocator, MinorLocator
 
@@ -142,14 +140,14 @@ class AxesCore:
         # Define shortcut mappings: user-friendly name -> internal scParams key
         # Only essential parameters that users commonly need
         SHORTCUT_MAP = {
-            'Z0': 'axes.Z0',
-            'domain': 'plot.default.domain',
+            "Z0": "axes.Z0",
+            "domain": "plot.default.domain",
         }
 
         # Process smith_params dictionary first (cleanest API)
         sc_params_to_set = {}
-        if 'smith_params' in kwargs:
-            smith_params = kwargs.pop('smith_params')
+        if "smith_params" in kwargs:
+            smith_params = kwargs.pop("smith_params")
             if not isinstance(smith_params, dict):
                 raise TypeError("smith_params must be a dictionary")
             sc_params_to_set.update(smith_params)
@@ -163,7 +161,7 @@ class AxesCore:
         axes_kwargs = {}
         for key, value in list(kwargs.items()):
             # Check if this is a Smith chart parameter (uses dot notation)
-            if '.' in key:
+            if "." in key:
                 # Direct dot notation - use as-is
                 sc_params_to_set[key] = kwargs.pop(key)
             elif key in RC_DEFAULT_PARAMS:
@@ -230,13 +228,15 @@ class AxesCore:
         bbox = self._get_key("axes.xlabel.fancybox")
         rotation = self._get_key("axes.xlabel.rotation")
         for label in self.get_xticklabels():
-            label.update({
-                'verticalalignment': 'center',
-                'horizontalalignment': 'center',
-                'rotation_mode': 'anchor',
-                'rotation': rotation,
-                'bbox': bbox
-            })
+            label.update(
+                {
+                    "verticalalignment": "center",
+                    "horizontalalignment": "center",
+                    "rotation_mode": "anchor",
+                    "rotation": rotation,
+                    "bbox": bbox,
+                }
+            )
             self.add_artist(label)
 
         # Configure y-axis labels (reactance)
@@ -274,7 +274,6 @@ class AxesCore:
             enable = self._get_key(f"grid.{grid_type}.enable")
             self.grid(visible=enable, which=grid_type)
 
-
     def clear(self):
         """
         Clear the Smith chart axes.
@@ -297,4 +296,3 @@ class AxesCore:
 
         # Perform Smith chart initialization
         self._init_smith_chart()
-

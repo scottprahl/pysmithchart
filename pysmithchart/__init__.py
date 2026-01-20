@@ -35,7 +35,6 @@ Example:
     >>> plt.show()
 """
 
-import pathlib
 from matplotlib.projections import register_projection
 
 # Import constants FIRST

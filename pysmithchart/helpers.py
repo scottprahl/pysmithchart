@@ -8,7 +8,8 @@ from matplotlib.patches import Circle
 from matplotlib.spines import Spine
 
 from pysmithchart import utils
-from pysmithchart.constants import SC_TWICE_INFINITY, REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ABSOLUTE_DOMAIN, ADMITTANCE_DOMAIN
+from pysmithchart.constants import SC_TWICE_INFINITY
+from pysmithchart.constants import REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ABSOLUTE_DOMAIN, ADMITTANCE_DOMAIN
 
 
 class HelpersMixin:
@@ -87,7 +88,7 @@ class HelpersMixin:
 
             # Suppress warnings for inf/nan arithmetic (expected in edge cases)
             # Suppress warnings for inf/nan arithmetic (expected in edge cases)
-            with np.errstate(invalid='ignore', divide='ignore'):
+            with np.errstate(invalid="ignore", divide="ignore"):
                 cdata = x_arr + 1j * y_arr
 
         # Handle special cases: infinity maps to edges of Smith chart
@@ -95,13 +96,14 @@ class HelpersMixin:
         is_inf = np.isinf(np.real(cdata)) | np.isinf(np.abs(cdata))
 
         # Apply domain transformation (suppress inf/nan warnings)
-        with np.errstate(invalid='ignore', divide='ignore'):
+        with np.errstate(invalid="ignore", divide="ignore"):
             if domain == REFLECTANCE_DOMAIN:
                 # S-parameters: Check magnitude and warn if > 1
                 if warn_s_parameter:
                     s_magnitude = np.abs(cdata)
                     if np.any(s_magnitude > 1):
                         import warnings
+
                         warnings.warn(
                             f"S-parameter magnitude |S| > 1 detected (max: {np.max(s_magnitude):.3f}). "
                             "Points outside the unit circle will not be visible on the Smith chart.",

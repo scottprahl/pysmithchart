@@ -166,7 +166,6 @@ SC_DEFAULT_PARAMS = {
     # Grid settings
     "grid.zorder": 1,
     "grid.locator.precision": 2,
-
     # Outer boundary (Smith-chart frame)
     #
     # The outer boundary is rendered as the axes patch/spine (a circle). It is

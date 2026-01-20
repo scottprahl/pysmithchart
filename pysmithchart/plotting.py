@@ -5,7 +5,7 @@ from numbers import Number
 
 import numpy as np
 from matplotlib.axes import Axes
-from matplotlib.lines import Line2D
+from matplotlib import _color_data
 from scipy.interpolate import splprep, splev
 
 from pysmithchart.constants import IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, REFLECTANCE_DOMAIN, ABSOLUTE_DOMAIN
@@ -186,9 +186,7 @@ class PlottingMixin:
             cdata = utils.xy_to_z(line.get_data())
 
             # Apply unified domain transformation
-            x_transformed, y_transformed = self._apply_domain_transform(
-                cdata, domain=domain, warn_s_parameter=True
-            )
+            x_transformed, y_transformed = self._apply_domain_transform(cdata, domain=domain, warn_s_parameter=True)
 
             line.set_data(x_transformed, y_transformed)
 
@@ -249,27 +247,33 @@ class PlottingMixin:
         if args and isinstance(args[0], str):
             fmt = args[0]
             # Parse format string for color and marker
-            import matplotlib as mpl
-            from matplotlib import _color_data
 
             # Extract color
             for color_key in _color_data.TABLEAU_COLORS.keys():
                 if color_key[4] in fmt:  # 'tab:blue' -> 'b'
-                    kwargs.setdefault('c', color_key[4])
+                    kwargs.setdefault("c", color_key[4])
                     break
             # Common single-letter colors
-            color_map = {'r': 'red', 'g': 'green', 'b': 'blue', 'c': 'cyan',
-                        'm': 'magenta', 'y': 'yellow', 'k': 'black', 'w': 'white'}
+            color_map = {
+                "r": "red",
+                "g": "green",
+                "b": "blue",
+                "c": "cyan",
+                "m": "magenta",
+                "y": "yellow",
+                "k": "black",
+                "w": "white",
+            }
             for char in fmt:
                 if char in color_map:
-                    kwargs.setdefault('c', char)
+                    kwargs.setdefault("c", char)
                     break
 
             # Extract marker
-            marker_chars = '.ov^<>123478spP*hH+xXDd|_'
+            marker_chars = ".ov^<>123478spP*hH+xXDd|_"
             for char in fmt:
                 if char in marker_chars:
-                    kwargs.setdefault('marker', char)
+                    kwargs.setdefault("marker", char)
                     break
 
         # Get domain
@@ -327,67 +331,62 @@ class PlottingMixin:
             return []
 
         # Parse arrow parameter
-        if arrow is True or arrow == 'end':
-            arrow_spec = {'position': 'end', 'style': '->', 'size': 15, 'offset': 1}
+        if arrow is True or arrow == "end":
+            arrow_spec = {"position": "end", "style": "->", "size": 15, "offset": 1}
         elif isinstance(arrow, str):
-            arrow_spec = {'position': arrow, 'style': '->', 'size': 15, 'offset': 1}
+            arrow_spec = {"position": arrow, "style": "->", "size": 15, "offset": 1}
         elif isinstance(arrow, dict):
             arrow_spec = {
-                'position': arrow.get('position', 'end'),
-                'style': arrow.get('style', '->'),
-                'size': arrow.get('size', 15),
-                'offset': arrow.get('offset', 1)
+                "position": arrow.get("position", "end"),
+                "style": arrow.get("style", "->"),
+                "size": arrow.get("size", 15),
+                "offset": arrow.get("offset", 1),
             }
         else:
             return []
 
         # Extract arrow properties
-        position = arrow_spec['position']
-        style = arrow_spec['style']
-        size = arrow_spec['size']
-        offset = arrow_spec['offset']
+        position = arrow_spec["position"]
+        style = arrow_spec["style"]
+        size = arrow_spec["size"]
+        offset = arrow_spec["offset"]
 
         # Get visual properties from the line
         color = line.get_color()
         lw = line.get_linewidth()
 
         # Arrow properties
-        arrow_props = dict(
-            arrowstyle=style,
-            lw=lw,
-            color=color,
-            mutation_scale=size
-        )
+        arrow_props = dict(arrowstyle=style, lw=lw, color=color, mutation_scale=size)
 
         annotations = []
 
         # Add arrow at start
         # The key fix: use the line's transform (which is self.transData for Smith chart)
         # This ensures arrows are drawn in the same coordinate system as the line
-        if position in ['start', 'both']:
+        if position in ["start", "both"]:
             if len(x) > offset:
                 ann = Axes.annotate(
                     self,
-                    '',
+                    "",
                     xy=(x[offset], y[offset]),
                     xytext=(x[0], y[0]),
-                    xycoords='data',
-                    textcoords='data',
-                    arrowprops=arrow_props
+                    xycoords="data",
+                    textcoords="data",
+                    arrowprops=arrow_props,
                 )
                 annotations.append(ann)
 
         # Add arrow at end
-        if position in ['end', 'both']:
+        if position in ["end", "both"]:
             if len(x) > offset:
                 ann = Axes.annotate(
                     self,
-                    '',
+                    "",
                     xy=(x[-1], y[-1]),
-                    xytext=(x[-(offset+1)], y[-(offset+1)]),
-                    xycoords='data',
-                    textcoords='data',
-                    arrowprops=arrow_props
+                    xytext=(x[-(offset + 1)], y[-(offset + 1)]),
+                    xycoords="data",
+                    textcoords="data",
+                    arrowprops=arrow_props,
                 )
                 annotations.append(ann)
 
@@ -425,7 +424,7 @@ class PlottingMixin:
             >>> ax.text(75+50j, "Load", fontsize=12, color='red', ha='left')
         """
         # Extract transform from kwargs if present
-        transform = kwargs.pop('transform', None)
+        transform = kwargs.pop("transform", None)
 
         # Handle complex input: text(complex, string, ...)
         if np.iscomplexobj(x):
@@ -582,8 +581,9 @@ class PlottingMixin:
 
         return Axes.legend(self, unique_handles, unique_labels, **kwargs)
 
-    def plot_constant_resistance(self, resistance, *args, reactance_range=None,
-                                  domain=None, num_points=200, arrow=None, **kwargs):
+    def plot_constant_resistance(
+        self, resistance, *args, reactance_range=None, domain=None, num_points=200, arrow=None, **kwargs
+    ):
         """
         Plot a constant resistance circle on the Smith chart.
 
@@ -633,7 +633,7 @@ class PlottingMixin:
 
         if reactance_range is None:
             # Draw complete circle using angular parametrization
-            theta = np.linspace(-np.pi/2 + 0.01, np.pi/2 - 0.01, num_points)
+            theta = np.linspace(-np.pi / 2 + 0.01, np.pi / 2 - 0.01, num_points)
 
             # Use tangent to span from -large to +large reactance
             if domain == ABSOLUTE_DOMAIN:
@@ -654,8 +654,9 @@ class PlottingMixin:
         else:
             return self.plot(Z, domain=domain, arrow=arrow, **kwargs)
 
-    def plot_constant_reactance(self, reactance, *args, resistance_range=None,
-                                domain=None, num_points=200, arrow=None, **kwargs):
+    def plot_constant_reactance(
+        self, reactance, *args, resistance_range=None, domain=None, num_points=200, arrow=None, **kwargs
+    ):
         """
         Plot a constant reactance arc on the Smith chart.
 
@@ -726,8 +727,9 @@ class PlottingMixin:
 
         return lines
 
-    def plot_constant_conductance(self, conductance, *args, susceptance_range=None,
-                                  domain=None, num_points=200, arrow=None, **kwargs):
+    def plot_constant_conductance(
+        self, conductance, *args, susceptance_range=None, domain=None, num_points=200, arrow=None, **kwargs
+    ):
         """
         Plot a constant conductance circle on the Smith chart (admittance chart).
 
@@ -776,7 +778,7 @@ class PlottingMixin:
 
         if susceptance_range is None:
             # Draw complete circle using angular parametrization
-            theta = np.linspace(-np.pi/2 + 0.01, np.pi/2 - 0.01, num_points)
+            theta = np.linspace(-np.pi / 2 + 0.01, np.pi / 2 - 0.01, num_points)
 
             # Use tangent to span from -large to +large susceptance
             if domain == ABSOLUTE_DOMAIN:
@@ -804,8 +806,9 @@ class PlottingMixin:
 
         return lines
 
-    def plot_constant_susceptance(self, susceptance, *args, conductance_range=None,
-                                  domain=None, num_points=200, arrow=None, **kwargs):
+    def plot_constant_susceptance(
+        self, susceptance, *args, conductance_range=None, domain=None, num_points=200, arrow=None, **kwargs
+    ):
         """
         Plot a constant susceptance arc on the Smith chart (admittance chart).
 
@@ -941,9 +944,7 @@ class PlottingMixin:
             angle_range = (0, 360)
 
         # Generate points around the circle
-        angles = np.linspace(np.radians(angle_range[0]),
-                            np.radians(angle_range[1]),
-                            num_points)
+        angles = np.linspace(np.radians(angle_range[0]), np.radians(angle_range[1]), num_points)
 
         # Create reflection coefficients on the circle
         gamma = gamma_mag * np.exp(1j * angles)
@@ -960,9 +961,7 @@ class PlottingMixin:
 
         return lines
 
-
-    def plot_rotation_path(self, Z_start, Z_end, *args, domain=None, num_points=100,
-                          arrow=None, **kwargs):
+    def plot_rotation_path(self, Z_start, Z_end, *args, domain=None, num_points=100, arrow=None, **kwargs):
         """
         Plot a physically realizable impedance matching path.
 
@@ -1008,13 +1007,13 @@ class PlottingMixin:
 
         # Convert to complex if needed
         if not isinstance(Z_start, complex):
-            if hasattr(Z_start, '__iter__'):
+            if hasattr(Z_start, "__iter__"):
                 Z_start = complex(Z_start[0], Z_start[1])
             else:
                 Z_start = complex(Z_start, 0)
 
         if not isinstance(Z_end, complex):
-            if hasattr(Z_end, '__iter__'):
+            if hasattr(Z_end, "__iter__"):
                 Z_end = complex(Z_end[0], Z_end[1])
             else:
                 Z_end = complex(Z_end, 0)
@@ -1114,7 +1113,7 @@ class PlottingMixin:
 
             # Plot step 2 (reactive element) with arrow - remove label to avoid duplicate
             fmt_kwargs_2 = fmt_kwargs.copy()
-            fmt_kwargs_2.pop('label', None)
+            fmt_kwargs_2.pop("label", None)
 
             if fmt_str:
                 lines.extend(self.plot(gamma_step2, fmt_str, domain=REFLECTANCE_DOMAIN, arrow=arrow, **fmt_kwargs_2))
@@ -1122,4 +1121,3 @@ class PlottingMixin:
                 lines.extend(self.plot(gamma_step2, domain=REFLECTANCE_DOMAIN, arrow=arrow, **fmt_kwargs_2))
 
             return lines
-
