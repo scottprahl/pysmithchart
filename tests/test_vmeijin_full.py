@@ -24,7 +24,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 
-from pysmithchart import S_PARAMETER, Z_PARAMETER
+from pysmithchart import REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN
 
 # Configure Matplotlib settings
 rcParams.update({"legend.numpoints": 3, "axes.axisbelow": True})
@@ -75,10 +75,10 @@ def load_complex_data(file_path, step=40):
 def plot_example(title, sp_data, z_data, **kwargs):
     """Helper function to plot examples."""
     kwargs.setdefault("markevery", 1)
-    plt.plot(sp_data, datatype=S_PARAMETER, **kwargs)
-    plt.plot(z_data, datatype=Z_PARAMETER, **kwargs)
-    plt.plot(100, datatype=Z_PARAMETER, **kwargs)
-    plt.plot(25 + 25j, datatype=Z_PARAMETER, **kwargs)
+    plt.plot(sp_data, domain=REFLECTANCE_DOMAIN, **kwargs)
+    plt.plot(z_data, domain=IMPEDANCE_DOMAIN, **kwargs)
+    plt.plot(100, domain=IMPEDANCE_DOMAIN, **kwargs)
+    plt.plot(25 + 25j, domain=IMPEDANCE_DOMAIN, **kwargs)
     plt.title(title)
 
 
@@ -110,9 +110,11 @@ def test_grid_styles(setup_environment):
                         3,
                         i,
                         projection="smith",
-                        grid_major_fancy=major_fancy,
-                        grid_minor_enable=minor or minor_fancy,
-                        grid_minor_fancy=minor_fancy,
+                        **{
+                            "grid.major.fancy": major_fancy,
+                            "grid.minor.enable": minor or minor_fancy,
+                            "grid.minor.fancy": minor_fancy,
+                        },
                     )
                     major_str = "fancy" if major_fancy else "standard"
                     minor_str = "off" if not minor else "fancy" if minor_fancy else "standard"
@@ -131,7 +133,7 @@ def test_fancy_grids(setup_environment):
     i = 0
     for threshold in [(50, 50), (100, 50), (125, 100)]:
         i += 1
-        plt.subplot(2, 3, i, projection="smith", grid_major_fancy_threshold=threshold)
+        plt.subplot(2, 3, i, projection="smith", **{"grid.major.fancy.threshold": threshold})
         plot_example(f"Major Threshold=({threshold[0]}, {threshold[1]})", sp_data, z_data)
 
     for threshold in [15, 30, 60]:
@@ -141,9 +143,7 @@ def test_fancy_grids(setup_environment):
             3,
             i,
             projection="smith",
-            grid_minor_fancy=True,
-            grid_minor_enable=True,
-            grid_minor_fancy_threshold=threshold,
+            **{"grid.minor.fancy": True, "grid.minor.enable": True, "grid.minor.fancy.threshold": threshold},
         )
         plot_example(f"Minor Threshold={threshold}", sp_data, z_data)
 
@@ -160,12 +160,12 @@ def test_grid_locators(setup_environment):
     i = 0
     for num in [5, 8, 14, 20]:
         i += 1
-        plt.subplot(2, 4, i, projection="smith", grid_major_xmaxn=num)
+        plt.subplot(2, 4, i, projection="smith", **{"grid.major.xdivisions": num})
         plot_example(f"Max real steps: {num}", sp_data, z_data)
 
     for num in [6, 14, 25, 50]:
         i += 1
-        plt.subplot(2, 4, i, projection="smith", grid_major_ymaxn=num)
+        plt.subplot(2, 4, i, projection="smith", **{"grid.major.ydivisions": num})
         plot_example(f"Max imaginary steps: {num}", sp_data, z_data)
 
     save_figure(chart_dir, "full_grid_locators")
@@ -187,57 +187,26 @@ def test_normalize(setup_environment):
                 3,
                 i,
                 projection="smith",
-                axes_normalize=normalize,
-                axes_impedance=impedance,
+                Z0=impedance,
             )
             plot_example(f"Impedance: {impedance} Ω — Normalize: {normalize}", sp_data, z_data)
 
     save_figure(chart_dir, "full_normalize")
 
 
+@pytest.mark.filterwarnings("ignore:S-parameter magnitude")
 def test_markers(setup_environment):
-    """Test for marker styles and configurations."""
+    """Test for basic marker styles."""
     _, chart_dir = setup_environment
 
-    VStartMarker = np.array([[0, 0], [0.5, 0.5], [0, -0.5], [-0.5, 0.5], [0, 0]])
-    XEndMarker = np.array(
-        [
-            [0, 0],
-            [0.5, 0.5],
-            [0.25, 0],
-            [0.5, -0.5],
-            [0, 0],
-            [-0.5, -0.5],
-            [-0.25, 0],
-            [-0.5, 0.5],
-            [0, 0],
-        ]
-    )
-
-    fig = plt.figure(figsize=(24, 12))
+    fig = plt.figure(figsize=(12, 6))
     fig.set_layout_engine("tight")
-    i = 0
-    for hackline, startmarker, endmarker, rotate_marker in [
-        [False, None, None, False],
-        [True, "s", "^", False],
-        [True, "s", None, False],
-        [True, VStartMarker, XEndMarker, False],
-        [True, "s", "^", True],
-        [True, None, "^", False],
-    ]:
-        i += 1
-        ax = plt.subplot(
-            2,
-            3,
-            i,
-            projection="smith",
-            plot_marker_hack=hackline,
-            plot_marker_rotate=rotate_marker,
-        )
-        ax.update_scParams(plot_marker_start=startmarker, plot_marker_end=endmarker)
-        s = f"HackLines: {hackline} - StartMarker: {startmarker}\n"
-        s += f"EndMarker: {endmarker} - Rotate: {rotate_marker}"
-        plot_example(s, sp_data=np.array([50]), z_data=np.array([25]), markersize=10)
+
+    markers = ["o", "s", "^", "v", "D", "*"]
+
+    for i, marker in enumerate(markers):
+        ax = plt.subplot(2, 3, i + 1, projection="smith")
+        plot_example(f"Marker: {marker}", sp_data=np.array([50]), z_data=np.array([25]), marker=marker, markersize=10)
 
     save_figure(chart_dir, "full_markers")
 
@@ -276,7 +245,7 @@ def test_miscellaneous(setup_environment):
 
     fig = plt.figure(figsize=(18, 12))
     fig.set_layout_engine("tight")
-    plt.subplot(2, 3, 1, projection="smith", plot_marker_hack=True)
+    plt.subplot(2, 3, 1, projection="smith")
     plot_example("Legend", sp_data, z_data)
     plt.legend(["S11", "S22", "Polyline", "Z → 0.125λ"])
 
@@ -286,9 +255,7 @@ def test_miscellaneous(setup_environment):
         3,
         2,
         projection="smith",
-        grid_minor_enable=True,
-        grid_minor_fancy=True,
-        grid_minor_fancy_dividers=divs,
+        **{"grid.minor.enable": True, "grid.minor.fancy": True, "grid.minor.fancy.dividers": divs},
     )
     plot_example(f"Minor fancy dividers={divs}", sp_data, z_data)
 

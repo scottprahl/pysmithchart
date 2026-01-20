@@ -9,7 +9,7 @@ Tests:
 - `test_plot_point`: Verifies the ability to plot individual points
 - `test_plot_s_param`: Tests the plotting of S-parameters on the Smith chart.
 - `test_plot_labels`: Ensures plots with labels and legends render correctly.
-- `test_plot_normalized_axes`: Normalized and non-normalized axes different impedances.
+- `test_plot_normalized_axes`: Normalized axes different impedances.
 - `test_plot_grid_styles`: Examines various grid style configurations.
 """
 
@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 import matplotlib.pyplot as plt
 
-from pysmithchart import S_PARAMETER
+from pysmithchart import REFLECTANCE_DOMAIN
 
 
 @pytest.fixture
@@ -68,25 +68,27 @@ def test_plot_points(chart_dir, points):
     plt.close()
 
 
+@pytest.mark.filterwarnings("ignore:S-parameter magnitude")
 def test_plot_s_param(chart_dir):
     """Test plotting S-parameters on the Smith chart."""
     freqs = np.logspace(0, 9, 200)
     s11 = s11_of_cap(freqs)
     plt.figure(figsize=(6, 6))
     plt.subplot(1, 1, 1, projection="smith")
-    plt.plot(s11, markevery=1, datatype=S_PARAMETER)
+    plt.plot(s11, markevery=1, domain=REFLECTANCE_DOMAIN)
     plt.title("S-Parameters of a Capacitor")
     plt.savefig(os.path.join(chart_dir, "schang_cap.pdf"), format="pdf")
     plt.close()
 
 
+@pytest.mark.filterwarnings("ignore:S-parameter magnitude")
 def test_plot_labels(chart_dir):
     """Test plotting with labels and a legend."""
     freqs = np.logspace(0, 9, 200)
     s11 = s11_of_cap(freqs)
     plt.figure(figsize=(6, 6))
     plt.subplot(1, 1, 1, projection="smith")
-    plt.plot(s11, markevery=1, datatype=S_PARAMETER, label="s11")
+    plt.plot(s11, markevery=1, domain=REFLECTANCE_DOMAIN, label="s11")
     plt.legend()
     plt.title("S-Parameters with Labels and Legend")
     plt.savefig(os.path.join(chart_dir, "schang_labels.pdf"), format="pdf")
@@ -105,13 +107,11 @@ def test_plot_normalized_axes(chart_dir):
             3,
             i + 1,
             projection="smith",
-            axes_impedance=impedance,
-            axes_normalize=do_normalize_axes,
+            Z0=impedance,
         )
-        plt.plot(s11, datatype=S_PARAMETER)
-        plt.title(f"Impedance: {impedance} Ω — Normalized: {do_normalize_axes}")
+        plt.plot(s11, domain=REFLECTANCE_DOMAIN)
+        plt.title(f"Impedance: {impedance} Ω")
 
-    plt.suptitle("Normalized vs. Non-Normalized Axes")
     plt.savefig(os.path.join(chart_dir, "schang_normalized_axes.pdf"), format="pdf")
     plt.close()
 
@@ -144,13 +144,11 @@ def test_plot_grid_styles(chart_dir):
             3,
             i + 1 - offset,
             projection="smith",
-            grid_major_fancy=major_fancy,
-            grid_minor_enable=minor_enable,
-            grid_minor_fancy=minor_fancy,
+            **{"grid.major.fancy": major_fancy, "grid.minor.enable": minor_enable, "grid.minor.fancy": minor_fancy},
         )
         major_str = "fancy" if major_fancy else "standard"
         minor_str = "off" if not minor_enable else ("fancy" if minor_fancy else "standard")
-        plt.plot(s11, datatype=S_PARAMETER)
+        plt.plot(s11, domain=REFLECTANCE_DOMAIN)
         plt.title(f"Major Grid: {major_str}, Minor Grid: {minor_str}")
 
     plt.suptitle("Grid Style Variations")

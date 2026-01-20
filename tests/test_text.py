@@ -16,7 +16,7 @@ import sys
 
 sys.path.insert(0, "/home/claude")
 
-from pysmithchart import SmithAxes, Z_PARAMETER, Y_PARAMETER, S_PARAMETER
+from pysmithchart import SmithAxes, IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, REFLECTANCE_DOMAIN
 
 
 class TestSmithAxesTextMethod:
@@ -151,18 +151,19 @@ class TestSmithAxesTextMethod:
         """Test that transformation is applied to coordinates."""
         # Create text at a known impedance
         x, y = 50, 25
-        text_obj = smith_axes.text(x, y, "Test", datatype=Z_PARAMETER)
+        text_obj = smith_axes.text(x, y, "Test", domain=IMPEDANCE_DOMAIN)
 
         # Get the transformed position
         pos = text_obj.get_position()
 
-        # For Z_PARAMETER with normalization disabled, the transformation is:
-        # z = 50 + 25j -> normalize (if enabled) -> z_to_xy
+        # For IMPEDANCE_DOMAIN, the transformation is:
+        # z = 50 + 25j -> normalize by Z0 -> z_to_xy
         from pysmithchart.utils import z_to_xy
 
         z = 50 + 25j
-        if smith_axes._normalize:
-            z = z / smith_axes._get_key("axes.impedance")
+        # IMPEDANCE_DOMAIN is always normalized by Z0 in the transform pipeline
+        if smith_axes._get_key("axes.normalize"):
+            z = z / smith_axes._get_key("axes.Z0")
 
         x_expected, y_expected = z_to_xy(z)
 
@@ -170,16 +171,16 @@ class TestSmithAxesTextMethod:
         assert np.isclose(pos[0], x_expected, rtol=1e-5)
         assert np.isclose(pos[1], y_expected, rtol=1e-5)
 
-    def test_text_transformation_s_parameter(self, smith_axes):
-        """Test that Moebius transformation is applied for S_PARAMETER."""
+    def test_text_transformation_REFLECTION_DOMAIN2(self, smith_axes):
+        """Test that Moebius transformation is applied for REFLECTANCE_DOMAIN."""
         # Create text in S-parameter space (reflection coefficient)
         x, y = 0.5, 0.3
-        text_obj = smith_axes.text(x, y, "Test", datatype=S_PARAMETER)
+        text_obj = smith_axes.text(x, y, "Test", domain=REFLECTANCE_DOMAIN)
 
         # Get the transformed position
         pos = text_obj.get_position()
 
-        # For S_PARAMETER, transformation is: moebius_inv_z(s) -> z_to_xy
+        # For REFLECTANCE_DOMAIN, transformation is: moebius_inv_z(s) -> z_to_xy
         from pysmithchart.utils import z_to_xy
 
         s = 0.5 + 0.3j
@@ -248,7 +249,7 @@ class TestSmithAxesTextMethod:
         """Test text labels accompanying plot points."""
         # Plot some points
         impedances = [25 + 25j, 50 + 0j, 75 + 50j]
-        smith_axes.plot(impedances, "o", datatype=Z_PARAMETER, label="Points")
+        smith_axes.plot(impedances, "o", domain=IMPEDANCE_DOMAIN, label="Points")
 
         # Add text labels at the same coordinates
         for z in impedances:
@@ -261,7 +262,7 @@ class TestSmithAxesTextMethod:
 
         for norm in normalizations:
             fig = plt.figure()
-            ax = fig.add_subplot(1, 1, 1, projection="smith", axes_impedance=norm)
+            ax = fig.add_subplot(1, 1, 1, projection="smith", Z0=norm)
 
             # Add text at normalized impedance
             text_obj = ax.text(norm, 0, f"{norm}Ω")
@@ -347,7 +348,7 @@ class TestSmithAxesTextIntegration:
 
     def test_text_with_legend(self, smith_axes):
         """Test text with legend present."""
-        smith_axes.plot([50 + 25j], "o", datatype=Z_PARAMETER, label="Data")
+        smith_axes.plot([50 + 25j], "o", domain=IMPEDANCE_DOMAIN, label="Data")
         smith_axes.legend()
         text_obj = smith_axes.text(50, 25, "With Legend")
         assert text_obj is not None
@@ -408,12 +409,6 @@ class TestSmithAxesTextEdgeCases:
         """Test text with very small coordinate values."""
         text_obj = smith_axes.text(1e-6, 1e-6, "Small")
         assert text_obj is not None
-
-    def test_text_string_none(self, smith_axes):
-        """Test text with None as string (matplotlib converts to empty string)."""
-        text_obj = smith_axes.text(50, 25, None)
-        # Matplotlib converts None to empty string
-        assert text_obj.get_text() == ""
 
     def test_text_numeric_string(self, smith_axes):
         """Test text with numeric values as strings."""

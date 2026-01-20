@@ -14,6 +14,7 @@ from matplotlib.collections import PathCollection
 matplotlib.use("Agg")
 
 import sys
+
 sys.path.insert(0, "/home/claude")
 
 from pysmithchart import SmithAxes, IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, REFLECTANCE_DOMAIN, ABSOLUTE_DOMAIN
@@ -64,7 +65,7 @@ class TestSmithAxesScatter:
     def test_scatter_REFLECTION_DOMAIN2(self, smith_axes):
         """Test scatter with S-parameters."""
         S = [0.5 + 0.3j, -0.2 - 0.1j, 0.1 + 0.4j]
-        collection = smith_axes.scatter(S, s=100, c='blue', domain=REFLECTANCE_DOMAIN)
+        collection = smith_axes.scatter(S, s=100, c="blue", domain=REFLECTANCE_DOMAIN)
         assert isinstance(collection, PathCollection)
         assert len(collection.get_offsets()) == len(S)
 
@@ -94,70 +95,40 @@ class TestSmithAxesScatter:
 
     def test_scatter_with_color(self, smith_axes):
         """Test scatter with color specification."""
-        collection = smith_axes.scatter(
-            [50 + 25j, 75 + 50j],
-            s=100,
-            c='red',
-            domain=IMPEDANCE_DOMAIN
-        )
+        collection = smith_axes.scatter([50 + 25j, 75 + 50j], s=100, c="red", domain=IMPEDANCE_DOMAIN)
         assert isinstance(collection, PathCollection)
 
     def test_scatter_with_colormap(self, smith_axes):
         """Test scatter with colormap."""
         points = [30 + 30j, 50 + 50j, 100 + 100j]
         colors = [0, 0.5, 1.0]
-        collection = smith_axes.scatter(
-            points,
-            s=100,
-            c=colors,
-            cmap='viridis',
-            domain=IMPEDANCE_DOMAIN
-        )
+        collection = smith_axes.scatter(points, s=100, c=colors, cmap="viridis", domain=IMPEDANCE_DOMAIN)
         assert isinstance(collection, PathCollection)
 
     def test_scatter_with_varying_sizes(self, smith_axes):
         """Test scatter with varying marker sizes."""
         points = [30 + 30j, 50 + 50j, 100 + 100j]
         sizes = [50, 100, 150]
-        collection = smith_axes.scatter(
-            points,
-            s=sizes,
-            domain=IMPEDANCE_DOMAIN
-        )
+        collection = smith_axes.scatter(points, s=sizes, domain=IMPEDANCE_DOMAIN)
         assert isinstance(collection, PathCollection)
 
     def test_scatter_with_alpha(self, smith_axes):
         """Test scatter with alpha transparency."""
-        collection = smith_axes.scatter(
-            [50 + 25j],
-            s=150,
-            alpha=0.5,
-            domain=IMPEDANCE_DOMAIN
-        )
+        collection = smith_axes.scatter([50 + 25j], s=150, alpha=0.5, domain=IMPEDANCE_DOMAIN)
         assert isinstance(collection, PathCollection)
 
     def test_scatter_with_edgecolors(self, smith_axes):
         """Test scatter with edge colors."""
         collection = smith_axes.scatter(
-            [50 + 25j, 75 + 50j],
-            s=100,
-            c='blue',
-            edgecolors='red',
-            linewidths=2,
-            domain=IMPEDANCE_DOMAIN
+            [50 + 25j, 75 + 50j], s=100, c="blue", edgecolors="red", linewidths=2, domain=IMPEDANCE_DOMAIN
         )
         assert isinstance(collection, PathCollection)
 
     def test_scatter_with_marker_style(self, smith_axes):
         """Test scatter with different marker styles."""
-        markers = ['o', 's', '^', 'D', '*']
+        markers = ["o", "s", "^", "D", "*"]
         for i, marker in enumerate(markers):
-            collection = smith_axes.scatter(
-                [50 + i*10j],
-                s=100,
-                marker=marker,
-                domain=IMPEDANCE_DOMAIN
-            )
+            collection = smith_axes.scatter([50 + i * 10j], s=100, marker=marker, domain=IMPEDANCE_DOMAIN)
             assert isinstance(collection, PathCollection)
 
     def test_scatter_REFLECTION_DOMAIN2_warning_outside_chart(self, smith_axes):
@@ -167,9 +138,9 @@ class TestSmithAxesScatter:
 
     def test_scatter_multiple_calls(self, smith_axes):
         """Test multiple scatter calls on same axes."""
-        c1 = smith_axes.scatter([30 + 30j], s=100, c='red', domain=IMPEDANCE_DOMAIN)
-        c2 = smith_axes.scatter([50 + 50j], s=100, c='blue', domain=IMPEDANCE_DOMAIN)
-        c3 = smith_axes.scatter([100 + 100j], s=100, c='green', domain=IMPEDANCE_DOMAIN)
+        c1 = smith_axes.scatter([30 + 30j], s=100, c="red", domain=IMPEDANCE_DOMAIN)
+        c2 = smith_axes.scatter([50 + 50j], s=100, c="blue", domain=IMPEDANCE_DOMAIN)
+        c3 = smith_axes.scatter([100 + 100j], s=100, c="green", domain=IMPEDANCE_DOMAIN)
 
         assert isinstance(c1, PathCollection)
         assert isinstance(c2, PathCollection)
@@ -177,24 +148,13 @@ class TestSmithAxesScatter:
 
     def test_scatter_with_plot(self, smith_axes):
         """Test scatter used together with plot."""
-        smith_axes.plot([30 + 30j, 100 + 100j], 'b-', domain=IMPEDANCE_DOMAIN)
-        collection = smith_axes.scatter(
-            [30 + 30j, 50 + 50j, 100 + 100j],
-            s=100,
-            c='red',
-            domain=IMPEDANCE_DOMAIN
-        )
+        smith_axes.plot([30 + 30j, 100 + 100j], "b-", domain=IMPEDANCE_DOMAIN)
+        collection = smith_axes.scatter([30 + 30j, 50 + 50j, 100 + 100j], s=100, c="red", domain=IMPEDANCE_DOMAIN)
         assert isinstance(collection, PathCollection)
 
     def test_scatter_matched_load(self, smith_axes):
         """Test scatter at matched load (center of chart)."""
-        collection = smith_axes.scatter(
-            [50 + 0j],
-            s=200,
-            c='green',
-            marker='*',
-            domain=IMPEDANCE_DOMAIN
-        )
+        collection = smith_axes.scatter([50 + 0j], s=200, c="green", marker="*", domain=IMPEDANCE_DOMAIN)
         assert isinstance(collection, PathCollection)
 
     def test_scatter_numpy_array_input(self, smith_axes):
@@ -224,17 +184,9 @@ class TestSmithAxesScatter:
         # REFLECTANCE_DOMAIN with large impedance values will trigger warning
         if domain == REFLECTANCE_DOMAIN:
             with pytest.warns(UserWarning, match="S-parameter magnitude"):
-                collection = smith_axes.scatter(
-                    [50 + 25j],
-                    s=100,
-                    domain=domain
-                )
+                collection = smith_axes.scatter([50 + 25j], s=100, domain=domain)
         else:
-            collection = smith_axes.scatter(
-                [50 + 25j],
-                s=100,
-                domain=domain
-            )
+            collection = smith_axes.scatter([50 + 25j], s=100, domain=domain)
         assert isinstance(collection, PathCollection)
 
 
@@ -256,8 +208,8 @@ class TestScatterTransformations:
 
         Gamma = (ZL - Z0) / (ZL + Z0)
 
-        c1 = smith_axes.scatter([ZL], s=100, c='red', domain=IMPEDANCE_DOMAIN)
-        c2 = smith_axes.scatter([Gamma], s=50, c='blue', domain=REFLECTANCE_DOMAIN)
+        c1 = smith_axes.scatter([ZL], s=100, c="red", domain=IMPEDANCE_DOMAIN)
+        c2 = smith_axes.scatter([Gamma], s=50, c="blue", domain=REFLECTANCE_DOMAIN)
 
         pos1 = c1.get_offsets()[0]
         pos2 = c2.get_offsets()[0]
@@ -269,8 +221,8 @@ class TestScatterTransformations:
         Z = 75 + 50j
         Y = 1 / Z
 
-        c1 = smith_axes.scatter([Z], s=100, c='red', domain=IMPEDANCE_DOMAIN)
-        c2 = smith_axes.scatter([Y], s=50, c='blue', domain=ADMITTANCE_DOMAIN)
+        c1 = smith_axes.scatter([Z], s=100, c="red", domain=IMPEDANCE_DOMAIN)
+        c2 = smith_axes.scatter([Y], s=50, c="blue", domain=ADMITTANCE_DOMAIN)
 
         pos1 = c1.get_offsets()[0]
         pos2 = c2.get_offsets()[0]
