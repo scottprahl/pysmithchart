@@ -83,13 +83,13 @@ Quick Start
 .. code-block:: python
 
     import matplotlib.pyplot as plt
-    from pysmithchart import S_PARAMETER
+    from pysmithchart import REFLECTANCE_DOMAIN
 
     S = [0.5 + 0.3j, -0.2 - 0.1j]
 
     plt.figure(figsize=(6, 6))
     plt.subplot(1, 1, 1, projection="smith")
-    plt.plot(S, datatype=S_PARAMETER, marker='o', markersize=10, label='S₁₁')
+    plt.plot(S, domain=REFLECTANCE_DOMAIN, marker='o', markersize=10, label='S₁₁')
     plt.legend()
     plt.title('Reflection Coefficients')
     plt.show()
