@@ -20,7 +20,7 @@ ZL = [30 + 30j, 50 + 50j, 100 + 100j]
 sc = {"grid.minor.enable": True}
 plt.figure(figsize=(6, 6))
 plt.subplot(1, 1, 1, projection="smith", Z0=200, **sc)
-plt.plot(ZL, "b-o", markersize=10) 
+plt.plot(ZL, "b-o", markersize=10)
 plt.title("Impedance parameters with Z₀=200Ω")
 plt.savefig("readme_fig2.svg", format="svg")
 plt.show()

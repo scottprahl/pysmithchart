@@ -44,7 +44,6 @@ import numpy as np
 from .constants import SC_EPSILON, SC_INFINITY
 from .constants import REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, ABSOLUTE_DOMAIN
 
-
 # Public API
 __all__ = [
     # Domain validation
