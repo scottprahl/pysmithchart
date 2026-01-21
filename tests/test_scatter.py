@@ -17,7 +17,7 @@ import sys
 
 sys.path.insert(0, "/home/claude")
 
-from pysmithchart import SmithAxes, IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, REFLECTANCE_DOMAIN, ABSOLUTE_DOMAIN
+from pysmithchart import IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, REFLECTANCE_DOMAIN, ABSOLUTE_DOMAIN
 
 
 class TestSmithAxesScatter:

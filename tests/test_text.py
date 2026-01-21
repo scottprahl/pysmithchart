@@ -16,7 +16,7 @@ import sys
 
 sys.path.insert(0, "/home/claude")
 
-from pysmithchart import SmithAxes, IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, REFLECTANCE_DOMAIN
+from pysmithchart import IMPEDANCE_DOMAIN, REFLECTANCE_DOMAIN
 
 
 class TestSmithAxesTextMethod:
@@ -128,24 +128,6 @@ class TestSmithAxesTextMethod:
         for x, y in zip(x_coords, y_coords):
             text_obj = smith_axes.text(x, y, f"{x}+{y}j")
             assert text_obj is not None
-
-    def test_text_transformation_applied(self, smith_axes):
-        """Test that Moebius transformation is applied to coordinates."""
-        # Create text at a known impedance
-        x, y = 50, 25
-        text_obj = smith_axes.text(x, y, "Test")
-
-        # Get the transformed position
-        pos = text_obj.get_position()
-
-        # Manually compute expected transformation
-        from pysmithchart.utils import z_to_xy
-
-        x_expected, y_expected = z_to_xy(smith_axes.moebius_z(x, y))
-
-        # Check that the text is at the transformed position
-        assert np.isclose(pos[0], x_expected, rtol=1e-5)
-        assert np.isclose(pos[1], y_expected, rtol=1e-5)
 
     def test_text_transformation_applied(self, smith_axes):
         """Test that transformation is applied to coordinates."""
@@ -310,7 +292,7 @@ class TestSmithAxesTextMethod:
     def test_text_clip_behavior(self, smith_axes):
         """Test text clipping behavior."""
         text_obj = smith_axes.text(50, 25, "Clipped", clip_on=True)
-        assert text_obj.get_clip_on() == True
+        assert text_obj.get_clip_on()
 
     @pytest.mark.parametrize(
         "x,y,label",

@@ -838,7 +838,7 @@ def rotate_toward_imag(Z, target_imag, Z0=50, solution="closer"):
         return zs[idx] * Z0
 
     # We have multiple solutions, pick based on criterion
-    angle_current = np.angle(gamma)
+#    angle_current = np.angle(gamma)
 
     if solution == "higher_real":
         result = max(candidates, key=lambda x: np.real(x[1]))[1]

@@ -1,5 +1,5 @@
 """
-Test suite for rotation functions in pysmithchart.utils
+Test suite for rotation functions in pysmithchart.utils.
 
 Tests the three modern rotation functions:
 - rotate_by_wavelength
@@ -23,7 +23,7 @@ class TestRotateByWavelength:
         assert np.isclose(Z_rot, Z), f"Expected {Z}, got {Z_rot}"
 
     def test_quarter_wave_transform(self):
-        """Test quarter-wave transformation: Z → Z₀²/Z"""
+        """Test quarter-wave transformation: Z → Z₀²/Z."""
         Z = 100 + 0j  # Pure resistance
         Z0 = 50
         Z_rot = utils.rotate_by_wavelength(Z, 0.25, Z0=Z0)

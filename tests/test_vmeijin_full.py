@@ -205,7 +205,7 @@ def test_markers(setup_environment):
     markers = ["o", "s", "^", "v", "D", "*"]
 
     for i, marker in enumerate(markers):
-        ax = plt.subplot(2, 3, i + 1, projection="smith")
+        plt.subplot(2, 3, i + 1, projection="smith")
         plot_example(f"Marker: {marker}", sp_data=np.array([50]), z_data=np.array([25]), marker=marker, markersize=10)
 
     save_figure(chart_dir, "full_markers")
