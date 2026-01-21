@@ -135,7 +135,7 @@ def get_domain_name(domain):
     return names.get(domain, f"Unknown domain: {domain}")
 
 
-def calc_rho(vswr):
+def vswr_to_gamma_mag(vswr):
     """Converts VSWR to reflection-coefficient magnitude |Gamma|.
 
     VSWR and the reflection coefficient magnitude are related (for a lossless line) by:
@@ -168,12 +168,12 @@ def calc_rho(vswr):
     Examples:
         Convert a single VSWR value:
 
-            rho = calc_rho(2.0)     # 0.333...
+            rho = vswr_to_gamma_mag(2.0)     # 0.333...
 
         Convert an array of values:
 
             vswrs = np.array([1.0, 1.5, 2.0, 3.0])
-            rho = calc_rho(vswrs)
+            rho = vswr_to_gamma_mag(vswrs)
 
     Notes:
         - VSWR = 1 corresponds to a perfect match (|Gamma| = 0).
@@ -838,7 +838,7 @@ def rotate_toward_imag(Z, target_imag, Z0=50, solution="closer"):
         return zs[idx] * Z0
 
     # We have multiple solutions, pick based on criterion
-#    angle_current = np.angle(gamma)
+    #    angle_current = np.angle(gamma)
 
     if solution == "higher_real":
         result = max(candidates, key=lambda x: np.real(x[1]))[1]
