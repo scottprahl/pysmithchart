@@ -1,5 +1,6 @@
 """Helper and utility methods for SmithAxes."""
 
+import warnings
 import numpy as np
 from numbers import Number
 from collections.abc import Iterable
@@ -102,8 +103,6 @@ class HelpersMixin:
                 if warn_s_parameter:
                     s_magnitude = np.abs(cdata)
                     if np.any(s_magnitude > 1):
-                        import warnings
-
                         warnings.warn(
                             f"S-parameter magnitude |S| > 1 detected (max: {np.max(s_magnitude):.3f}). "
                             "Points outside the unit circle will not be visible on the Smith chart.",
@@ -121,8 +120,12 @@ class HelpersMixin:
                 z = cdata
 
             elif domain == ADMITTANCE_DOMAIN:
-                # Y-parameters: Convert to impedance, then normalize
-                z = (1 / cdata) / self._get_key("axes.Z0")
+                # Y-parameters: Normalize by Y₀ = 1/Z₀, then convert to impedance
+                # For admittance Smith charts, we need Y → Z transformation
+                # Y_norm = Y * Z₀ (normalized admittance)
+                # z = 1 / Y_norm (convert to normalized impedance for correct grid display)
+                y_norm = cdata * self._get_key("axes.Z0")
+                z = np.conjugate(1.0 / y_norm)
 
             else:
                 # Should never reach here due to validation above
