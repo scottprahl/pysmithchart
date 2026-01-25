@@ -324,7 +324,7 @@ class TestSmithAxesTextIntegration:
 
     def test_text_with_grid(self, smith_axes):
         """Test text rendering with grid enabled."""
-        smith_axes.grid(which="both")
+        smith_axes.grid(grid="both")
         text_obj = smith_axes.text(50, 25, "With Grid")
         assert text_obj is not None
 

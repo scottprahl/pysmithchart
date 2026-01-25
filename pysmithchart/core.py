@@ -74,14 +74,13 @@ class AxesCore:
         Essential Shortcuts:
             Z0 (float): Reference impedance (default: 50Ω)
             domain (str): Default data domain (Z_DOMAIN, R_DOMAIN, etc.)
-            which (str): Grid type selection. Options:
+            grid (str): Grid type selection. Options:
                 - 'impedance' (default): Impedance grid only
                 - 'admittance': Admittance grid only
                 - 'both': Both impedance and admittance grids
 
-        smith_params (dict, RECOMMENDED):
-            Dictionary of Smith chart parameters using dot notation.
-            This is the cleanest way to configure the chart.
+        smith_style (dict):
+            Dictionary of Smith chart parameters to modify.
 
             Common parameters:
                 'grid.Z.major.enable': True/False
@@ -100,35 +99,24 @@ class AxesCore:
             >>> fig.add_subplot(111, projection='smith', Z0=75)
             >>>
             >>> # Quick admittance chart
-            >>> fig.add_subplot(111, projection='smith', which='admittance')
+            >>> fig.add_subplot(111, projection='smith', grid='admittance')
             >>>
             >>> # Show both impedance and admittance grids
-            >>> fig.add_subplot(111, projection='smith', which='both')
+            >>> fig.add_subplot(111, projection='smith', grid='both')
             >>>
-            >>> # Recommended approach with smith_params
-            >>> config = {
+            >>> # Recommended approach with smith_style
+            >>> ss = {
             ...     'grid.Z.major.color': 'blue',
             ...     'grid.Z.major.fancy.threshold': (50, 50),
             ...     'grid.Z.minor.enable': True
             ... }
-            >>> fig.add_subplot(111, projection='smith', smith_params=config)
+            >>> fig.add_subplot(111, projection='smith', smith_style=ss)
             >>>
-            >>> # Combine shortcuts with smith_params
+            >>> # Combine shortcuts with smith_style
             >>> fig.add_subplot(111, projection='smith',
             ...                 Z0=75,
-            ...                 which='admittance',
-            ...                 smith_params={'grid.Y.major.color': 'blue'})
-            >>>
-            >>> # Direct dot notation also works (backwards compatible)
-            >>> fig.add_subplot(111, projection='smith',
-            ...                 **{'axes.Z0': 75, 'grid.Z.major.color': 'blue'})
-
-        Notes:
-            The `smith_params` approach is recommended because it:
-            - Keeps configuration separate from code
-            - Makes complex setups more readable
-            - Can be saved/loaded from config files
-            - Avoids underscore proliferation in the API
+            ...                 grid='admittance',
+            ...                 smith_style={'grid.Y.major.color': 'blue'})
         """
         self.transProjection = None
         self.transAffine = None
@@ -149,29 +137,24 @@ class AxesCore:
         self._current_zorder = None
         self.scParams = copy.deepcopy(SC_DEFAULT_PARAMS)
 
-        # Define shortcut mappings: user-friendly name -> internal scParams key
-        # Only essential parameters that users commonly need
+        # Define shortcut mappings for user-friendly names
         SHORTCUT_MAP = {
             "Z0": "axes.Z0",
             "domain": "plot.default.domain",
         }
 
-        # Process smith_params dictionary first (cleanest API)
-        sc_params_to_set = {}
+        # default is a smith chart with impedance grid
+        sc_params_to_set = {
+            "grid.Z.major.enable": True,
+            "grid.Z.minor.enable": True,
+            "grid.Y.major.enable": False,
+            "grid.Y.minor.enable": False,
+        }
 
-        # Handle 'which' parameter for grid type selection
-        sc_params_to_set.update(
-            {
-                "grid.Z.major.enable": True,
-                "grid.Z.minor.enable": True,
-                "grid.Y.major.enable": False,
-                "grid.Y.minor.enable": False,
-            }
-        )
-        which = kwargs.pop("which", None)
-        if which is not None:
-            which = which.lower()
-            if which == "admittance":
+        grid = kwargs.pop("grid", None)
+        if grid is not None and grid != "impedance":
+            grid = grid.lower()
+            if grid == "admittance":
                 sc_params_to_set.update(
                     {
                         "grid.Z.major.enable": False,
@@ -180,7 +163,7 @@ class AxesCore:
                         "grid.Y.minor.enable": True,
                     }
                 )
-            elif which == "both":
+            elif grid == "both":
                 sc_params_to_set.update(
                     {
                         "grid.Y.major.enable": True,
@@ -188,13 +171,13 @@ class AxesCore:
                     }
                 )
             else:
-                raise ValueError(f"Invalid 'which' parameter: '{which}'. Must be 'impedance', 'admittance', or 'both'.")
+                raise ValueError(f"Invalid 'grid' parameter: '{grid}'. Must be 'impedance', 'admittance', or 'both'.")
 
-        if "smith_params" in kwargs:
-            smith_params = kwargs.pop("smith_params")
-            if not isinstance(smith_params, dict):
-                raise TypeError("smith_params must be a dictionary")
-            sc_params_to_set.update(smith_params)
+        if "smith_style" in kwargs:
+            smith_style = kwargs.pop("smith_style")
+            if not isinstance(smith_style, dict):
+                raise TypeError("smith_style must be a dictionary")
+            sc_params_to_set.update(smith_style)
 
         # Process shortcuts second
         for shortcut, internal_key in SHORTCUT_MAP.items():
@@ -283,7 +266,7 @@ class AxesCore:
         bbox = self._get_key("axes.xlabel.fancybox")
         rotation = self._get_key("axes.xlabel.rotation")
 
-        # Determine which grid mode
+        # Determine grid mode
         impedance_enabled = self._get_key("grid.Z.major.enable")
         admittance_enabled = self._get_key("grid.Y.major.enable")
 
@@ -383,7 +366,7 @@ class AxesCore:
             self.text(x, y, s, fontsize=14, transform=self.transAxes)
 
         # Enable grids according to settings - grid() checks the enable flags internally
-        self.grid(which="both")
+        self.grid(grid="both")
 
     def clear(self):
         """

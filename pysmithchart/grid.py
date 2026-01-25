@@ -10,7 +10,7 @@ from pysmithchart.utils import choose_minor_divider
 class GridMixin:
     """Mixin class providing grid drawing methods for SmithAxes."""
 
-    def grid(self, which="impedance", **kwargs):
+    def grid(self, grid="impedance", **kwargs):
         """
         Draw gridlines on the Smith chart.
 
@@ -20,14 +20,14 @@ class GridMixin:
         - grid.fancy (enables adaptive clipping for both grids)
 
         Args:
-            which (str): 'impedance', 'admittance', or 'both' (default: 'both')
+            grid (str): 'impedance', 'admittance', or 'both' (default: 'both')
             **kwargs: Styling parameters that override configuration
         """
-        assert which in ["impedance", "admittance", "both"]
+        assert grid in ["impedance", "admittance", "both"]
 
         fancy = self._get_key("grid.fancy")
-        draw_impedance = which in ["impedance", "both"]
-        draw_admittance = which in ["admittance", "both"]
+        draw_impedance = grid in ["impedance", "both"]
+        draw_admittance = grid in ["admittance", "both"]
 
         # Draw impedance grids
         if draw_impedance:
@@ -357,9 +357,9 @@ class GridMixin:
             thr_x = thr_y = threshold
         return (thr_x / 1000, thr_y / 1000)
 
-    def _get_grid_style(self, grid_type, level, **user_kwargs):
+    def _get_grid_style(self, grid, level, **user_kwargs):
         """Get styling parameters for a grid."""
-        if grid_type == "impedance":
+        if grid == "impedance":
             prefix = f"grid.Z.{level}"
         else:
             prefix = f"grid.Y.{level}"
