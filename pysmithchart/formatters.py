@@ -69,7 +69,6 @@ class ImagFormatter(RealFormatter):
     "j" to indicate imaginary values. Special cases include:
 
         - `''` (empty string) for negative infinity.
-        - `'symbol.infinity'` from `scParams` for positive infinity.
         - `'0'` for values near zero, ensuring `-0` is not displayed.
 
     Args:
@@ -97,7 +96,7 @@ class ImagFormatter(RealFormatter):
         if x < -SC_NEAR_INFINITY:
             return ""
         if x > SC_NEAR_INFINITY:
-            return self.axes._get_key("symbol.infinity")
+            return "∞ "
         if abs(x) < SC_EPSILON:
             return "0"
         return ("%f" % x).rstrip("0").rstrip(".") + "j"
