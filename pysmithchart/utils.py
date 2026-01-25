@@ -18,13 +18,12 @@ Public Functions:
     Möbius Transformations:
         moebius_transform(z, norm): Forward Möbius transform (Z → Γ)
         moebius_inverse_transform(s, norm): Inverse Möbius transform (Γ → Z)
-        moebius_z(z, norm, normalize): Legacy forward transform
-        moebius_inv_z(s, norm, normalize): Legacy inverse transform
 
     RF Calculations:
         calc_gamma(Z_0, Z_L): Calculate reflection coefficient
         calc_vswr(Z_0, Z_L): Calculate VSWR from impedances
         calc_load(Z_0, gamma): Calculate load impedance from Γ
+        reactance_to_component(X, freq): describe reactance as C or L
 
     Rotation Functions:
         rotate_by_wavelength(Z, wavelength, Z0, direction): Rotate by electrical length
@@ -36,7 +35,6 @@ Public Functions:
         lambda_to_rad(lmb): Wavelength fraction to radians
         rad_to_lambda(rad): Radians to wavelength fraction
 
-For detailed documentation, see individual function docstrings.
 """
 
 from collections.abc import Iterable
@@ -70,6 +68,7 @@ __all__ = [
     "lambda_to_rad",
     "rad_to_lambda",
     "choose_minor_divider",
+    "reactance_to_component",
 ]
 
 
@@ -963,3 +962,40 @@ def choose_minor_divider(
         )
 
     return max(ok, key=_score)
+
+
+def reactance_to_component(X, freq):
+    """
+    Convert reactance to component value (L or C).
+
+    Args:
+        X: Reactance in Ohms (positive for inductor, negative for capacitor)
+        freq: Frequency in Hz
+
+    Returns:
+        (component_type, value, unit)
+    """
+    omega = 2 * np.pi * freq
+
+    if X > 0:
+        # Inductor
+        L = X / omega
+        if L >= 1e-3:
+            return ("Capacitor", L * 1e6, "mH")
+        elif L >= 1e-6:
+            return ("Inductor", L * 1e6, "µH")
+        else:
+            return ("Inductor", L * 1e9, "nH")
+    if X < 0:
+        # Capacitor
+        C = -1 / (omega * X)
+        if C >= 1e-3:
+            return ("Capacitor", C * 1e6, "mF")
+        elif C >= 1e-6:
+            return ("Capacitor", C * 1e6, "µF")
+        elif C >= 1e-9:
+            return ("Capacitor", C * 1e9, "nF")
+        else:
+            return ("Capacitor", C * 1e12, "pF")
+    else:
+        return ("None", 0, "")
