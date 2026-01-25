@@ -582,7 +582,7 @@ class PlottingMixin:
         return Axes.legend(self, unique_handles, unique_labels, **kwargs)
 
     def plot_constant_resistance(
-        self, resistance, *args, reactance_range=None, domain=None, num_points=200, arrow=None, **kwargs
+        self, resistance, *args, reactance_range=None, domain=None, num_points=500, arrow=None, **kwargs
     ):
         """
         Plot a constant resistance circle on the Smith chart.
@@ -728,7 +728,7 @@ class PlottingMixin:
         return lines
 
     def plot_constant_conductance(
-        self, conductance, *args, susceptance_range=None, domain=None, num_points=200, arrow=None, **kwargs
+        self, conductance, *args, susceptance_range=None, domain=None, num_points=500, arrow=None, **kwargs
     ):
         """
         Plot a constant conductance circle on the Smith chart (admittance chart).
