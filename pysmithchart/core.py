@@ -4,10 +4,11 @@ import copy
 
 import numpy as np
 import matplotlib as mp
+import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
 from pysmithchart.constants import SC_DEFAULT_PARAMS, RC_DEFAULT_PARAMS
-from pysmithchart.constants import SC_NEAR_INFINITY, SC_TWICE_INFINITY
+from pysmithchart.constants import SC_NEAR_INFINITY, SC_TWICE_INFINITY, SC_EPSILON
 from pysmithchart.formatters import RealFormatter, ImagFormatter
 from pysmithchart.locators import MajorXLocator, MajorYLocator, MinorLocator
 
@@ -28,7 +29,7 @@ class AxesCore:
 
         Args:
             sc_dict (dict, optional): Dictionary of parameters to update using dot notation.
-                Example: {'grid.major.color': 'blue', 'axes.Z0': 75}
+                Example: {'grid.Z.major.color': 'blue', 'axes.Z0': 75}
             reset (bool, optional): If True, resets scParams to default values before updating.
             **kwargs: Additional key-value pairs (must use dot notation).
 
@@ -36,7 +37,7 @@ class AxesCore:
             KeyError: If an invalid parameter key is provided.
 
         Note:
-            Parameters must use dot notation (e.g., 'grid.major.color', not 'grid_major_color').
+            Parameters must use dot notation (e.g., 'grid.Z.major.color', not 'grid.Z.major_color').
             Use shortcuts like Z0, datatype in __init__ instead.
         """
         if reset:
@@ -51,14 +52,14 @@ class AxesCore:
             if key in self.scParams:
                 self.scParams[key] = value
                 # Handle color auto-propagation
-                if key == "grid.major.color":
-                    self.scParams["grid.major.color.x"] = value
-                    self.scParams["grid.major.color.y"] = value
-                elif key == "grid.minor.color":
-                    self.scParams["grid.minor.color.x"] = value
-                    self.scParams["grid.minor.color.y"] = value
+                if key == "grid.Z.major.color":
+                    self.scParams["grid.Z.major.color.x"] = value
+                    self.scParams["grid.Z.major.color.y"] = value
+                elif key == "grid.Z.minor.color":
+                    self.scParams["grid.Z.minor.color.x"] = value
+                    self.scParams["grid.Z.minor.color.y"] = value
             else:
-                raise KeyError(f"'{key}' is not a valid scParams key. Use dot notation (e.g., 'grid.major.color')")
+                raise KeyError(f"'{key}' is not a valid scParams key. Use dot notation (e.g., 'grid.Z.major.color')")
 
     def __init__(self, *args, **kwargs):
         """
@@ -73,18 +74,22 @@ class AxesCore:
         Essential Shortcuts:
             Z0 (float): Reference impedance (default: 50Ω)
             domain (str): Default data domain (IMPEDANCE_DOMAIN, REFLECTANCE_DOMAIN, etc.)
+            which (str): Grid type selection. Options:
+                - 'impedance' (default): Impedance grid only
+                - 'admittance': Admittance grid only
+                - 'both': Both impedance and admittance grids
 
         smith_params (dict, RECOMMENDED):
             Dictionary of Smith chart parameters using dot notation.
             This is the cleanest way to configure the chart.
 
             Common parameters:
-                'grid.major.enable': True/False
-                'grid.minor.enable': True/False
-                'grid.major.color': 'blue', 'red', etc.
-                'grid.major.linestyle': '-', '--', ':', etc.
-                'grid.major.fancy': True/False
-                'grid.major.fancy.threshold': (50, 50)
+                'grid.Z.major.enable': True/False
+                'grid.Z.minor.enable': True/False
+                'grid.Z.major.color': 'blue', 'red', etc.
+                'grid.Z.major.linestyle': '-', '--', ':', etc.
+                'grid.Z.major.fancy': True/False
+                'grid.Z.major.fancy.threshold': (50, 50)
                 'axes.normalize': True/False
                 'axes.normalize.label': True/False
 
@@ -94,22 +99,29 @@ class AxesCore:
             >>> # Minimal - just change Z0
             >>> fig.add_subplot(111, projection='smith', Z0=75)
             >>>
+            >>> # Quick admittance chart
+            >>> fig.add_subplot(111, projection='smith', which='admittance')
+            >>>
+            >>> # Show both impedance and admittance grids
+            >>> fig.add_subplot(111, projection='smith', which='both')
+            >>>
             >>> # Recommended approach with smith_params
             >>> config = {
-            ...     'grid.major.color': 'blue',
-            ...     'grid.major.fancy.threshold': (50, 50),
-            ...     'grid.minor.enable': True
+            ...     'grid.Z.major.color': 'blue',
+            ...     'grid.Z.major.fancy.threshold': (50, 50),
+            ...     'grid.Z.minor.enable': True
             ... }
             >>> fig.add_subplot(111, projection='smith', smith_params=config)
             >>>
             >>> # Combine shortcuts with smith_params
             >>> fig.add_subplot(111, projection='smith',
             ...                 Z0=75,
-            ...                 smith_params={'grid.major.color': 'blue'})
+            ...                 which='admittance',
+            ...                 smith_params={'grid.Y.major.color': 'blue'})
             >>>
             >>> # Direct dot notation also works (backwards compatible)
             >>> fig.add_subplot(111, projection='smith',
-            ...                 **{'axes.Z0': 75, 'grid.major.color': 'blue'})
+            ...                 **{'axes.Z0': 75, 'grid.Z.major.color': 'blue'})
 
         Notes:
             The `smith_params` approach is recommended because it:
@@ -146,6 +158,38 @@ class AxesCore:
 
         # Process smith_params dictionary first (cleanest API)
         sc_params_to_set = {}
+
+        # Handle 'which' parameter for grid type selection
+        sc_params_to_set.update(
+            {
+                "grid.Z.major.enable": True,
+                "grid.Z.minor.enable": True,
+                "grid.Y.major.enable": False,
+                "grid.Y.minor.enable": False,
+            }
+        )
+        which = kwargs.pop("which", None)
+        if which is not None:
+            which = which.lower()
+            if which == "admittance":
+                sc_params_to_set.update(
+                    {
+                        "grid.Z.major.enable": False,
+                        "grid.Z.minor.enable": False,
+                        "grid.Y.major.enable": True,
+                        "grid.Y.minor.enable": True,
+                    }
+                )
+            elif which == "both":
+                sc_params_to_set.update(
+                    {
+                        "grid.Y.major.enable": True,
+                        "grid.Y.minor.enable": True,
+                    }
+                )
+            else:
+                raise ValueError(f"Invalid 'which' parameter: '{which}'. Must be 'impedance', 'admittance', or 'both'.")
+
         if "smith_params" in kwargs:
             smith_params = kwargs.pop("smith_params")
             if not isinstance(smith_params, dict):
@@ -215,52 +259,121 @@ class AxesCore:
         Axes.set_ylim(self, -SC_TWICE_INFINITY, SC_TWICE_INFINITY)
 
         # Configure axis locators
-        self.xaxis.set_major_locator(MajorXLocator(self, self._get_key("grid.major.xdivisions")))
-        self.yaxis.set_major_locator(MajorYLocator(self, self._get_key("grid.major.ydivisions")))
-        self.xaxis.set_minor_locator(MinorLocator(self._get_key("grid.minor.xdivisions")))
-        self.yaxis.set_minor_locator(MinorLocator(self._get_key("grid.minor.ydivisions")))
+        self.xaxis.set_major_locator(MajorXLocator(self, self._get_key("grid.Z.major.real.divisions")))
+        self.yaxis.set_major_locator(MajorYLocator(self, self._get_key("grid.Z.major.imag.divisions")))
+        self.xaxis.set_minor_locator(MinorLocator(self._get_key("grid.Z.minor.real.divisions")))
+        self.yaxis.set_minor_locator(MinorLocator(self._get_key("grid.Z.minor.imag.divisions")))
 
         # Configure ticks
         self.xaxis.set_ticks_position("none")
         self.yaxis.set_ticks_position("none")
 
-        # Configure x-axis labels (resistance)
+        # Configure x-axis labels (resistance/conductance)
+        # Turn off matplotlib's automatic tick labels
+        self.xaxis.set_major_formatter(plt.NullFormatter())
+        self.yaxis.set_major_formatter(plt.NullFormatter())
+
+        # Manually add labels with full control over positioning
+        self._add_manual_axis_labels()
+
+    def _add_manual_axis_labels(self):
+        """Manually add axis labels for both impedance and admittance modes."""
+        from pysmithchart.constants import ABSOLUTE_DOMAIN
+
         bbox = self._get_key("axes.xlabel.fancybox")
         rotation = self._get_key("axes.xlabel.rotation")
-        for label in self.get_xticklabels():
-            label.update(
-                {
-                    "verticalalignment": "center",
-                    "horizontalalignment": "center",
-                    "rotation_mode": "anchor",
-                    "rotation": rotation,
-                    "bbox": bbox,
-                }
-            )
-            self.add_artist(label)
 
-        # Configure y-axis labels (reactance)
-        inf_correction = self._get_key("symbol.infinity.correction")
-        for tick, loc in zip(self.yaxis.get_major_ticks(), self.yaxis.get_majorticklocs()):
-            label = tick.label1
+        # Determine which grid mode
+        impedance_enabled = self._get_key("grid.Z.major.enable")
+        admittance_enabled = self._get_key("grid.Y.major.enable")
 
-            # Adjust size for infinity symbols
-            if abs(loc) > SC_NEAR_INFINITY:
-                label.set_size(label.get_size() + inf_correction)
+        # Get tick locations
+        x_major_locs = self.xaxis.get_majorticklocs()
+        y_major_locs = self.yaxis.get_majorticklocs()
 
-            # Set alignment based on position
-            label.set_verticalalignment("center")
-            x_pos = np.real(self.moebius_z(loc * 1j))
-            if x_pos < -0.1:
-                label.set_horizontalalignment("right")
-            elif x_pos > 0.1:
-                label.set_horizontalalignment("left")
+        # Add X-axis (real axis) labels, x_pos is in the ABSOLUTE_DOMAIN
+        for loc in x_major_locs:
+            if admittance_enabled and not impedance_enabled:
+                if loc < SC_EPSILON:
+                    label_text = "∞"
+                    x_pos = 0  # right edge on admittance chart
+                elif loc >= SC_NEAR_INFINITY:
+                    label_text = "0"
+                    x_pos = SC_NEAR_INFINITY  # left edge on admittance chart
+                else:
+                    label_text = ("%f" % loc).rstrip("0").rstrip(".")
+                    x_pos = 1 / loc  # Reciprocal position
             else:
-                label.set_horizontalalignment("center")
+                if loc < SC_EPSILON:
+                    label_text = "0"
+                    x_pos = 0  # Left edge
+                elif loc >= SC_NEAR_INFINITY:
+                    label_text = "∞"
+                    x_pos = SC_NEAR_INFINITY  # Right edge
+                else:
+                    label_text = ("%f" % loc).rstrip("0").rstrip(".")
+                    x_pos = loc
 
-        # Set formatters
-        self.yaxis.set_major_formatter(ImagFormatter(self))
-        self.xaxis.set_major_formatter(RealFormatter(self))
+            # Place label at bottom of chart where circle crosses real axis
+            self.text(
+                x_pos,
+                0,
+                label_text,
+                verticalalignment="center",
+                horizontalalignment="center",
+                rotation_mode="anchor",
+                rotation=rotation,
+                bbox=bbox,
+                domain=ABSOLUTE_DOMAIN,
+                clip_on=False,
+            )
+
+        # Add Y-axis (imaginary axis) labels, y_pos is in the ABSOLUTE_DOMAIN
+        for loc in y_major_locs:
+            if abs(loc) < SC_EPSILON or abs(loc) >= SC_NEAR_INFINITY:
+                continue
+
+            # Regular value - format and position
+            label_text = ("%f" % abs(loc)).rstrip("0").rstrip(".") + "j"
+            if loc < 0:
+                label_text = "-" + label_text
+
+            # Position in ABSOLUTE_DOMAIN (normalized impedance space)
+            # For admittance, label at reciprocal position
+            if admittance_enabled and not impedance_enabled:
+                y_pos = 1 / loc
+            else:
+                y_pos = loc
+
+            # Calculate horizontal position for alignment
+            x_moebius = np.real(self.moebius_z(y_pos * 1j))
+
+            if x_moebius < -0.1:
+                ha = "right"
+            elif x_moebius > 0.1:
+                ha = "left"
+            else:
+                ha = "center"
+
+            # Vertical alignment based on top/bottom half
+            # Positive y_pos = top half, negative y_pos = bottom half
+            if y_pos > 0:
+                va = "bottom"  # Label below the point (top half of chart)
+            elif y_pos < 0:
+                va = "top"  # Label above the point (bottom half of chart)
+            else:
+                va = "center"  # Center label (at y=0)
+
+            # Place label using ABSOLUTE_DOMAIN (no special size for infinity)
+            self.text(
+                0,
+                y_pos,
+                label_text,
+                verticalalignment=va,
+                horizontalalignment=ha,
+                domain=ABSOLUTE_DOMAIN,
+                clip_on=False,
+            )
 
         # Add normalization label if enabled
         if self._get_key("axes.normalize") and self._get_key("axes.normalize.label"):
@@ -269,10 +382,8 @@ class AxesCore:
             s = "Z₀ = %d Ω" % self._get_key("axes.Z0")
             self.text(x, y, s, fontsize=14, transform=self.transAxes)
 
-        # Enable grids according to settings
-        for grid_type in ["major", "minor"]:
-            enable = self._get_key(f"grid.{grid_type}.enable")
-            self.grid(visible=enable, which=grid_type)
+        # Enable grids according to settings - grid() checks the enable flags internally
+        self.grid(which="both")
 
     def clear(self):
         """
@@ -284,6 +395,8 @@ class AxesCore:
         # Reset Smith chart-specific state
         self._majorarcs = []
         self._minorarcs = []
+        self._admittance_majorarcs = []
+        self._admittance_minorarcs = []
         self._normbox = None
 
         # Temporarily disable grid to prevent issues during parent clear
