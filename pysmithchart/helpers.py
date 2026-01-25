@@ -10,7 +10,7 @@ from matplotlib.spines import Spine
 
 from pysmithchart import utils
 from pysmithchart.constants import SC_TWICE_INFINITY
-from pysmithchart.constants import REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ABSOLUTE_DOMAIN, ADMITTANCE_DOMAIN
+from pysmithchart.constants import R_DOMAIN, Z_DOMAIN, NORM_Z_DOMAIN, Y_DOMAIN
 
 
 class HelpersMixin:
@@ -27,7 +27,7 @@ class HelpersMixin:
             x: Real part(s), or complex impedance/admittance/S-parameter value(s).
                Can be scalar, array, or complex.
             y: Imaginary part(s). Ignored if x is complex. If None and x is real, y defaults to 0.
-            domain: One of REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ABSOLUTE_DOMAIN, ADMITTANCE_DOMAIN.
+            domain: One of R_DOMAIN, Z_DOMAIN, NORM_Z_DOMAIN, Y_DOMAIN.
                     If None, uses plot.default.domain from scParams.
             warn_s_parameter: If True, warn when |S| > 1 (default: True).
                              Set to False to suppress warnings.
@@ -38,13 +38,13 @@ class HelpersMixin:
 
         Examples:
             >>> # Scalar impedance
-            >>> x, y = ax._apply_domain_transform(50, 25, domain=IMPEDANCE_DOMAIN)
+            >>> x, y = ax._apply_domain_transform(50, 25, domain=Z_DOMAIN)
 
             >>> # Array of complex S-parameters
-            >>> x, y = ax._apply_domain_transform([0.5+0.3j, -0.2-0.1j], domain=REFLECTANCE_DOMAIN)
+            >>> x, y = ax._apply_domain_transform([0.5+0.3j, -0.2-0.1j], domain=R_DOMAIN)
 
             >>> # Scalar complex admittance
-            >>> x, y = ax._apply_domain_transform(0.02+0.01j, domain=ADMITTANCE_DOMAIN)
+            >>> x, y = ax._apply_domain_transform(0.02+0.01j, domain=Y_DOMAIN)
         """
         # Get default domain if not specified
         if domain is None:
@@ -98,7 +98,7 @@ class HelpersMixin:
 
         # Apply domain transformation (suppress inf/nan warnings)
         with np.errstate(invalid="ignore", divide="ignore"):
-            if domain == REFLECTANCE_DOMAIN:
+            if domain == R_DOMAIN:
                 # S-parameters: Check magnitude and warn if > 1
                 if warn_s_parameter:
                     s_magnitude = np.abs(cdata)
@@ -111,21 +111,22 @@ class HelpersMixin:
                 # Apply inverse Möbius: z = (1 + S) / (1 - S)
                 z = self.moebius_inv_z(cdata, normalize=True)
 
-            elif domain == IMPEDANCE_DOMAIN:
-                # Z-parameters: Normalize by Z₀
+            elif domain == Z_DOMAIN:
+                # Z-parameters in ohms: Normalize by Z₀
                 z = cdata / self._get_key("axes.Z0")
 
-            elif domain == ABSOLUTE_DOMAIN:
-                # A-parameters: Already normalized, use as-is
+            elif domain == NORM_Z_DOMAIN:
+                # Already normalized, use as-is
                 z = cdata
 
-            elif domain == ADMITTANCE_DOMAIN:
-                # Y-parameters: Normalize by Y₀ = 1/Z₀, then convert to impedance
-                # For admittance Smith charts, we need Y → Z transformation
-                # Y_norm = Y * Z₀ (normalized admittance)
-                # z = 1 / Y_norm (convert to normalized impedance for correct grid display)
+            elif domain == Y_DOMAIN:
+                # Y-parameters in Siemens: Normalize by 1/Z₀
                 y_norm = cdata * self._get_key("axes.Z0")
                 z = np.conjugate(1.0 / y_norm)
+
+            elif domain == NORM_Y_DOMAIN:
+                # A-parameters: Already normalized, use as-is
+                z = np.conjugate(1.0 / cdata)
 
             else:
                 # Should never reach here due to validation above

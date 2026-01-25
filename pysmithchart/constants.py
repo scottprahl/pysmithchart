@@ -8,10 +8,10 @@ as well as numerical tolerances.
 
 Parameter Types
 ---------------
-- ``REFLECTANCE_DOMAIN``: Indicates scattering parameters (reflection coefficient Γ).
-- ``IMPEDANCE_DOMAIN``: Indicates impedance parameters (always normalized by Z₀).
-- ``ABSOLUTE_DOMAIN``: Indicates absolute/unnormalized values (plotted as-is).
-- ``ADMITTANCE_DOMAIN``: Indicates admittance parameters.
+- ``R_DOMAIN``: Indicates scattering parameters (reflection coefficient Γ).
+- ``Z_DOMAIN``: Indicates impedance parameters (always normalized by Z₀).
+- ``NORM_Z_DOMAIN``: Indicates absolute/unnormalized values (plotted as-is).
+- ``Y_DOMAIN``: Indicates admittance parameters.
 
 Numerical Constants
 -------------------
@@ -130,10 +130,11 @@ Additional Parameter:
 # =============================================================================
 # Numerical Constants
 # =============================================================================
-REFLECTANCE_DOMAIN = "S"
-IMPEDANCE_DOMAIN = "Z"
-ABSOLUTE_DOMAIN = "A"
-ADMITTANCE_DOMAIN = "Y"
+R_DOMAIN = "S"
+Z_DOMAIN = "Z"
+NORM_Z_DOMAIN = "z"
+Y_DOMAIN = "Y"
+NORM_Y_DOMAIN = "y"
 
 SC_EPSILON = 1e-7
 SC_INFINITY = 1e9
@@ -241,7 +242,7 @@ SC_DEFAULT_PARAMS = {
     # Plot settings
     "plot.zorder": 4,
     "plot.marker.default": "o",
-    "plot.default.domain": IMPEDANCE_DOMAIN,
+    "plot.default.domain": Z_DOMAIN,
     "plot.default.interpolation": 5,
     # Initialization flag
     "init.updaterc": True,

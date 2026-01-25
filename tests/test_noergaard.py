@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pytest
 
-from pysmithchart import REFLECTANCE_DOMAIN, ADMITTANCE_DOMAIN
+from pysmithchart import R_DOMAIN, Y_DOMAIN
 from pysmithchart.utils import calc_gamma, calc_load
 
 
@@ -64,19 +64,19 @@ def test_vswr_circle_s(chart_dir):
     plt.subplot(1, 1, 1, projection="smith")
 
     Gamma = 0.5 * np.exp(2j * np.pi * np.linspace(0, 1, 40))
-    plt.plot(Gamma[:-1], "k", domain=REFLECTANCE_DOMAIN, label="VSWR Circle")
+    plt.plot(Gamma[:-1], "k", domain=R_DOMAIN, label="VSWR Circle")
 
     ZL = Z0 * (1 + 0j)
     Gamma = calc_gamma(Z0, ZL)
-    plt.plot(Gamma, "b", domain=REFLECTANCE_DOMAIN, marker="o", label="$1+0j$")
+    plt.plot(Gamma, "b", domain=R_DOMAIN, marker="o", label="$1+0j$")
 
     ZL = Z0 * (0.5 - 0.5j)
     Gamma = calc_gamma(Z0, ZL)
-    plt.plot(Gamma, "g", domain=REFLECTANCE_DOMAIN, marker="o", label="$0.5-0.5j$")
+    plt.plot(Gamma, "g", domain=R_DOMAIN, marker="o", label="$0.5-0.5j$")
 
     ZL = Z0 * (1 + 1j)
     Gamma = calc_gamma(Z0, ZL)
-    plt.plot(Gamma, "r", domain=REFLECTANCE_DOMAIN, marker="o", label="$1+1j$")
+    plt.plot(Gamma, "r", domain=R_DOMAIN, marker="o", label="$1+1j$")
 
     plt.title("Plotting using S-Parameters")
     plt.legend()
@@ -95,19 +95,19 @@ def test_vswr_circle_y(chart_dir):
     Gamma = 0.5 * np.exp(2j * np.pi * np.linspace(0, 1, 40))
     ZL = calc_load(Z0, Gamma)  # normalized impedance
     YL = 1 / ZL
-    plt.plot(YL[:-1], "k", domain=ADMITTANCE_DOMAIN, label="VSWR Circle")
+    plt.plot(YL[:-1], "k", domain=Y_DOMAIN, label="VSWR Circle")
 
     ZL = 1 + 0j
     YL = 1 / ZL
-    plt.plot(YL, "b", domain=ADMITTANCE_DOMAIN, marker="o", label="$1+0j$")
+    plt.plot(YL, "b", domain=Y_DOMAIN, marker="o", label="$1+0j$")
 
     ZL = 0.5 - 0.5j
     YL = 1 / ZL
-    plt.plot(YL, "g", domain=ADMITTANCE_DOMAIN, marker="o", label="$0.5-0.5j$")
+    plt.plot(YL, "g", domain=Y_DOMAIN, marker="o", label="$0.5-0.5j$")
 
     ZL = 1 + 1j
     YL = 1 / ZL
-    plt.plot(YL, "r", domain=ADMITTANCE_DOMAIN, marker="o", label="$1+1j$")
+    plt.plot(YL, "r", domain=Y_DOMAIN, marker="o", label="$1+1j$")
 
     plt.title("Plotting using Y-Parameters")
     plt.legend()
@@ -123,10 +123,10 @@ def test_vswr_circle_mixed(chart_dir):
     plt.figure(figsize=(6, 6))
     plt.subplot(1, 1, 1, projection="smith", Z0=1)
 
-    plt.plot(Gamma[:-1], "k", domain=REFLECTANCE_DOMAIN, label="VSWR Circle")
+    plt.plot(Gamma[:-1], "k", domain=R_DOMAIN, label="VSWR Circle")
     plt.plot(1 + 0j, "b", marker="o", label="$1+0j$")
     plt.plot(1 + 1j, "r", marker="o", label="$1+1j$")
-    plt.plot(1 / (0.5 - 0.5j), "g", domain=ADMITTANCE_DOMAIN, marker="o", label="$0.5-0.5j$")
+    plt.plot(1 / (0.5 - 0.5j), "g", domain=Y_DOMAIN, marker="o", label="$0.5-0.5j$")
 
     plt.title("Plotting using Mixed-Parameters")
     plt.legend()

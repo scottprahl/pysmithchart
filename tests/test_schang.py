@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 import matplotlib.pyplot as plt
 
-from pysmithchart import REFLECTANCE_DOMAIN
+from pysmithchart import R_DOMAIN
 
 
 @pytest.fixture
@@ -75,7 +75,7 @@ def test_plot_s_param(chart_dir):
     s11 = s11_of_cap(freqs)
     plt.figure(figsize=(6, 6))
     plt.subplot(1, 1, 1, projection="smith")
-    plt.plot(s11, markevery=1, domain=REFLECTANCE_DOMAIN)
+    plt.plot(s11, markevery=1, domain=R_DOMAIN)
     plt.title("S-Parameters of a Capacitor")
     plt.savefig(os.path.join(chart_dir, "schang_cap.pdf"), format="pdf")
     plt.close()
@@ -88,7 +88,7 @@ def test_plot_labels(chart_dir):
     s11 = s11_of_cap(freqs)
     plt.figure(figsize=(6, 6))
     plt.subplot(1, 1, 1, projection="smith")
-    plt.plot(s11, markevery=1, domain=REFLECTANCE_DOMAIN, label="s11")
+    plt.plot(s11, markevery=1, domain=R_DOMAIN, label="s11")
     plt.legend()
     plt.title("S-Parameters with Labels and Legend")
     plt.savefig(os.path.join(chart_dir, "schang_labels.pdf"), format="pdf")
@@ -109,7 +109,7 @@ def test_plot_normalized_axes(chart_dir):
             projection="smith",
             Z0=impedance,
         )
-        plt.plot(s11, domain=REFLECTANCE_DOMAIN)
+        plt.plot(s11, domain=R_DOMAIN)
         plt.title(f"Impedance: {impedance} Ω")
 
     plt.savefig(os.path.join(chart_dir, "schang_normalized_axes.pdf"), format="pdf")
@@ -136,7 +136,7 @@ def test_plot_grid_styles(chart_dir):
         sc = {"grid.fancy": fancy, "grid.Z.minor.enable": minor_enable}
         plt.subplot(2, 2, i + 1, projection="smith", **sc)
         major_str = "fancy" if fancy else "standard"
-        plt.plot(s11, domain=REFLECTANCE_DOMAIN)
+        plt.plot(s11, domain=R_DOMAIN)
         plt.title(f"Grid: {major_str}")
 
     plt.suptitle("Grid Style Variations")

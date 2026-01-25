@@ -16,7 +16,7 @@ import sys
 
 sys.path.insert(0, "/home/claude")
 
-from pysmithchart import IMPEDANCE_DOMAIN, REFLECTANCE_DOMAIN
+from pysmithchart import Z_DOMAIN, R_DOMAIN
 
 
 class TestSmithAxesTextMethod:
@@ -133,17 +133,17 @@ class TestSmithAxesTextMethod:
         """Test that transformation is applied to coordinates."""
         # Create text at a known impedance
         x, y = 50, 25
-        text_obj = smith_axes.text(x, y, "Test", domain=IMPEDANCE_DOMAIN)
+        text_obj = smith_axes.text(x, y, "Test", domain=Z_DOMAIN)
 
         # Get the transformed position
         pos = text_obj.get_position()
 
-        # For IMPEDANCE_DOMAIN, the transformation is:
+        # For Z_DOMAIN, the transformation is:
         # z = 50 + 25j -> normalize by Z0 -> z_to_xy
         from pysmithchart.utils import z_to_xy
 
         z = 50 + 25j
-        # IMPEDANCE_DOMAIN is always normalized by Z0 in the transform pipeline
+        # Z_DOMAIN is always normalized by Z0 in the transform pipeline
         if smith_axes._get_key("axes.normalize"):
             z = z / smith_axes._get_key("axes.Z0")
 
@@ -154,15 +154,15 @@ class TestSmithAxesTextMethod:
         assert np.isclose(pos[1], y_expected, rtol=1e-5)
 
     def test_text_transformation_REFLECTION_DOMAIN2(self, smith_axes):
-        """Test that Moebius transformation is applied for REFLECTANCE_DOMAIN."""
+        """Test that Moebius transformation is applied for R_DOMAIN."""
         # Create text in S-parameter space (reflection coefficient)
         x, y = 0.5, 0.3
-        text_obj = smith_axes.text(x, y, "Test", domain=REFLECTANCE_DOMAIN)
+        text_obj = smith_axes.text(x, y, "Test", domain=R_DOMAIN)
 
         # Get the transformed position
         pos = text_obj.get_position()
 
-        # For REFLECTANCE_DOMAIN, transformation is: moebius_inv_z(s) -> z_to_xy
+        # For R_DOMAIN, transformation is: moebius_inv_z(s) -> z_to_xy
         from pysmithchart.utils import z_to_xy
 
         s = 0.5 + 0.3j
@@ -231,7 +231,7 @@ class TestSmithAxesTextMethod:
         """Test text labels accompanying plot points."""
         # Plot some points
         impedances = [25 + 25j, 50 + 0j, 75 + 50j]
-        smith_axes.plot(impedances, "o", domain=IMPEDANCE_DOMAIN, label="Points")
+        smith_axes.plot(impedances, "o", domain=Z_DOMAIN, label="Points")
 
         # Add text labels at the same coordinates
         for z in impedances:
@@ -330,7 +330,7 @@ class TestSmithAxesTextIntegration:
 
     def test_text_with_legend(self, smith_axes):
         """Test text with legend present."""
-        smith_axes.plot([50 + 25j], "o", domain=IMPEDANCE_DOMAIN, label="Data")
+        smith_axes.plot([50 + 25j], "o", domain=Z_DOMAIN, label="Data")
         smith_axes.legend()
         text_obj = smith_axes.text(50, 25, "With Legend")
         assert text_obj is not None

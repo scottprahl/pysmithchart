@@ -73,7 +73,7 @@ class AxesCore:
 
         Essential Shortcuts:
             Z0 (float): Reference impedance (default: 50Ω)
-            domain (str): Default data domain (IMPEDANCE_DOMAIN, REFLECTANCE_DOMAIN, etc.)
+            domain (str): Default data domain (Z_DOMAIN, R_DOMAIN, etc.)
             which (str): Grid type selection. Options:
                 - 'impedance' (default): Impedance grid only
                 - 'admittance': Admittance grid only
@@ -278,7 +278,7 @@ class AxesCore:
 
     def _add_manual_axis_labels(self):
         """Manually add axis labels for both impedance and admittance modes."""
-        from pysmithchart.constants import ABSOLUTE_DOMAIN
+        from pysmithchart.constants import NORM_Z_DOMAIN
 
         bbox = self._get_key("axes.xlabel.fancybox")
         rotation = self._get_key("axes.xlabel.rotation")
@@ -291,7 +291,7 @@ class AxesCore:
         x_major_locs = self.xaxis.get_majorticklocs()
         y_major_locs = self.yaxis.get_majorticklocs()
 
-        # Add X-axis (real axis) labels, x_pos is in the ABSOLUTE_DOMAIN
+        # Add X-axis (real axis) labels, x_pos is in the NORM_Z_DOMAIN
         for loc in x_major_locs:
             if admittance_enabled and not impedance_enabled:
                 if loc < SC_EPSILON:
@@ -324,11 +324,11 @@ class AxesCore:
                 rotation_mode="anchor",
                 rotation=rotation,
                 bbox=bbox,
-                domain=ABSOLUTE_DOMAIN,
+                domain=NORM_Z_DOMAIN,
                 clip_on=False,
             )
 
-        # Add Y-axis (imaginary axis) labels, y_pos is in the ABSOLUTE_DOMAIN
+        # Add Y-axis (imaginary axis) labels, y_pos is in the NORM_Z_DOMAIN
         for loc in y_major_locs:
             if abs(loc) < SC_EPSILON or abs(loc) >= SC_NEAR_INFINITY:
                 continue
@@ -338,7 +338,7 @@ class AxesCore:
             if loc < 0:
                 label_text = "-" + label_text
 
-            # Position in ABSOLUTE_DOMAIN (normalized impedance space)
+            # Position in NORM_Z_DOMAIN (normalized impedance space)
             # For admittance, label at reciprocal position
             if admittance_enabled and not impedance_enabled:
                 y_pos = 1 / loc
@@ -364,14 +364,14 @@ class AxesCore:
             else:
                 va = "center"  # Center label (at y=0)
 
-            # Place label using ABSOLUTE_DOMAIN (no special size for infinity)
+            # Place label using NORM_Z_DOMAIN (no special size for infinity)
             self.text(
                 0,
                 y_pos,
                 label_text,
                 verticalalignment=va,
                 horizontalalignment=ha,
-                domain=ABSOLUTE_DOMAIN,
+                domain=NORM_Z_DOMAIN,
                 clip_on=False,
             )
 

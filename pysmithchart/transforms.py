@@ -47,7 +47,7 @@ class TransformMixin:
         Args:
             x (float or array): Real part of coordinate(s).
             y (float or array): Imaginary part of coordinate(s).
-            domain (str): Coordinate type (IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, REFLECTANCE_DOMAIN, ABSOLUTE_DOMAIN).
+            domain (str): Coordinate type (Z_DOMAIN, Y_DOMAIN, R_DOMAIN, NORM_Z_DOMAIN).
 
         Returns:
             tuple: (x_impedance, y_impedance) in impedance space.

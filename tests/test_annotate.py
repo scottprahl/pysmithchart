@@ -12,7 +12,7 @@ import sys
 
 sys.path.insert(0, "/home/claude")
 
-from pysmithchart import IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, REFLECTANCE_DOMAIN
+from pysmithchart import Z_DOMAIN, Y_DOMAIN, R_DOMAIN
 
 
 class TestSmithAxesAnnotate:
@@ -32,34 +32,34 @@ class TestSmithAxesAnnotate:
         assert callable(smith_axes.annotate)
 
     def test_annotate_basic_REFLECTION_DOMAIN(self, smith_axes):
-        """Test basic annotation with IMPEDANCE_DOMAIN."""
-        ann = smith_axes.annotate("Test", xy=(50, 25), domain=IMPEDANCE_DOMAIN)
+        """Test basic annotation with Z_DOMAIN."""
+        ann = smith_axes.annotate("Test", xy=(50, 25), domain=Z_DOMAIN)
         assert isinstance(ann, matplotlib.text.Annotation)
         assert ann.get_text() == "Test"
 
     def test_annotate_with_arrow(self, smith_axes):
         """Test annotation with arrow."""
         ann = smith_axes.annotate(
-            "Load", xy=(50, 25), xytext=(70, 40), domain=IMPEDANCE_DOMAIN, arrowprops=dict(arrowstyle="->")
+            "Load", xy=(50, 25), xytext=(70, 40), domain=Z_DOMAIN, arrowprops=dict(arrowstyle="->")
         )
         assert ann is not None
         assert ann.arrow_patch is not None
 
     def test_annotate_without_arrow(self, smith_axes):
         """Test annotation without arrow (just offset text)."""
-        ann = smith_axes.annotate("Label", xy=(50, 25), xytext=(60, 30), domain=IMPEDANCE_DOMAIN)
+        ann = smith_axes.annotate("Label", xy=(50, 25), xytext=(60, 30), domain=Z_DOMAIN)
         assert ann is not None
         # When arrowprops is None, arrow_patch should be None
         assert ann.arrow_patch is None
 
-    def test_annotate_ADMITTANCE_DOMAIN(self, smith_axes):
-        """Test annotation with ADMITTANCE_DOMAIN (admittance)."""
-        ann = smith_axes.annotate("Y Point", xy=(0.02, 0.01), domain=ADMITTANCE_DOMAIN)
+    def test_annotate_Y_DOMAIN(self, smith_axes):
+        """Test annotation with Y_DOMAIN (admittance)."""
+        ann = smith_axes.annotate("Y Point", xy=(0.02, 0.01), domain=Y_DOMAIN)
         assert isinstance(ann, matplotlib.text.Annotation)
 
     def test_annotate_REFLECTION_DOMAIN2(self, smith_axes):
-        """Test annotation with REFLECTANCE_DOMAIN."""
-        ann = smith_axes.annotate("Γ", xy=(0.5, 0.3), domain=REFLECTANCE_DOMAIN)
+        """Test annotation with R_DOMAIN."""
+        ann = smith_axes.annotate("Γ", xy=(0.5, 0.3), domain=R_DOMAIN)
         assert isinstance(ann, matplotlib.text.Annotation)
 
     def test_annotate_default_datatype(self, smith_axes):
@@ -78,8 +78,8 @@ class TestSmithAxesAnnotate:
             "Mixed",
             xy=(0.5, 0.3),  # S-parameter
             xytext=(75, 50),  # Z-parameter
-            domain=REFLECTANCE_DOMAIN,
-            domain_text=IMPEDANCE_DOMAIN,
+            domain=R_DOMAIN,
+            domain_text=Z_DOMAIN,
             arrowprops=dict(arrowstyle="->"),
         )
         assert ann is not None
@@ -91,15 +91,15 @@ class TestSmithAxesAnnotate:
             "Test",
             xy=(50, 25),
             xytext=(60, 35),
-            domain=IMPEDANCE_DOMAIN,
-            # domain_text not specified - should use IMPEDANCE_DOMAIN
+            domain=Z_DOMAIN,
+            # domain_text not specified - should use Z_DOMAIN
         )
         assert ann is not None
 
     def test_annotate_invalid_datatype_text(self, smith_axes):
         """Test that invalid domain_text raises ValueError."""
         with pytest.raises(ValueError, match="Invalid domain"):
-            smith_axes.annotate("Test", xy=(50, 25), xytext=(60, 35), domain=IMPEDANCE_DOMAIN, domain_text="INVALID")
+            smith_axes.annotate("Test", xy=(50, 25), xytext=(60, 35), domain=Z_DOMAIN, domain_text="INVALID")
 
     def test_annotate_with_styling(self, smith_axes):
         """Test annotation with text styling."""
@@ -107,7 +107,7 @@ class TestSmithAxesAnnotate:
             "Styled",
             xy=(50, 25),
             xytext=(70, 40),
-            domain=IMPEDANCE_DOMAIN,
+            domain=Z_DOMAIN,
             fontsize=14,
             color="red",
             fontweight="bold",
@@ -119,7 +119,7 @@ class TestSmithAxesAnnotate:
     def test_annotate_with_bbox(self, smith_axes):
         """Test annotation with background box."""
         bbox_props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-        ann = smith_axes.annotate("Boxed", xy=(50, 25), domain=IMPEDANCE_DOMAIN, bbox=bbox_props)
+        ann = smith_axes.annotate("Boxed", xy=(50, 25), domain=Z_DOMAIN, bbox=bbox_props)
         assert ann.get_bbox_patch() is not None
 
     def test_annotate_arrow_styles(self, smith_axes):
@@ -131,7 +131,7 @@ class TestSmithAxesAnnotate:
                 f"Arrow {i}",
                 xy=(50 + i * 10, 25),
                 xytext=(60 + i * 10, 35),
-                domain=IMPEDANCE_DOMAIN,
+                domain=Z_DOMAIN,
                 arrowprops=dict(arrowstyle=style),
             )
             assert ann is not None
@@ -145,7 +145,7 @@ class TestSmithAxesAnnotate:
                 f"Conn {i}",
                 xy=(50, 25 + i * 10),
                 xytext=(70, 35 + i * 10),
-                domain=IMPEDANCE_DOMAIN,
+                domain=Z_DOMAIN,
                 arrowprops=dict(arrowstyle="->", connectionstyle=style),
             )
             assert ann is not None
@@ -155,11 +155,11 @@ class TestSmithAxesAnnotate:
         z = 50 + 25j
 
         # Plot a point
-        smith_axes.plot([z], "o", markersize=10, domain=IMPEDANCE_DOMAIN)
+        smith_axes.plot([z], "o", markersize=10, domain=Z_DOMAIN)
 
         # Annotate it
         ann = smith_axes.annotate(
-            "Point", xy=(z.real, z.imag), xytext=(70, 40), domain=IMPEDANCE_DOMAIN, arrowprops=dict(arrowstyle="->")
+            "Point", xy=(z.real, z.imag), xytext=(70, 40), domain=Z_DOMAIN, arrowprops=dict(arrowstyle="->")
         )
         assert ann is not None
 
@@ -174,7 +174,7 @@ class TestSmithAxesAnnotate:
         annotations = []
         for x, y, label in points:
             ann = smith_axes.annotate(
-                label, xy=(x, y), xytext=(x + 15, y + 15), domain=IMPEDANCE_DOMAIN, arrowprops=dict(arrowstyle="->")
+                label, xy=(x, y), xytext=(x + 15, y + 15), domain=Z_DOMAIN, arrowprops=dict(arrowstyle="->")
             )
             annotations.append(ann)
 
@@ -184,7 +184,7 @@ class TestSmithAxesAnnotate:
     def test_annotate_at_matched_load(self, smith_axes):
         """Test annotation at matched load (50Ω)."""
         ann = smith_axes.annotate(
-            "Matched\n50Ω", xy=(50, 0), xytext=(60, 20), domain=IMPEDANCE_DOMAIN, arrowprops=dict(arrowstyle="->")
+            "Matched\n50Ω", xy=(50, 0), xytext=(60, 20), domain=Z_DOMAIN, arrowprops=dict(arrowstyle="->")
         )
         assert ann is not None
 
@@ -201,7 +201,7 @@ class TestSmithAxesAnnotate:
                 f"{ha}-{va}",
                 xy=(50, 25 + i * 15),
                 xytext=(70, 35 + i * 15),
-                domain=IMPEDANCE_DOMAIN,
+                domain=Z_DOMAIN,
                 ha=ha,
                 va=va,
                 arrowprops=dict(arrowstyle="->"),
@@ -214,23 +214,23 @@ class TestSmithAxesAnnotate:
         z = 50 + 25j
 
         # Plot point
-        smith_axes.plot([z], "o", markersize=10, domain=IMPEDANCE_DOMAIN)
+        smith_axes.plot([z], "o", markersize=10, domain=Z_DOMAIN)
 
         # Add text
-        smith_axes.text(z.real, z.imag, "  Label", domain=IMPEDANCE_DOMAIN, ha="left")
+        smith_axes.text(z.real, z.imag, "  Label", domain=Z_DOMAIN, ha="left")
 
         # Add annotation
         ann = smith_axes.annotate(
             "Important",
             xy=(z.real, z.imag),
             xytext=(75, 50),
-            domain=IMPEDANCE_DOMAIN,
+            domain=Z_DOMAIN,
             arrowprops=dict(arrowstyle="->", color="red"),
         )
 
         assert ann is not None
 
-    @pytest.mark.parametrize("domain", [IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, REFLECTANCE_DOMAIN])
+    @pytest.mark.parametrize("domain", [Z_DOMAIN, Y_DOMAIN, R_DOMAIN])
     def test_annotate_all_datatypes_parametrized(self, smith_axes, domain):
         """Parametrized test for all datatypes."""
         ann = smith_axes.annotate(
@@ -240,7 +240,7 @@ class TestSmithAxesAnnotate:
 
     def test_annotate_xytext_none(self, smith_axes):
         """Test annotation when xytext is None (text at xy position)."""
-        ann = smith_axes.annotate("At Point", xy=(50, 25), xytext=None, domain=IMPEDANCE_DOMAIN)
+        ann = smith_axes.annotate("At Point", xy=(50, 25), xytext=None, domain=Z_DOMAIN)
         assert ann is not None
 
 
@@ -259,21 +259,21 @@ class TestSmithAxesAnnotateIntegration:
         """Test annotation with grid enabled."""
         smith_axes.grid(which="impedance")
         ann = smith_axes.annotate(
-            "Test", xy=(50, 25), xytext=(70, 40), domain=IMPEDANCE_DOMAIN, arrowprops=dict(arrowstyle="->")
+            "Test", xy=(50, 25), xytext=(70, 40), domain=Z_DOMAIN, arrowprops=dict(arrowstyle="->")
         )
         assert ann is not None
         smith_axes.grid(which="admittance")
         ann = smith_axes.annotate(
-            "Test", xy=(50, 25), xytext=(70, 40), domain=IMPEDANCE_DOMAIN, arrowprops=dict(arrowstyle="->")
+            "Test", xy=(50, 25), xytext=(70, 40), domain=Z_DOMAIN, arrowprops=dict(arrowstyle="->")
         )
         assert ann is not None
 
     def test_annotate_with_legend(self, smith_axes):
         """Test annotation with legend."""
-        smith_axes.plot([50 + 25j], "o", domain=IMPEDANCE_DOMAIN, label="Data")
+        smith_axes.plot([50 + 25j], "o", domain=Z_DOMAIN, label="Data")
         smith_axes.legend()
         ann = smith_axes.annotate(
-            "Point", xy=(50, 25), xytext=(70, 40), domain=IMPEDANCE_DOMAIN, arrowprops=dict(arrowstyle="->")
+            "Point", xy=(50, 25), xytext=(70, 40), domain=Z_DOMAIN, arrowprops=dict(arrowstyle="->")
         )
         assert ann is not None
 
@@ -287,12 +287,12 @@ class TestSmithAxesAnnotateIntegration:
         ]
 
         for z, label in circuit:
-            smith_axes.plot([z], "o", markersize=8, domain=IMPEDANCE_DOMAIN)
+            smith_axes.plot([z], "o", markersize=8, domain=Z_DOMAIN)
             smith_axes.annotate(
                 label,
                 xy=(z.real, z.imag),
                 xytext=(z.real + 20, z.imag + 20),
-                domain=IMPEDANCE_DOMAIN,
+                domain=Z_DOMAIN,
                 arrowprops=dict(arrowstyle="->", color="blue"),
                 fontsize=10,
                 bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
@@ -318,26 +318,26 @@ class TestSmithAxesTransformCoordinates:
         assert callable(smith_axes._transform_coordinates)
 
     def test_transform_coordinates_REFLECTION_DOMAIN(self, smith_axes):
-        """Test coordinate transformation for IMPEDANCE_DOMAIN."""
-        x, y = smith_axes._transform_coordinates(50, 25, IMPEDANCE_DOMAIN)
+        """Test coordinate transformation for Z_DOMAIN."""
+        x, y = smith_axes._transform_coordinates(50, 25, Z_DOMAIN)
         assert isinstance(x, (int, float))
         assert isinstance(y, (int, float))
 
-    def test_transform_coordinates_ADMITTANCE_DOMAIN(self, smith_axes):
-        """Test coordinate transformation for ADMITTANCE_DOMAIN."""
-        x, y = smith_axes._transform_coordinates(0.02, 0.01, ADMITTANCE_DOMAIN)
+    def test_transform_coordinates_Y_DOMAIN(self, smith_axes):
+        """Test coordinate transformation for Y_DOMAIN."""
+        x, y = smith_axes._transform_coordinates(0.02, 0.01, Y_DOMAIN)
         assert isinstance(x, (int, float))
         assert isinstance(y, (int, float))
 
     def test_transform_coordinates_REFLECTION_DOMAIN2(self, smith_axes):
-        """Test coordinate transformation for REFLECTANCE_DOMAIN."""
-        x, y = smith_axes._transform_coordinates(0.5, 0.3, REFLECTANCE_DOMAIN)
+        """Test coordinate transformation for R_DOMAIN."""
+        x, y = smith_axes._transform_coordinates(0.5, 0.3, R_DOMAIN)
         assert isinstance(x, (int, float))
         assert isinstance(y, (int, float))
 
     def test_transform_coordinates_returns_tuple(self, smith_axes):
         """Test that _transform_coordinates returns a tuple."""
-        result = smith_axes._transform_coordinates(50, 25, IMPEDANCE_DOMAIN)
+        result = smith_axes._transform_coordinates(50, 25, Z_DOMAIN)
         assert isinstance(result, tuple)
         assert len(result) == 2
 

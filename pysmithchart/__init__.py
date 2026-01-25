@@ -13,32 +13,32 @@ Modules:
     helpers: Utility and helper methods.
 
 Constants:
-    REFLECTANCE_DOMAIN: Scattering parameter domain for plotting reflection coefficients.
-    IMPEDANCE_DOMAIN: Impedance parameter domain for plotting normalized impedances.
-    ADMITTANCE_DOMAIN: Admittance parameter domain for plotting normalized admittances.
-    ABSOLUTE_DOMAIN: Absolute parameter domain for plotting unnormalized values.
+    R_DOMAIN: Scattering parameter domain for plotting reflection coefficients.
+    Z_DOMAIN: Impedance parameter domain for plotting normalized impedances.
+    Y_DOMAIN: Admittance parameter domain for plotting normalized admittances.
+    NORM_Z_DOMAIN: Absolute parameter domain for plotting unnormalized values.
 
 Public API:
     - SmithAxes: The custom projection class for Smith charts.
-    - REFLECTANCE_DOMAIN: Constant for S-parameter plotting.
-    - IMPEDANCE_DOMAIN: Constant for Z-parameter plotting.
-    - ADMITTANCE_DOMAIN: Constant for Y-parameter plotting.
-    - ABSOLUTE_DOMAIN: Constant for A-parameter plotting.
+    - R_DOMAIN: Constant for S-parameter plotting.
+    - Z_DOMAIN: Constant for Z-parameter plotting.
+    - Y_DOMAIN: Constant for Y-parameter plotting.
+    - NORM_Z_DOMAIN: Constant for A-parameter plotting.
 
 Example:
     Import the module and plot a reflection coefficient using the Smith chart projection:
 
     >>> import matplotlib.pyplot as plt
-    >>> from pysmithchart import REFLECTANCE_DOMAIN
+    >>> from pysmithchart import R_DOMAIN
     >>> plt.subplot(1, 1, 1, projection="smith")
-    >>> plt.plot([0.5 + 0.3j, -0.2 - 0.1j], 'o', domain=REFLECTANCE_DOMAIN)
+    >>> plt.plot([0.5 + 0.3j, -0.2 - 0.1j], 'o', domain=R_DOMAIN)
     >>> plt.show()
 """
 
 from matplotlib.projections import register_projection
 
 # Import constants FIRST
-from .constants import ABSOLUTE_DOMAIN, REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN
+from .constants import NORM_Z_DOMAIN, R_DOMAIN, Z_DOMAIN, Y_DOMAIN, NORM_Y_DOMAIN
 
 # Now import axes AFTER constants
 from .axes import SmithAxes
@@ -47,7 +47,7 @@ from .axes import SmithAxes
 register_projection(SmithAxes)
 
 # Public API for wildcard imports
-__all__ = ["SmithAxes", "REFLECTANCE_DOMAIN", "IMPEDANCE_DOMAIN", "ADMITTANCE_DOMAIN", "ABSOLUTE_DOMAIN"]
+__all__ = ["SmithAxes", "R_DOMAIN", "Z_DOMAIN", "Y_DOMAIN", "NORM_Z_DOMAIN"]
 
 __version__ = "0.6.0"
 __author__ = "Paul Staerke, Scott Prahl"

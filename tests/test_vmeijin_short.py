@@ -12,7 +12,7 @@ import pytest
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 
-from pysmithchart import REFLECTANCE_DOMAIN
+from pysmithchart import R_DOMAIN
 
 # have matplotlib legend include three markers instead of one
 rcParams.update({"legend.numpoints": 3})
@@ -72,9 +72,9 @@ def test_smith_chart_plot2(setup_environment):
     plt.figure(figsize=(6, 6))
     plt.subplot(1, 1, 1, projection="smith")
     s = "equipoints=22"
-    plt.plot(s11, markevery=1, label=s, equipoints=22, domain=REFLECTANCE_DOMAIN)
+    plt.plot(s11, markevery=1, label=s, equipoints=22, domain=R_DOMAIN)
     s += "\nmarkevery=3"
-    plt.plot(s22, markevery=3, label=s, equipoints=22, domain=REFLECTANCE_DOMAIN)
+    plt.plot(s22, markevery=3, label=s, equipoints=22, domain=R_DOMAIN)
     plt.legend(loc="lower right", fontsize=10)
     plt.title("Matplotlib Smith Chart Projection")
 

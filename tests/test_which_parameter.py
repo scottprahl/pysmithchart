@@ -9,7 +9,7 @@ import sys
 sys.path.insert(0, "/home/claude")
 
 import pysmithchart
-from pysmithchart import ADMITTANCE_DOMAIN, IMPEDANCE_DOMAIN
+from pysmithchart import Y_DOMAIN, Z_DOMAIN
 
 print("Testing 'which' parameter functionality...\n")
 
@@ -42,7 +42,7 @@ try:
     print("  ✓ Admittance grid enabled correctly")
 
     # Test plotting
-    ax.plot(admittances, "o-", domain=ADMITTANCE_DOMAIN)
+    ax.plot(admittances, "o-", domain=Y_DOMAIN)
     print("  ✓ Plotting works")
     plt.close(fig)
 except Exception as e:
@@ -109,13 +109,13 @@ try:
 
     # Plot on each
     impedances = np.array(admittances) * 50  # Convert to unnormalized
-    ax1.plot(impedances, "o-", domain=IMPEDANCE_DOMAIN)
+    ax1.plot(impedances, "o-", domain=Z_DOMAIN)
     ax1.set_title("Impedance Chart")
 
-    ax2.plot(admittances, "o-", domain=ADMITTANCE_DOMAIN)
+    ax2.plot(admittances, "o-", domain=Y_DOMAIN)
     ax2.set_title("Admittance Chart")
 
-    ax3.plot(admittances, "o-", domain=ADMITTANCE_DOMAIN)
+    ax3.plot(admittances, "o-", domain=Y_DOMAIN)
     ax3.set_title("Both Grids")
 
     plt.tight_layout()

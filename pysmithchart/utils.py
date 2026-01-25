@@ -40,7 +40,7 @@ Public Functions:
 from collections.abc import Iterable
 import numpy as np
 from .constants import SC_EPSILON, SC_INFINITY
-from .constants import REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, ABSOLUTE_DOMAIN
+from .constants import R_DOMAIN, Z_DOMAIN, Y_DOMAIN, NORM_Z_DOMAIN, NORM_Y_DOMAIN
 
 # Public API
 __all__ = [
@@ -77,34 +77,21 @@ __all__ = [
 # ============================================================================
 
 
-def validate_domain(domain, allow_none=False):
+def validate_domain(domain):
     """
     Validate that a domain parameter is valid.
 
     Args:
-        domain: The domain to validate (REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, or ABSOLUTE_DOMAIN)
-        allow_none (bool): If True, None is considered valid
+        domain: The domain to validate
 
     Returns:
         The validated domain
-
-    Raises:
-        ValueError: If domain is invalid
-
-    Example:
-        >>> from pysmithchart.constants import IMPEDANCE_DOMAIN
-        >>> validate_domain(IMPEDANCE_DOMAIN)
-        'Z'
     """
-    valid_types = [REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, ABSOLUTE_DOMAIN]
-
-    if domain is None and allow_none:
-        return None
+    valid_types = [R_DOMAIN, Z_DOMAIN, Y_DOMAIN, NORM_Z_DOMAIN, NORM_Y_DOMAIN]
 
     if domain not in valid_types:
         raise ValueError(
-            f"Invalid domain: {domain}. "
-            f"Must be one of: REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, or ABSOLUTE_DOMAIN"
+            f"Invalid domain: {domain}. " f"Must be one of: R_DOMAIN, Z_DOMAIN, Y_DOMAIN, NORM_Z_DOMAIN, NORM_Y_DOMAIN"
         )
 
     return domain
@@ -119,17 +106,13 @@ def get_domain_name(domain):
 
     Returns:
         str: Human-readable name
-
-    Example:
-        >>> from pysmithchart.constants import IMPEDANCE_DOMAIN
-        >>> get_domain_name(IMPEDANCE_DOMAIN)
-        'IMPEDANCE_DOMAIN (Impedance)'
     """
     names = {
-        REFLECTANCE_DOMAIN: "REFLECTANCE_DOMAIN (Scattering/Reflection coefficient)",
-        IMPEDANCE_DOMAIN: "IMPEDANCE_DOMAIN (Impedance)",
-        ADMITTANCE_DOMAIN: "ADMITTANCE_DOMAIN (Admittance)",
-        ABSOLUTE_DOMAIN: "ABSOLUTE_DOMAIN (Arbitrary/Direct)",
+        R_DOMAIN: "R_DOMAIN Scattering/Reflection coefficient",
+        Z_DOMAIN: "Z_DOMAIN Impedance in Ohms",
+        Y_DOMAIN: "Y_DOMAIN Admittance in Siemens",
+        NORM_Z_DOMAIN: "NORM_Z_DOMAIN normalized impedance",
+        NORM_Y_DOMAIN: "NORM_Z_DOMAIN normalized admittance",
     }
     return names.get(domain, f"Unknown domain: {domain}")
 
@@ -148,36 +131,19 @@ def vswr_to_gamma_mag(vswr):
     This function accepts either a scalar or an array-like VSWR and returns the
     corresponding scalar or NumPy array of |Gamma| values.
 
+    This mapping assumes the standard lossless relationship between VSWR
+    and |Gamma|.
+
+    Returned values satisfy 0 <= |Gamma| < 1 for finite VSWR. (As VSWR -> infinity,
+    |Gamma| -> 1.)
+
     Args:
         vswr: Voltage standing wave ratio(s). Must satisfy VSWR >= 1. May be a
             float or any array-like object accepted by `numpy.asarray`.
 
     Returns:
         The reflection-coefficient magnitude(s) |Gamma|. The return type matches
-        the input shape:
-        - If `vswr` is a scalar, returns a scalar-like NumPy value.
-        - If `vswr` is array-like, returns an `ndarray` of the same shape.
-
-        Values satisfy 0 <= |Gamma| < 1 for finite VSWR. (As VSWR -> infinity,
-        |Gamma| -> 1.)
-
-    Raises:
-        ValueError: If any VSWR value is < 1.
-
-    Examples:
-        Convert a single VSWR value:
-
-            rho = vswr_to_gamma_mag(2.0)     # 0.333...
-
-        Convert an array of values:
-
-            vswrs = np.array([1.0, 1.5, 2.0, 3.0])
-            rho = vswr_to_gamma_mag(vswrs)
-
-    Notes:
-        - VSWR = 1 corresponds to a perfect match (|Gamma| = 0).
-        - This mapping assumes the standard lossless relationship between VSWR
-          and |Gamma|.
+        the input shape.
     """
     v = np.asarray(vswr)
     if np.any(v < 1):
@@ -185,7 +151,7 @@ def vswr_to_gamma_mag(vswr):
     return (v - 1) / (v + 1)
 
 
-def calc_vswr_from_rho(rho):
+def calc_vswr_from_gamma(gamma):
     """Converts reflection-coefficient magnitude |Gamma| to VSWR.
 
     For a lossless line, VSWR and reflection coefficient magnitude are related by:
@@ -196,40 +162,16 @@ def calc_vswr_from_rho(rho):
     returns the corresponding scalar or NumPy array of VSWR values.
 
     Args:
-        rho: Reflection-coefficient magnitude(s) |Gamma|. Must satisfy
-            0 <= rho < 1. May be a float or any array-like object accepted by
+        gamma: Reflection-coefficient magnitude(s) |Gamma|. Must satisfy
+            0 <= gamma < 1. May be a float or any array-like object accepted by
             `numpy.asarray`.
 
     Returns:
         VSWR value(s). The return type matches the input shape:
-        - If `rho` is a scalar, returns a scalar-like NumPy value.
-        - If `rho` is array-like, returns an `ndarray` of the same shape.
-
-        Values satisfy 1 <= VSWR < infinity for valid rho. (As rho -> 1,
-        VSWR -> infinity.)
-
-    Raises:
-        ValueError: If any rho value is < 0 or >= 1.
-
-    Examples:
-        Convert a single magnitude:
-
-            vswr = calc_vswr_from_rho(0.2)   # 1.5
-
-        Convert an array of magnitudes:
-
-            rho = np.array([0.0, 0.2, 0.5])
-            vswr = calc_vswr_from_rho(rho)
-
-    Notes:
-        - rho = 0 corresponds to a perfect match (VSWR = 1).
-        - rho values at or above 1 are non-physical for passive terminations
-          and cause a divide-by-zero or negative denominator in the VSWR formula,
-          so they are rejected.
     """
-    r = np.asarray(rho)
+    r = np.asarray(gamma)
     if np.any(r < 0) or np.any(r >= 1):
-        raise ValueError("|Gamma| must satisfy 0 <= rho < 1.")
+        raise ValueError("|Gamma| must satisfy 0 <= gamma < 1.")
     return (1 + r) / (1 - r)
 
 
@@ -244,6 +186,9 @@ def calc_vswr(Z_0, Z_L):
 
         VSWR = (1 + |Gamma|) / (1 - |Gamma|)
 
+    This function assumes the standard lossless relationship between VSWR
+    and |Gamma|.
+
     Args:
         Z_0: Reference (characteristic) impedance Z0 in ohms. Typically a real,
             positive number (e.g., 50 or 75). May be complex, but many
@@ -253,26 +198,6 @@ def calc_vswr(Z_0, Z_L):
     Returns:
         The VSWR (a real, non-negative float). For a perfect match, VSWR = 1.
         As the mismatch approaches |Gamma| -> 1, VSWR grows without bound.
-
-    Raises:
-        ZeroDivisionError: If `Z_L + Z_0` evaluates to zero (reflection
-            coefficient is singular).
-        ValueError: If `Z_0` is zero (not a valid reference impedance).
-
-    Examples:
-        Matched load:
-
-            calc_vswr(50, 50 + 0j)     # 1.0
-
-        Reactive mismatch:
-
-            calc_vswr(50, 50 + 1j*25)
-
-    Notes:
-        - This function assumes the standard lossless relationship between VSWR
-          and |Gamma|.
-        - If you already have Gamma, prefer `calc_vswr_from_rho(abs(Gamma))` or,
-          if you add it, a direct `calc_vswr_from_gamma(Gamma)` helper.
     """
     if Z_0 == 0:
         raise ValueError("Z_0 must be non-zero.")
@@ -297,25 +222,6 @@ def calc_gamma(Z_0, Z_L):
 
     Returns:
         The complex reflection coefficient Gamma.
-
-    Raises:
-        ZeroDivisionError: If `Z_L + Z_0` evaluates to zero.
-        ValueError: If `Z_0` is zero (not a valid reference impedance).
-
-    Examples:
-        A matched load has Gamma = 0:
-
-            calc_gamma(50, 50)     # 0j
-
-        A short circuit (ZL = 0) yields Gamma = -1:
-
-            calc_gamma(50, 0)      # -1+0j
-
-        An open circuit (ZL -> infinity) approaches Gamma -> +1.
-
-    Notes:
-        - |Gamma| <= 1 for passive loads when Z0 is real and positive.
-        - Gamma is the natural quantity to plot in `REFLECTANCE_DOMAIN`.
     """
     if Z_0 == 0:
         raise ValueError("Z_0 must be non-zero.")
@@ -336,38 +242,30 @@ def calc_load(Z_0, gamma):
 
     Returns:
         The load impedance ZL in ohms (complex in general).
-
-    Raises:
-        ZeroDivisionError: If `1 - gamma` evaluates to zero (Gamma = 1).
-        ValueError: If `Z_0` is zero (not a valid reference impedance).
-
-    Examples:
-        Recover ZL from Gamma:
-
-            g = calc_gamma(50, 100 + 1j*25)
-            ZL = calc_load(50, g)
-
-        Gamma = 1 corresponds to an open circuit (ZL -> infinity) and is
-        singular in this formula.
-
-    Notes:
-        - If `gamma` is exactly 1, the returned impedance is unbounded; this
-          function will raise a division error.
-        - This function is useful when converting measured/simulated S11 (Gamma)
-          back into impedance for matching calculations.
     """
     if Z_0 == 0:
         raise ValueError("Z_0 must be non-zero.")
     return Z_0 * (gamma + 1) / (1 - gamma)
 
 
-def cs_scalar(z, N=5):
+def cs_scalar(z, N=3, parens=False, trim_zeros=True):
     """Convert complex number to string for printing."""
+    form = "%% .%df" % N
+    s_real = form % z.real
+    s_imag = form % abs(z.imag)
+    if trim_zeros:
+        s_real = s_real.rstrip("0").rstrip(".")
+        s_imag = s_imag.rstrip("0").rstrip(".")
+
     if z.imag < 0:
-        form = "(%% .%df - %%.%dfj)" % (N, N)
+        s_imag = "- %sj" % s_imag
     else:
-        form = "(%% .%df + %%.%dfj)" % (N, N)
-    return form % (z.real, abs(z.imag))
+        s_imag = "+ %sj" % s_imag
+
+    if parens:
+        return "(%s %s)" % (s_real, s_imag)
+
+    return "%s %s" % (s_real, s_imag)
 
 
 def cs(z, N=5):
@@ -387,24 +285,20 @@ def xy_to_z(*xy):
     Args:
         *xy (tuple):
 
-            - If a single argument is passed:
+        If a single argument is passed:
+            - If the argument is a complex number or an array-like of complex numbers,
+              it is returned as-is.
+            - If the argument is an iterable with two rows (e.g., shape `(2, N)`), it
+              is interpreted as real and imaginary parts, and a complex array is returned.
 
-                - If the argument is a complex number or an array-like of complex numbers,
-                  it is returned as-is.
-                - If the argument is an iterable with two rows (e.g., shape `(2, N)`), it
-                  is interpreted as real and imaginary parts, and a complex array is returned.
-                - If the argument has more than two dimensions, a `ValueError` is raised.
-
-            - If two arguments are passed:
-
-                - The first argument represents the real part (`x`), and the second
-                  represents the imaginary part (`y`).
-                - Both arguments must be scalars or iterable objects of the same size.
-                  If they are iterable, they are combined to form a complex array.
-                - If the sizes of `x` and `y` do not match, a `ValueError` is raised.
+        If two arguments are passed:
+            - The first argument represents the real part (`x`), and the second
+              represents the imaginary part (`y`).
+            - Both arguments must be scalars or iterable objects of the same size.
+              If they are iterable, they are combined to form a complex array.
 
     Returns:
-        complex or numpy.ndarray: The complex scalar or array of complex numbers.
+        complex or numpy.ndarray: A complex scalar or array of complex numbers.
     """
     if len(xy) == 1:
         z = xy[0]
@@ -487,9 +381,8 @@ def z_to_xy(z):
 
 def moebius_transform(z, norm=1):
     """
-    Apply Möbius transformation to impedance values (CANONICAL IMPLEMENTATION).
+    Apply Möbius transformation to impedance values.
 
-    This is the single source of truth for the Möbius transformation formula.
     Maps impedance space to reflection coefficient space.
 
     Formula: S = 1 - 2*norm / (z + norm)
@@ -524,9 +417,8 @@ def moebius_transform(z, norm=1):
 
 def moebius_inverse_transform(s, norm=1):
     """
-    Apply inverse Möbius transformation to reflection coefficients (CANONICAL IMPLEMENTATION).
+    Apply inverse Möbius transformation to reflection coefficients.
 
-    This is the single source of truth for the inverse Möbius transformation formula.
     Maps reflection coefficient space back to impedance space.
 
     Formula: Z = norm * (1 + S) / (1 - S)

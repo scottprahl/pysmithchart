@@ -8,7 +8,7 @@ from matplotlib.axes import Axes
 from matplotlib import _color_data
 from scipy.interpolate import splprep, splev
 
-from pysmithchart.constants import IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, REFLECTANCE_DOMAIN, ABSOLUTE_DOMAIN
+from pysmithchart.constants import Z_DOMAIN, Y_DOMAIN, R_DOMAIN, NORM_Z_DOMAIN
 from pysmithchart import utils
 
 
@@ -33,16 +33,12 @@ class PlottingMixin:
                 by :meth:`matplotlib.axes.Axes.plot`, along with the following:
 
                 domain (str, optional):
-                    Specifies the input data format. Must be one of:
-                    - `REFLECTANCE_DOMAIN` ('S'): Scattering parameters (reflection coefficient).
-                      Values are converted via inverse Möbius: z = (1+S)/(1-S).
-                      Warning issued if |S| > 1.
-                    - `IMPEDANCE_DOMAIN` ('Z'): Impedance in Ohms (always normalized by Z₀).
-                      Values are divided by characteristic impedance Z₀.
-                    - `ABSOLUTE_DOMAIN` ('A'): Absolute/unnormalized coordinates.
-                      Values are plotted as-is without any transformation.
-                    - `ADMITTANCE_DOMAIN` ('Y'): Admittance (converted to impedance).
-                    Defaults to `IMPEDANCE_DOMAIN`.
+                    Specifies the input data format
+                    - `Z_DOMAIN`: (default) Impedance in Ohms.
+                    - `R_DOMAIN`: Γ or scattering parameters
+                    - `NORM_Z_DOMAIN`: Normalized impedance.
+                    - `Y_DOMAIN`: Admittance in Siemens
+                    - `NORM_Y_DOMAIN`: Normalized admittance.
 
                 interpolate (bool or int, optional):
                     If `True`, interpolates the given data linearly with a default step size.
@@ -66,12 +62,6 @@ class PlottingMixin:
             list[matplotlib.lines.Line2D]:
                 A list of line objects representing the plotted data.
 
-        Raises:
-            ValueError: If `domain` is not one of the valid domain constants.
-            UserWarning: If `domain` is `REFLECTANCE_DOMAIN` and |S| > 1 (point outside Smith chart).
-            ValueError: If both `interpolate` and `equipoints` are enabled.
-            ValueError: If `interpolate` is specified with a non-positive value.
-
         Examples:
             Plot impedance data on a Smith Chart:
 
@@ -79,7 +69,7 @@ class PlottingMixin:
             >>> import pysmithchart
             >>> ZL = [30 + 30j, 50 + 50j, 100 + 100j]
             >>> plt.subplot(1, 1, 1, projection="smith")
-            >>> plt.plot(ZL, "b", marker="o", markersize=10, domain=pysmithchart.IMPEDANCE_DOMAIN)
+            >>> plt.plot(ZL, "b", marker="o", markersize=10, domain=pysmithchart.Z_DOMAIN)
             >>> plt.show()
 
             Plot with arrow showing direction:
@@ -217,15 +207,20 @@ class PlottingMixin:
 
         return lines
 
-    def scatter(self, x, y=None, *args, domain=None, **kwargs):
+    def scatter(self, x, y=None, domain=None, **kwargs):
         """
         Create a scatter plot on the Smith Chart.
 
         Args:
             x: X coordinates (real part) or complex impedance/admittance values.
             y: Y coordinates (imaginary part). Ignored if x is complex.
-            *args: Optional format string (not commonly used with scatter, use c= and marker= instead).
-            domain: Data format (REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ABSOLUTE_DOMAIN, ADMITTANCE_DOMAIN).
+            domain (str, optional):
+                Specifies the input data format
+                - `Z_DOMAIN`: (default) Impedance in Ohms.
+                - `R_DOMAIN`: Γ or scattering parameters
+                - `NORM_Z_DOMAIN`: Normalized impedance.
+                - `Y_DOMAIN`: Admittance in Siemens
+                - `NORM_Y_DOMAIN`: Normalized admittance.
             **kwargs: Additional arguments passed to matplotlib.axes.Axes.scatter (s, c, marker, etc.).
 
         Returns:
@@ -233,49 +228,11 @@ class PlottingMixin:
 
         Examples:
             >>> # Recommended: use keyword arguments
-            >>> ax.scatter(50+25j, s=100, c='red', marker='o')
+            >>> ax.scatter(50+25j, s=50, c='red', marker='o')
 
-            >>> # Also works: format string (converted to kwargs)
-            >>> ax.scatter(50+25j, 'ro', s=100)
-
-        Note:
-            Unlike plot(), scatter() primarily uses keyword arguments. If you provide a format
-            string like 'ro', it will be parsed for color and marker, but size must still be
-            specified with s=.
+            >>> # Also works: passing real and imaginary parts separately
+            >>> ax.scatter(50, 25, s=50, c='red', marker='o')
         """
-        # Parse format string if provided
-        if args and isinstance(args[0], str):
-            fmt = args[0]
-            # Parse format string for color and marker
-
-            # Extract color
-            for color_key in _color_data.TABLEAU_COLORS.keys():
-                if color_key[4] in fmt:  # 'tab:blue' -> 'b'
-                    kwargs.setdefault("c", color_key[4])
-                    break
-            # Common single-letter colors
-            color_map = {
-                "r": "red",
-                "g": "green",
-                "b": "blue",
-                "c": "cyan",
-                "m": "magenta",
-                "y": "yellow",
-                "k": "black",
-                "w": "white",
-            }
-            for char in fmt:
-                if char in color_map:
-                    kwargs.setdefault("c", char)
-                    break
-
-            # Extract marker
-            marker_chars = ".ov^<>123478spP*hH+xXDd|_"
-            for char in fmt:
-                if char in marker_chars:
-                    kwargs.setdefault("marker", char)
-                    break
-
         # Get domain
         if domain is None:
             domain = self._get_key("plot.default.domain")
@@ -401,7 +358,7 @@ class PlottingMixin:
                 If complex, y parameter is ignored and s becomes the second argument.
             y (float or str, optional): Imaginary part (if x is real), or text string (if x is complex).
             s (str, optional): The text string to display (if x and y are real).
-            domain (str, optional): Coordinate type (IMPEDANCE_DOMAIN, ADMITTANCE_DOMAIN, REFLECTANCE_DOMAIN).
+            domain (str, optional): Coordinate type (Z_DOMAIN, Y_DOMAIN, R_DOMAIN).
                 Default: Uses plot.default.domain from smith_params.
             **kwargs: Additional matplotlib text parameters including:
                 - transform: Coordinate transform (default uses data coordinates with Smith chart transformation).
@@ -435,7 +392,7 @@ class PlottingMixin:
                 # User passed text(complex, something, something_else)
                 # This is ambiguous, but likely: text(z, text, domain=...)
                 # Put s back into kwargs as domain if it's a valid domain
-                if s in [REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN, ABSOLUTE_DOMAIN, ADMITTANCE_DOMAIN]:
+                if s in [R_DOMAIN, Z_DOMAIN, NORM_Z_DOMAIN, Y_DOMAIN]:
                     domain = s
                 s = y  # y is the text string
             else:
@@ -589,14 +546,14 @@ class PlottingMixin:
 
         Args:
             resistance (float): The resistance value to plot.
-                - For IMPEDANCE_DOMAIN: Value in Ohms (will be normalized by Z₀)
-                - For ABSOLUTE_DOMAIN: Normalized value (used as-is, typically r = R/Z₀)
+                - For Z_DOMAIN: Value in Ohms (will be normalized by Z₀)
+                - For NORM_Z_DOMAIN: Normalized value (used as-is, typically r = R/Z₀)
             *args: Optional format string (e.g., 'r-', 'b--', 'go').
             reactance_range (tuple, optional): The (min, max) reactance range to plot.
                 If None, draws a complete circle. If specified, draws an arc between
                 the min and max reactance values.
-            domain (str, optional): Domain for the data (IMPEDANCE_DOMAIN or ABSOLUTE_DOMAIN).
-                Default: IMPEDANCE_DOMAIN (values in Ohms, normalized by Z₀).
+            domain (str, optional): Domain for the data (Z_DOMAIN or NORM_Z_DOMAIN).
+                Default: Z_DOMAIN (values in Ohms, normalized by Z₀).
             num_points (int, optional): Number of points to use for the circle (default: 200).
             arrow (str, bool, or dict, optional): Add directional arrow(s) to the curve.
                 - None/False: No arrows (default)
@@ -617,7 +574,7 @@ class PlottingMixin:
             >>> ax.plot_constant_resistance(50, 'r-', arrow='end', label='R = 50Ω')
 
             >>> # Plot normalized r=1.0 circle using absolute domain
-            >>> ax.plot_constant_resistance(1.0, 'b-', domain=ABSOLUTE_DOMAIN, label='r = 1.0')
+            >>> ax.plot_constant_resistance(1.0, 'b-', domain=NORM_Z_DOMAIN, label='r = 1.0')
 
             >>> # Plot arc with limited reactance range and both arrows
             >>> ax.plot_constant_resistance(75, 'g--', reactance_range=(-100, 100), arrow='both')
@@ -627,18 +584,18 @@ class PlottingMixin:
             by varying the reactance from -∞ to +∞. For a complete circle, the function uses
             angular parametrization. For a partial arc, it uses the specified reactance range.
         """
-        # Default to IMPEDANCE_DOMAIN if not specified
+        # Default to Z_DOMAIN if not specified
         if domain is None:
-            domain = IMPEDANCE_DOMAIN
+            domain = Z_DOMAIN
 
         if reactance_range is None:
             # Draw complete circle using angular parametrization
             theta = np.linspace(-np.pi / 2 + 0.01, np.pi / 2 - 0.01, num_points)
 
             # Use tangent to span from -large to +large reactance
-            if domain == ABSOLUTE_DOMAIN:
+            if domain == NORM_Z_DOMAIN:
                 X = 10 * resistance * np.tan(theta)
-            else:  # IMPEDANCE_DOMAIN
+            else:  # Z_DOMAIN
                 Z0 = self._get_key("axes.Z0")
                 X = 10 * max(Z0, resistance) * np.tan(theta)
 
@@ -662,14 +619,14 @@ class PlottingMixin:
 
         Args:
             reactance (float): The reactance value to plot.
-                - For IMPEDANCE_DOMAIN: Value in Ohms (will be normalized by Z₀)
-                - For ABSOLUTE_DOMAIN: Normalized value (used as-is, typically x = X/Z₀)
+                - For Z_DOMAIN: Value in Ohms (will be normalized by Z₀)
+                - For NORM_Z_DOMAIN: Normalized value (used as-is, typically x = X/Z₀)
                 Positive for inductive, negative for capacitive.
             *args: Optional format string (e.g., 'r-', 'b--', 'go').
             resistance_range (tuple, optional): The (min, max) resistance range to plot.
                 If None, automatically determines range to show the full arc.
-            domain (str, optional): Domain for the data (IMPEDANCE_DOMAIN or ABSOLUTE_DOMAIN).
-                Default: IMPEDANCE_DOMAIN (values in Ohms, normalized by Z₀).
+            domain (str, optional): Domain for the data (Z_DOMAIN or NORM_Z_DOMAIN).
+                Default: Z_DOMAIN (values in Ohms, normalized by Z₀).
             num_points (int, optional): Number of points to use for the arc (default: 200).
             arrow (str, bool, or dict, optional): Add directional arrow(s) to the curve.
                 - None/False: No arrows (default)
@@ -687,7 +644,7 @@ class PlottingMixin:
             >>> ax.plot_constant_reactance(50, 'r-', label='X = +50Ω (inductive)')
 
             >>> # Plot normalized x=1.0 using absolute domain
-            >>> ax.plot_constant_reactance(1.0, 'b-', domain=ABSOLUTE_DOMAIN, label='x = 1.0')
+            >>> ax.plot_constant_reactance(1.0, 'b-', domain=NORM_Z_DOMAIN, label='x = 1.0')
 
             >>> # Plot with custom resistance range
             >>> ax.plot_constant_reactance(75, 'g--', resistance_range=(0, 200))
@@ -697,16 +654,16 @@ class PlottingMixin:
             by varying the resistance from 0 to ∞. Positive reactance (inductive) appears in the
             upper half of the chart, negative reactance (capacitive) in the lower half.
         """
-        # Default to IMPEDANCE_DOMAIN if not specified
+        # Default to Z_DOMAIN if not specified
         if domain is None:
-            domain = IMPEDANCE_DOMAIN
+            domain = Z_DOMAIN
 
         # Determine resistance range if not specified
         if resistance_range is None:
-            if domain == ABSOLUTE_DOMAIN:
+            if domain == NORM_Z_DOMAIN:
                 # For normalized/absolute, use range that covers most of the chart
                 resistance_range = (0.01, 10)
-            else:  # IMPEDANCE_DOMAIN
+            else:  # Z_DOMAIN
                 # For absolute values in Ohms, use range based on Z0
                 Z0 = self._get_key("axes.Z0")
                 resistance_range = (0.01, 10 * Z0)
@@ -738,13 +695,13 @@ class PlottingMixin:
 
         Args:
             conductance (float): The conductance value to plot.
-                - For ADMITTANCE_DOMAIN: Value in Siemens (will be normalized by Y₀=1/Z₀)
-                - For ABSOLUTE_DOMAIN: Normalized value (used as-is, typically g = G×Z₀)
+                - For Y_DOMAIN: Value in Siemens (will be normalized by Y₀=1/Z₀)
+                - For NORM_Z_DOMAIN: Normalized value (used as-is, typically g = G×Z₀)
             *args: Optional format string (e.g., 'r-', 'b--', 'go').
             susceptance_range (tuple, optional): The (min, max) susceptance range to plot.
                 If None, draws a complete circle.
-            domain (str, optional): Domain for the data (ADMITTANCE_DOMAIN or ABSOLUTE_DOMAIN).
-                Default: ADMITTANCE_DOMAIN (values in Siemens, normalized by Y₀).
+            domain (str, optional): Domain for the data (Y_DOMAIN or NORM_Z_DOMAIN).
+                Default: Y_DOMAIN (values in Siemens, normalized by Y₀).
             num_points (int, optional): Number of points to use for the circle (default: 200).
             arrow (str, bool, or dict, optional): Add directional arrow(s) to the curve.
                 - None/False: No arrows (default)
@@ -762,7 +719,7 @@ class PlottingMixin:
             >>> ax.plot_constant_conductance(0.02, 'r-', label='G = 0.02S')
 
             >>> # Plot normalized g=1.0 circle using absolute domain
-            >>> ax.plot_constant_conductance(1.0, 'b-', domain=ABSOLUTE_DOMAIN, label='g = 1.0')
+            >>> ax.plot_constant_conductance(1.0, 'b-', domain=NORM_Z_DOMAIN, label='g = 1.0')
 
             >>> # Plot with custom susceptance range
             >>> ax.plot_constant_conductance(0.02, 'g--', susceptance_range=(-0.05, 0.05))
@@ -772,18 +729,18 @@ class PlottingMixin:
             constant resistance on an impedance chart. The circle is parametrized by varying
             susceptance from -∞ to +∞.
         """
-        # Default to ADMITTANCE_DOMAIN if not specified
+        # Default to Y_DOMAIN if not specified
         if domain is None:
-            domain = ADMITTANCE_DOMAIN
+            domain = Y_DOMAIN
 
         if susceptance_range is None:
             # Draw complete circle using angular parametrization
             theta = np.linspace(-np.pi / 2 + 0.01, np.pi / 2 - 0.01, num_points)
 
             # Use tangent to span from -large to +large susceptance
-            if domain == ABSOLUTE_DOMAIN:
+            if domain == NORM_Z_DOMAIN:
                 B = 10 * conductance * np.tan(theta)
-            else:  # ADMITTANCE_DOMAIN
+            else:  # Y_DOMAIN
                 Z0 = self._get_key("axes.Z0")
                 Y0 = 1 / Z0
                 B = 10 * max(Y0, conductance) * np.tan(theta)
@@ -817,14 +774,14 @@ class PlottingMixin:
 
         Args:
             susceptance (float): The susceptance value to plot.
-                - For ADMITTANCE_DOMAIN: Value in Siemens (will be normalized by Y₀=1/Z₀)
-                - For ABSOLUTE_DOMAIN: Normalized value (used as-is, typically b = B×Z₀)
+                - For Y_DOMAIN: Value in Siemens (will be normalized by Y₀=1/Z₀)
+                - For NORM_Z_DOMAIN: Normalized value (used as-is, typically b = B×Z₀)
                 Positive for capacitive, negative for inductive.
             *args: Optional format string (e.g., 'r-', 'b--', 'go').
             conductance_range (tuple, optional): The (min, max) conductance range to plot.
                 If None, automatically determines range to show the full arc.
-            domain (str, optional): Domain for the data (ADMITTANCE_DOMAIN or ABSOLUTE_DOMAIN).
-                Default: ADMITTANCE_DOMAIN (values in Siemens, normalized by Y₀).
+            domain (str, optional): Domain for the data (Y_DOMAIN or NORM_Z_DOMAIN).
+                Default: Y_DOMAIN (values in Siemens, normalized by Y₀).
             num_points (int, optional): Number of points to use for the arc (default: 200).
             arrow (str, bool, or dict, optional): Add directional arrow(s) to the curve.
                 - None/False: No arrows (default)
@@ -845,7 +802,7 @@ class PlottingMixin:
             >>> ax.plot_constant_susceptance(-0.02, 'b-', label='B = -0.02S (inductive)')
 
             >>> # Plot normalized b=1.0 arc
-            >>> ax.plot_constant_susceptance(1.0, 'g-', domain=ABSOLUTE_DOMAIN, label='b = 1.0')
+            >>> ax.plot_constant_susceptance(1.0, 'g-', domain=NORM_Z_DOMAIN, label='b = 1.0')
 
             >>> # Plot with custom conductance range
             >>> ax.plot_constant_susceptance(0.02, 'g--', conductance_range=(0, 0.05))
@@ -859,14 +816,14 @@ class PlottingMixin:
             while positive reactance is inductive.
         """
         if domain is None:
-            domain = ADMITTANCE_DOMAIN
+            domain = Y_DOMAIN
 
         # Determine conductance range if not specified
         if conductance_range is None:
-            if domain == ABSOLUTE_DOMAIN:
+            if domain == NORM_Z_DOMAIN:
                 # For normalized/absolute, use range that covers most of the chart
                 conductance_range = (0.01, 10)
-            else:  # ADMITTANCE_DOMAIN
+            else:  # Y_DOMAIN
                 # For absolute values in Siemens, use range based on Y0
                 Z0 = self._get_key("axes.Z0")
                 Y0 = 1 / Z0
@@ -951,9 +908,9 @@ class PlottingMixin:
 
         # Plot the circle with optional format string
         if args:
-            lines = self.plot(gamma, *args, domain=REFLECTANCE_DOMAIN, **kwargs)
+            lines = self.plot(gamma, *args, domain=R_DOMAIN, **kwargs)
         else:
-            lines = self.plot(gamma, domain=REFLECTANCE_DOMAIN, **kwargs)
+            lines = self.plot(gamma, domain=R_DOMAIN, **kwargs)
 
         # Add arrows if requested
         if arrow and lines:
@@ -974,8 +931,8 @@ class PlottingMixin:
             Z_start: Starting impedance (complex number).
             Z_end: Ending impedance (complex number).
             *args: Optional format string (e.g., 'r-', 'b--').
-            domain: Domain for the impedances (IMPEDANCE_DOMAIN, ABSOLUTE_DOMAIN, etc.).
-                   Default: IMPEDANCE_DOMAIN.
+            domain: Domain for the impedances (Z_DOMAIN, NORM_Z_DOMAIN, etc.).
+                   Default: Z_DOMAIN.
             num_points (int): Number of points for smooth path (default: 100).
             arrow (str, bool, or dict, optional): Add directional arrow(s).
                 - For single arc (same VSWR): Arrow added to the arc
@@ -1003,7 +960,7 @@ class PlottingMixin:
         """
         # Default domain
         if domain is None:
-            domain = IMPEDANCE_DOMAIN
+            domain = Z_DOMAIN
 
         # Convert to complex if needed
         if not isinstance(Z_start, complex):
@@ -1021,16 +978,16 @@ class PlottingMixin:
         # Transform to normalized impedance
         Z0 = self._get_key("axes.Z0")
 
-        if domain == IMPEDANCE_DOMAIN:
+        if domain == Z_DOMAIN:
             z_start_norm = Z_start / Z0
             z_end_norm = Z_end / Z0
-        elif domain == ABSOLUTE_DOMAIN:
+        elif domain == NORM_Z_DOMAIN:
             z_start_norm = Z_start
             z_end_norm = Z_end
-        elif domain == ADMITTANCE_DOMAIN:
+        elif domain == Y_DOMAIN:
             z_start_norm = (1 / Z_start) / Z0
             z_end_norm = (1 / Z_end) / Z0
-        elif domain == REFLECTANCE_DOMAIN:
+        elif domain == R_DOMAIN:
             z_start_norm = utils.moebius_inverse_transform(Z_start, norm=1)
             z_end_norm = utils.moebius_inverse_transform(Z_end, norm=1)
         else:
@@ -1070,9 +1027,9 @@ class PlottingMixin:
 
             # Plot single arc with arrow
             if fmt_str:
-                return self.plot(gamma_path, fmt_str, domain=REFLECTANCE_DOMAIN, arrow=arrow, **fmt_kwargs)
+                return self.plot(gamma_path, fmt_str, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs)
             else:
-                return self.plot(gamma_path, domain=REFLECTANCE_DOMAIN, arrow=arrow, **fmt_kwargs)
+                return self.plot(gamma_path, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs)
 
         else:
             # CASE 2: Different VSWR - two-step matching path
@@ -1107,17 +1064,17 @@ class PlottingMixin:
 
             # Plot step 1 (transmission line rotation) with arrow
             if fmt_str:
-                lines.extend(self.plot(gamma_step1, fmt_str, domain=REFLECTANCE_DOMAIN, arrow=arrow, **fmt_kwargs))
+                lines.extend(self.plot(gamma_step1, fmt_str, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs))
             else:
-                lines.extend(self.plot(gamma_step1, domain=REFLECTANCE_DOMAIN, arrow=arrow, **fmt_kwargs))
+                lines.extend(self.plot(gamma_step1, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs))
 
             # Plot step 2 (reactive element) with arrow - remove label to avoid duplicate
             fmt_kwargs_2 = fmt_kwargs.copy()
             fmt_kwargs_2.pop("label", None)
 
             if fmt_str:
-                lines.extend(self.plot(gamma_step2, fmt_str, domain=REFLECTANCE_DOMAIN, arrow=arrow, **fmt_kwargs_2))
+                lines.extend(self.plot(gamma_step2, fmt_str, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs_2))
             else:
-                lines.extend(self.plot(gamma_step2, domain=REFLECTANCE_DOMAIN, arrow=arrow, **fmt_kwargs_2))
+                lines.extend(self.plot(gamma_step2, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs_2))
 
             return lines

@@ -24,7 +24,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 
-from pysmithchart import REFLECTANCE_DOMAIN, IMPEDANCE_DOMAIN
+from pysmithchart import R_DOMAIN, Z_DOMAIN
 
 # Configure Matplotlib settings
 rcParams.update({"legend.numpoints": 3, "axes.axisbelow": True})
@@ -75,10 +75,10 @@ def load_complex_data(file_path, step=40):
 def plot_example(title, sp_data, z_data, **kwargs):
     """Helper function to plot examples."""
     kwargs.setdefault("markevery", 1)
-    plt.plot(sp_data, domain=REFLECTANCE_DOMAIN, **kwargs)
-    plt.plot(z_data, domain=IMPEDANCE_DOMAIN, **kwargs)
-    plt.plot(100, domain=IMPEDANCE_DOMAIN, **kwargs)
-    plt.plot(25 + 25j, domain=IMPEDANCE_DOMAIN, **kwargs)
+    plt.plot(sp_data, domain=R_DOMAIN, **kwargs)
+    plt.plot(z_data, domain=Z_DOMAIN, **kwargs)
+    plt.plot(100, domain=Z_DOMAIN, **kwargs)
+    plt.plot(25 + 25j, domain=Z_DOMAIN, **kwargs)
     plt.title(title)
 
 

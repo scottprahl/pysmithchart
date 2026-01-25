@@ -23,7 +23,7 @@ import numpy as np
 import pytest
 import matplotlib.pyplot as plt
 
-from pysmithchart import REFLECTANCE_DOMAIN
+from pysmithchart import R_DOMAIN
 
 
 @pytest.fixture
@@ -182,7 +182,7 @@ def test_transformer_circle(chart_dir):
     plt.subplot(1, 1, 1, projection="smith")
     plt.plot(ZL, "b", marker="o", markersize=4)
     plt.plot(Zf, "r", marker="o", markersize=4)
-    plt.plot(Gamma_prime, "k", ls="", domain=REFLECTANCE_DOMAIN, marker="o", markersize=4)
+    plt.plot(Gamma_prime, "k", ls="", domain=R_DOMAIN, marker="o", markersize=4)
     plt.title("Rotating point by λ/8")
     plt.legend()
     image_path = os.path.join(chart_dir, "simple_eighth.pdf")
