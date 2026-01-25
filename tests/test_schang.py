@@ -124,32 +124,20 @@ def test_plot_grid_styles(chart_dir):
     offset = 0
 
     # Define the options for major, minor enable, and minor fancy
-    major_fancy_options = [True, False]
+    fancy_options = [True, False]
     minor_enable_options = [True, False]
-    minor_fancy_options = [True, False]
 
     # Generate all combinations
-    combinations = product(major_fancy_options, minor_enable_options, minor_fancy_options)
+    combinations = product(fancy_options, minor_enable_options)
 
     # Iterate through the combinations
-    plt.figure(figsize=(18, 12)).set_layout_engine("tight")
-    for i, (major_fancy, minor_enable, minor_fancy) in enumerate(combinations):
-
-        if not minor_enable and minor_fancy:
-            offset += 1
-            continue
-
-        plt.subplot(
-            2,
-            3,
-            i + 1 - offset,
-            projection="smith",
-            **{"grid.major.fancy": major_fancy, "grid.minor.enable": minor_enable, "grid.minor.fancy": minor_fancy},
-        )
-        major_str = "fancy" if major_fancy else "standard"
-        minor_str = "off" if not minor_enable else ("fancy" if minor_fancy else "standard")
+    plt.figure(figsize=(12, 12))
+    for i, (fancy, minor_enable) in enumerate(combinations):
+        sc = {"grid.fancy": fancy, "grid.Z.minor.enable": minor_enable}
+        plt.subplot(2, 2, i + 1, projection="smith", **sc)
+        major_str = "fancy" if fancy else "standard"
         plt.plot(s11, domain=REFLECTANCE_DOMAIN)
-        plt.title(f"Major Grid: {major_str}, Minor Grid: {minor_str}")
+        plt.title(f"Grid: {major_str}")
 
     plt.suptitle("Grid Style Variations")
     plt.savefig(os.path.join(chart_dir, "schang_grid_styles.pdf"), format="pdf")

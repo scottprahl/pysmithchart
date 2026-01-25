@@ -46,7 +46,7 @@ def chart_dir(tmpdir):
 def test_empty_smith_chart(chart_dir):
     """Test for plotting an empty Smith chart."""
     plt.figure(figsize=(6, 6))
-    plt.subplot(1, 1, 1, projection="smith", **{"grid.major.color": "blue"})
+    plt.subplot(1, 1, 1, projection="smith", **{"grid.Z.major.color": "blue"})
     plt.title("Completely blue grid")
 
     image_path = os.path.join(chart_dir, "simple_blue.pdf")
@@ -58,11 +58,11 @@ def test_minor_grid_colors(chart_dir):
     """Test for verifying minor grid colors on the Smith chart."""
     plt.figure(figsize=(6, 6))
     params = {
-        "grid.major.color.x": "blue",
-        "grid.major.color.y": "red",
-        "grid.minor.enable": True,
-        "grid.minor.color.x": "yellow",
-        "grid.minor.color.y": "orange",
+        "grid.Z.major.color.x": "blue",
+        "grid.Z.major.color.y": "red",
+        "grid.Z.minor.enable": True,
+        "grid.Z.minor.color.x": "yellow",
+        "grid.Z.minor.color.y": "orange",
     }
     plt.subplot(1, 1, 1, projection="smith", **params)
     plt.title("Ugly grid colors test")

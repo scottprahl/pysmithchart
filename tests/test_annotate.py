@@ -257,7 +257,12 @@ class TestSmithAxesAnnotateIntegration:
 
     def test_annotate_with_grid(self, smith_axes):
         """Test annotation with grid enabled."""
-        smith_axes.grid(True, which="both")
+        smith_axes.grid(which="impedance")
+        ann = smith_axes.annotate(
+            "Test", xy=(50, 25), xytext=(70, 40), domain=IMPEDANCE_DOMAIN, arrowprops=dict(arrowstyle="->")
+        )
+        assert ann is not None
+        smith_axes.grid(which="admittance")
         ann = smith_axes.annotate(
             "Test", xy=(50, 25), xytext=(70, 40), domain=IMPEDANCE_DOMAIN, arrowprops=dict(arrowstyle="->")
         )

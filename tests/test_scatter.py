@@ -219,7 +219,7 @@ class TestScatterTransformations:
     def test_scatter_y_to_z_consistency(self, smith_axes):
         """Test that Y and Z parameters are consistent."""
         Z = 75 + 50j
-        Y = 1 / Z
+        Y = np.conjugate(1 / Z)
 
         c1 = smith_axes.scatter([Z], s=100, c="red", domain=IMPEDANCE_DOMAIN)
         c2 = smith_axes.scatter([Y], s=50, c="blue", domain=ADMITTANCE_DOMAIN)

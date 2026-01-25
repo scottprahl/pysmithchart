@@ -97,28 +97,26 @@ def test_grid_styles(setup_environment):
     sp_data, chart_dir = setup_environment
     z_data = sp_data * 50
 
-    fig = plt.figure(figsize=(18, 12))
+    fig = plt.figure(figsize=(12, 12))
     fig.set_layout_engine("tight")
     i = 0
-    for major_fancy in [False, True]:
+    for fancy in [False, True]:
         for minor in [False, True]:
-            for minor_fancy in [False, True]:
-                if minor or not minor_fancy:
-                    i += 1
-                    plt.subplot(
-                        2,
-                        3,
-                        i,
-                        projection="smith",
-                        **{
-                            "grid.major.fancy": major_fancy,
-                            "grid.minor.enable": minor or minor_fancy,
-                            "grid.minor.fancy": minor_fancy,
-                        },
-                    )
-                    major_str = "fancy" if major_fancy else "standard"
-                    minor_str = "off" if not minor else "fancy" if minor_fancy else "standard"
-                    plot_example(f"Major: {major_str} - Minor: {minor_str}", sp_data, z_data)
+            if minor:
+                i += 1
+                plt.subplot(
+                    2,
+                    3,
+                    i,
+                    projection="smith",
+                    **{
+                        "grid.fancy": fancy,
+                        "grid.Z.minor.enable": minor,
+                    },
+                )
+                major_str = "fancy" if fancy else "standard"
+                minor_str = "off" if not minor else "off"
+                plot_example(f"Major: {major_str} - Minor: {minor_str}", sp_data, z_data)
 
     save_figure(chart_dir, "full_grid_styles")
 
@@ -133,18 +131,13 @@ def test_fancy_grids(setup_environment):
     i = 0
     for threshold in [(50, 50), (100, 50), (125, 100)]:
         i += 1
-        plt.subplot(2, 3, i, projection="smith", **{"grid.major.fancy.threshold": threshold})
+        plt.subplot(2, 3, i, projection="smith", **{"grid.major.threshold": threshold})
         plot_example(f"Major Threshold=({threshold[0]}, {threshold[1]})", sp_data, z_data)
 
     for threshold in [15, 30, 60]:
         i += 1
-        plt.subplot(
-            2,
-            3,
-            i,
-            projection="smith",
-            **{"grid.minor.fancy": True, "grid.minor.enable": True, "grid.minor.fancy.threshold": threshold},
-        )
+        sc = {"grid.Z.minor.enable": True, "grid.minor.threshold": threshold}
+        plt.subplot(2, 3, i, projection="smith", **sc)
         plot_example(f"Minor Threshold={threshold}", sp_data, z_data)
 
     save_figure(chart_dir, "full_fancy_grids")
@@ -160,12 +153,12 @@ def test_grid_locators(setup_environment):
     i = 0
     for num in [5, 8, 14, 20]:
         i += 1
-        plt.subplot(2, 4, i, projection="smith", **{"grid.major.xdivisions": num})
+        plt.subplot(2, 4, i, projection="smith", **{"grid.Z.major.real.divisions": num})
         plot_example(f"Max real steps: {num}", sp_data, z_data)
 
     for num in [6, 14, 25, 50]:
         i += 1
-        plt.subplot(2, 4, i, projection="smith", **{"grid.major.ydivisions": num})
+        plt.subplot(2, 4, i, projection="smith", **{"grid.Z.major.imag.divisions": num})
         plot_example(f"Max imaginary steps: {num}", sp_data, z_data)
 
     save_figure(chart_dir, "full_grid_locators")
@@ -255,7 +248,7 @@ def test_miscellaneous(setup_environment):
         3,
         2,
         projection="smith",
-        **{"grid.minor.enable": True, "grid.minor.fancy": True, "grid.minor.fancy.dividers": divs},
+        **{"grid.Z.minor.enable": True, "grid.fancy": True},
     )
     plot_example(f"Minor fancy dividers={divs}", sp_data, z_data)
 
