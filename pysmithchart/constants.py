@@ -19,7 +19,7 @@ Numerical Constants
 - ``SC_INFINITY``: Value representing "infinity" (1e9).
 - ``SC_NEAR_INFINITY``: 90% of ``SC_INFINITY``.
 - ``SC_TWICE_INFINITY``: Twice ``SC_INFINITY``.
-
+x
 Matplotlib Default Parameters (``RC_DEFAULT_PARAMS``)
 ------------------------------------------------------
 The default parameters used to configure matplotlib are defined in the dictionary below:
@@ -62,32 +62,58 @@ Grid Settings:
 
 - ``grid.zorder`` (int): Z-order for grid lines (default: 1).
 - ``grid.locator.precision`` (int): Number of significant decimals per decade (default: 2).
+- ``grid.fancy`` (bool): Use fancy grid drawing for smith charts.
+- ``grid.major.threshold`` (tuple): Visual threshold for spacing
+- ``grid.minor.threshold`` (int): Visual threshold for minorspacing
 
-Major Grid:
+Major Grid (Impedance):
 
-- ``grid.major.enable`` (bool): Enable the major grid.
-- ``grid.major.linestyle`` (str): Line style.
-- ``grid.major.linewidth`` (int): Line width.
-- ``grid.major.color`` (str): Color of grid lines (also set for color.x and color.y).
-- ``grid.major.xdivisions`` (int): Maximum divisions on the real axis.
-- ``grid.major.ydivisions`` (int): Maximum divisions on the imaginary axis.
-- ``grid.major.fancy`` (bool): Use fancy grid drawing.
-- ``grid.major.fancy.threshold`` (tuple): Threshold for fancy grid styling.
+- ``grid.Z.major.enable`` (bool): Enable the major grid.
+- ``grid.Z.major.linestyle`` (str): Line style.
+- ``grid.Z.major.linewidth`` (int): Line width.
+- ``grid.Z.major.color`` (str): Color of grid lines (also set for color.x and color.y).
+- ``grid.Z.major.real.divisions`` (int): Maximum divisions on the real axis.
+- ``grid.Z.major.imag.divisions`` (int): Maximum divisions on the imaginary axis.
 
-Minor Grid:
+Minor Grid (Impedance):
 
-- ``grid.minor.enable`` (bool): Enable the minor grid.
-- ``grid.minor.capstyle`` (str): Cap style for dash segments.
-- ``grid.minor.dashes`` (list): Dash style pattern.
-- ``grid.minor.linewidth`` (float): Line width.
-- ``grid.minor.color`` (str): Color for grid lines (also set for color.x and color.y).
-- ``grid.minor.xdivisions`` (int or None): Number of divisions between major ticks on the real axis.
+- ``grid.Z.minor.enable`` (bool): Enable the minor grid.
+- ``grid.Z.minor.capstyle`` (str): Cap style for dash segments.
+- ``grid.Z.minor.dashes`` (list): Dash style pattern.
+- ``grid.Z.minor.linewidth`` (float): Line width.
+- ``grid.Z.minor.color`` (str): Color for grid lines (also set for color.x and color.y).
+- ``grid.Z.minor.real.divisions`` (int or None): Number of divisions between major ticks on the real axis.
   If None, divisions are computed automatically per interval for uniform spacing.
-- ``grid.minor.ydivisions`` (int or None): Number of divisions between major ticks on the imaginary axis.
+- ``grid.Z.minor.imag.divisions`` (int or None): Number of divisions between major ticks on the imaginary axis.
   If None, divisions are computed automatically per interval for uniform spacing.
-- ``grid.minor.fancy`` (bool): Use fancy minor grid styling.
-- ``grid.minor.fancy.dividers`` (list): Dividers for the fancy grid.
-- ``grid.minor.fancy.threshold`` (int): Threshold for switching to the next divider.
+
+Admittance Grid Settings:
+
+Major Grid (Admittance):
+
+- ``grid.Y.major.enable`` (bool): Enable the major admittance grid.
+- ``grid.Y.major.linestyle`` (str): Line style for admittance grid.
+- ``grid.Y.major.linewidth`` (int): Line width for admittance grid.
+- ``grid.Y.major.color`` (str): Color of admittance grid lines.
+- ``grid.Y.major.color.x`` (str): Color for conductance circles.
+- ``grid.Y.major.color.y`` (str): Color for susceptance circles.
+- ``grid.Y.major.alpha`` (float): Alpha transparency for admittance grid.
+- ``grid.Y.major.real.divisions`` (int): Maximum divisions on conductance axis.
+- ``grid.Y.major.imag.divisions`` (int): Maximum divisions on susceptance axis.
+
+Minor Grid (Admittance):
+
+- ``grid.Y.minor.enable`` (bool): Enable the minor admittance grid.
+- ``grid.Y.minor.linestyle`` (str): Line style for minor admittance grid.
+- ``grid.Y.minor.capstyle`` (str): Cap style for dash segments.
+- ``grid.Y.minor.dashes`` (list): Dash style pattern.
+- ``grid.Y.minor.linewidth`` (float): Line width for minor admittance grid.
+- ``grid.Y.minor.color`` (str): Color for minor admittance grid lines.
+- ``grid.Y.minor.color.x`` (str): Color for minor conductance circles.
+- ``grid.Y.minor.color.y`` (str): Color for minor susceptance circles.
+- ``grid.Y.minor.alpha`` (float): Alpha transparency for minor admittance grid.
+- ``grid.Y.minor.real.divisions`` (int or None): Number of divisions for conductance.
+- ``grid.Y.minor.imag.divisions`` (int or None): Number of divisions for susceptance.
 
 Plot Settings:
 
@@ -95,12 +121,6 @@ Plot Settings:
 - ``plot.marker.default`` (str): Default marker for line points.
 - ``plot.default.domain``: Default domain for plots (REFLECTION, IMPEDANCE, ADMITTANCE, or ABSOLUTE).
 - ``plot.default.interpolation`` (int): Number of interpolated steps between points.
-
-Symbol Settings:
-
-- ``symbol.infinity`` (str): Symbol for infinity. The trailing space prevents label cutoff.
-- ``symbol.infinity.correction`` (int): Size correction for the infinity symbol.
-- ``symbol.ohm`` (str): Symbol for the resistance unit (ohm).
 
 Additional Parameter:
 
@@ -147,7 +167,6 @@ RC_DEFAULT_PARAMS = {
 # Default Smith Chart Parameters
 # =============================================================================
 SC_DEFAULT_PARAMS = {
-    # Axes settings
     "axes.xlabel.rotation": 90,
     "axes.xlabel.fancybox": {
         "boxstyle": "round,pad=0.2,rounding_size=0.2",
@@ -166,46 +185,59 @@ SC_DEFAULT_PARAMS = {
     # Grid settings
     "grid.zorder": 1,
     "grid.locator.precision": 2,
+    "grid.fancy": True,
+    "grid.major.threshold": (100, 50),
+    "grid.minor.threshold": 10,
     # Outer boundary (Smith-chart frame)
-    #
-    # The outer boundary is rendered as the axes patch/spine (a circle). It is
-    # configurable via the Smith-chart parameter system so that documentation
-    # examples can rely on a single reusable parameter dictionary.
-    #
-    # Defaults are selected to preserve the historical look where the boundary
-    # matched the major grid color.
     "grid.outer.enable": True,
     "grid.outer.color": "0.2",
     "grid.outer.linestyle": "-",
     "grid.outer.linewidth": 1,
     "grid.outer.alpha": 1.0,
-    # Major grid settings
-    "grid.major.enable": True,
-    "grid.major.linestyle": "-",
-    "grid.major.linewidth": 1,
-    "grid.major.color": "0.2",
-    "grid.major.color.x": "0.2",
-    "grid.major.color.y": "0.2",
-    "grid.major.alpha": 1.0,
-    "grid.major.xdivisions": 10,
-    "grid.major.ydivisions": 16,
-    "grid.major.fancy": True,
-    "grid.major.fancy.threshold": (100, 50),
-    # Minor grid settings
-    "grid.minor.enable": False,
-    "grid.minor.linestyle": ":",
-    "grid.minor.capstyle": "round",
-    "grid.minor.dashes": [0.2, 2],
-    "grid.minor.linewidth": 0.75,
-    "grid.minor.color": "0.4",
-    "grid.minor.color.x": "0.4",
-    "grid.minor.color.y": "0.4",
-    "grid.minor.alpha": 1.0,
-    "grid.minor.xdivisions": None,
-    "grid.minor.ydivisions": None,
-    "grid.minor.fancy": True,
-    "grid.minor.fancy.dividers": [1, 2, 3, 4, 5, 10, 20],
-    "grid.minor.fancy.threshold": 35,
+    # Major grid settings (impedance)
+    "grid.Z.major.enable": True,
+    "grid.Z.major.linestyle": "-",
+    "grid.Z.major.linewidth": 1,
+    "grid.Z.major.color": "0.2",
+    "grid.Z.major.color.x": "0.2",
+    "grid.Z.major.color.y": "0.2",
+    "grid.Z.major.alpha": 1.0,
+    "grid.Z.major.real.divisions": 10,
+    "grid.Z.major.imag.divisions": 16,
+    # Minor grid settings (impedance)
+    "grid.Z.minor.enable": False,
+    "grid.Z.minor.linestyle": ":",
+    "grid.Z.minor.capstyle": "round",
+    "grid.Z.minor.dashes": [0.2, 2],
+    "grid.Z.minor.linewidth": 0.75,
+    "grid.Z.minor.color": "0.4",
+    "grid.Z.minor.color.x": "0.4",
+    "grid.Z.minor.color.y": "0.4",
+    "grid.Z.minor.alpha": 1.0,
+    "grid.Z.minor.real.divisions": None,
+    "grid.Z.minor.imag.divisions": None,
+    # Major admittance grid settings
+    "grid.Y.major.enable": False,
+    "grid.Y.major.linestyle": "-",
+    "grid.Y.major.linewidth": 1,
+    "grid.Y.major.color": "0.6",
+    "grid.Y.major.color.x": "0.6",
+    "grid.Y.major.color.y": "0.6",
+    "grid.Y.major.alpha": 1.0,
+    "grid.Y.major.real.divisions": 10,
+    "grid.Y.major.imag.divisions": 16,
+    # Minor admittance grid settings
+    "grid.Y.minor.enable": False,
+    "grid.Y.minor.linestyle": ":",
+    "grid.Y.minor.capstyle": "round",
+    "grid.Y.minor.dashes": [0.2, 2],
+    "grid.Y.minor.linewidth": 0.75,
+    "grid.Y.minor.color": "0.7",
+    "grid.Y.minor.color.x": "0.7",
+    "grid.Y.minor.color.y": "0.7",
+    "grid.Y.minor.alpha": 1.0,
+    "grid.Y.minor.real.divisions": None,
+    "grid.Y.minor.imag.divisions": None,
     # Plot settings
     "plot.zorder": 4,
     "plot.marker.default": "o",
@@ -213,10 +245,6 @@ SC_DEFAULT_PARAMS = {
     "plot.default.interpolation": 5,
     # Initialization flag
     "init.updaterc": True,
-    # Symbol settings
-    "symbol.infinity": "∞ ",  # Trailing space prevents label cutoff.
-    "symbol.infinity.correction": 8,
-    "symbol.ohm": "Ω",
 }
 
 __all__ = [
