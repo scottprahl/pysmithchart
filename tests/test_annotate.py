@@ -3,15 +3,8 @@ Pytest tests for SmithAxes annotate() method with domain support.
 """
 
 import pytest
-import matplotlib.pyplot as plt
 import matplotlib
-
-matplotlib.use("Agg")
-
-import sys
-
-sys.path.insert(0, "/home/claude")
-
+import matplotlib.pyplot as plt
 from pysmithchart import Z_DOMAIN, Y_DOMAIN, R_DOMAIN
 
 

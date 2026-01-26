@@ -9,8 +9,7 @@ Tests the three modern rotation functions:
 
 import pytest
 import numpy as np
-from pysmithchart.rotation import *
-from pysmithchart.utils import rotate_by_wavelength, rotate_Z_toward_real, rotate_Z_toward_imag
+from pysmithchart.rotation import rotate_by_wavelength, rotate_Z_toward_real, rotate_Z_toward_imag
 
 
 class TestRotateByWavelength:

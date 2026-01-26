@@ -8,15 +8,7 @@ datatypes and input formats on Smith charts.
 import pytest
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib
 from matplotlib.collections import PathCollection
-
-matplotlib.use("Agg")
-
-import sys
-
-sys.path.insert(0, "/home/claude")
-
 from pysmithchart import Z_DOMAIN, Y_DOMAIN, R_DOMAIN, NORM_Z_DOMAIN
 
 
