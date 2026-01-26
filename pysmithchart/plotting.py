@@ -5,7 +5,6 @@ from numbers import Number
 
 import numpy as np
 from matplotlib.axes import Axes
-from matplotlib import _color_data
 from scipy.interpolate import splprep, splev
 
 from pysmithchart.constants import Z_DOMAIN, Y_DOMAIN, R_DOMAIN, NORM_Z_DOMAIN

@@ -121,8 +121,6 @@ def test_plot_grid_styles(chart_dir):
     freqs = np.logspace(0, 9, 200)
     s11 = s11_of_parallel_cap_res(freqs)
 
-    offset = 0
-
     # Define the options for major, minor enable, and minor fancy
     fancy_options = [True, False]
     minor_enable_options = [True, False]

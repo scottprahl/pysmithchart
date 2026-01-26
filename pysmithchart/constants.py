@@ -19,7 +19,7 @@ Numerical Constants
 - ``SC_INFINITY``: Value representing "infinity" (1e9).
 - ``SC_NEAR_INFINITY``: 90% of ``SC_INFINITY``.
 - ``SC_TWICE_INFINITY``: Twice ``SC_INFINITY``.
-x
+
 Matplotlib Default Parameters (``RC_DEFAULT_PARAMS``)
 ------------------------------------------------------
 The default parameters used to configure matplotlib are defined in the dictionary below:

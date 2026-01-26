@@ -47,7 +47,7 @@ from .axes import SmithAxes
 register_projection(SmithAxes)
 
 # Public API for wildcard imports
-__all__ = ["SmithAxes", "R_DOMAIN", "Z_DOMAIN", "Y_DOMAIN", "NORM_Z_DOMAIN"]
+__all__ = ["SmithAxes", "R_DOMAIN", "Z_DOMAIN", "Y_DOMAIN", "NORM_Z_DOMAIN", "NORM_Y_DOMAIN"]
 
 __version__ = "0.6.0"
 __author__ = "Paul Staerke, Scott Prahl"

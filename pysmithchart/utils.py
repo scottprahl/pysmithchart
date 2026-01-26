@@ -25,11 +25,6 @@ Public Functions:
         calc_load(Z_0, gamma): Calculate load impedance from Γ
         reactance_to_component(X, freq): describe reactance as C or L
 
-    Rotation Functions:
-        rotate_by_wavelength(Z, wavelength, Z0, direction): Rotate by electrical length
-        rotate_toward_real(Z, target_real, Z0, solution): Rotate to match resistance
-        rotate_toward_imag(Z, target_imag, Z0, solution): Rotate to match reactance
-
     Angle/Wavelength Conversions:
         ang_to_c(ang, radius): Angle to complex on circle
         lambda_to_rad(lmb): Wavelength fraction to radians
@@ -43,7 +38,7 @@ from .constants import SC_EPSILON, SC_INFINITY
 from .constants import R_DOMAIN, Z_DOMAIN, Y_DOMAIN, NORM_Z_DOMAIN, NORM_Y_DOMAIN
 
 # Public API
-__all__ = [
+__all__ = (
     # Domain validation
     "validate_domain",
     "get_domain_name",
@@ -59,22 +54,13 @@ __all__ = [
     "calc_gamma",
     "calc_vswr",
     "calc_load",
-    # Rotation functions
-    "rotate_by_wavelength",
-    "rotate_toward_real",
-    "rotate_toward_imag",
     # Angle/wavelength conversions
     "ang_to_c",
     "lambda_to_rad",
     "rad_to_lambda",
     "choose_minor_divider",
     "reactance_to_component",
-]
-
-
-# ============================================================================
-# Parameter Type Validation and Transformation Utilities
-# ============================================================================
+)
 
 
 def validate_domain(domain):
@@ -212,6 +198,7 @@ def calc_gamma(Z_0, Z_L):
 
         Gamma = (Z_L - Z_0) / (Z_L + Z_0)
 
+
     where Z0 is the reference (characteristic) impedance and ZL is the load
     impedance.
 
@@ -254,8 +241,10 @@ def cs_scalar(z, N=3, parens=False, trim_zeros=True):
     s_real = form % z.real
     s_imag = form % abs(z.imag)
     if trim_zeros:
-        s_real = s_real.rstrip("0").rstrip(".")
-        s_imag = s_imag.rstrip("0").rstrip(".")
+        if "." in s_real:
+            s_real = s_real.rstrip("0").rstrip(".")
+        if "." in s_imag:
+            s_imag = s_imag.rstrip("0").rstrip(".")
 
     if z.imag < 0:
         s_imag = "- %sj" % s_imag
@@ -263,7 +252,12 @@ def cs_scalar(z, N=3, parens=False, trim_zeros=True):
         s_imag = "+ %sj" % s_imag
 
     if parens:
-        return "(%s %s)" % (s_real, s_imag)
+        return "(%s%s)" % (s_real, s_imag)
+
+    if abs(z.imag) < 10 ** (-N):
+        return s_real
+    if abs(z.real) < 10 ** (-N):
+        return s_imag
 
     return "%s %s" % (s_real, s_imag)
 
@@ -284,18 +278,17 @@ def xy_to_z(*xy):
 
     Args:
         *xy (tuple):
+            - If a single argument is passed:
+                - If the argument is a complex number or an array-like of complex numbers,
+                  it is returned as-is.
+                - If the argument is an iterable with two rows (e.g., shape `(2, N)`), it
+                  is interpreted as real and imaginary parts, and a complex array is returned.
 
-        If a single argument is passed:
-            - If the argument is a complex number or an array-like of complex numbers,
-              it is returned as-is.
-            - If the argument is an iterable with two rows (e.g., shape `(2, N)`), it
-              is interpreted as real and imaginary parts, and a complex array is returned.
-
-        If two arguments are passed:
-            - The first argument represents the real part (`x`), and the second
-              represents the imaginary part (`y`).
-            - Both arguments must be scalars or iterable objects of the same size.
-              If they are iterable, they are combined to form a complex array.
+            - If two arguments are passed:
+                - The first argument represents the real part (`x`), and the second
+                  represents the imaginary part (`y`).
+                - Both arguments must be scalars or iterable objects of the same size.
+                  If they are iterable, they are combined to form a complex array.
 
     Returns:
         complex or numpy.ndarray: A complex scalar or array of complex numbers.
@@ -472,280 +465,6 @@ def rad_to_lambda(rad):
 def split_complex(z):
     """Splits a complex number into its real and imaginary components."""
     return [np.real(z), np.imag(z)]
-
-
-def rotate_by_wavelength(Z, wavelength, Z0=50, direction="toward_load"):
-    """
-    Rotate an impedance by a specified electrical length (in wavelengths).
-
-    Moving along a transmission line rotates the impedance around the center
-    of the Smith chart at constant |Γ|.
-
-    Args:
-        Z (complex): Input impedance in Ohms.
-        wavelength (float): Electrical length in wavelengths (e.g., 0.25 for λ/4).
-            Positive rotates toward load, negative toward generator.
-        Z0 (float): Characteristic impedance (default: 50Ω).
-        direction (str): 'toward_load' (default) or 'toward_generator'.
-
-    Returns:
-        complex: Rotated impedance in Ohms.
-
-    Examples:
-        >>> # Rotate 75+50j by λ/8 toward load
-        >>> Z_new = rotate_by_wavelength(75+50j, 0.125, Z0=50)
-
-        >>> # Rotate by λ/4 toward generator
-        >>> Z_new = rotate_by_wavelength(75+50j, 0.25, direction='toward_generator')
-
-    Notes:
-        - λ/4 rotation transforms Z → Z0²/Z
-        - λ/2 rotation returns to the same impedance
-        - Phase rotation: θ = 4π * wavelength (radians)
-    """
-    # Convert to normalized impedance
-    z = Z / Z0
-
-    # Convert to reflection coefficient
-    gamma = moebius_transform(z, norm=1)
-
-    # Calculate rotation angle in radians
-    # 1 wavelength = 2π electrical radians, full circle = 4π phase rotation
-    angle = 4 * np.pi * wavelength
-
-    # Apply direction
-    if direction == "toward_generator":
-        angle = -angle
-    elif direction != "toward_load":
-        raise ValueError("direction must be 'toward_load' or 'toward_generator'")
-
-    # Rotate the reflection coefficient
-    gamma_rotated = gamma * np.exp(1j * angle)
-
-    # Convert back to normalized impedance
-    z_rotated = moebius_inverse_transform(gamma_rotated, norm=1)
-
-    # Convert back to Ohms
-    return z_rotated * Z0
-
-
-def rotate_toward_real(Z, target_real, Z0=50, solution="closer"):
-    """
-    Rotate an impedance to match a target real part.
-
-    Finds the rotation along the constant-VSWR circle that results in the
-    specified real part of impedance.
-
-    Args:
-        Z (complex): Input impedance in Ohms.
-        target_real (float): Desired real part in Ohms.
-        Z0 (float): Characteristic impedance (default: 50Ω).
-        solution (str): Which solution to use if two exist:
-            'closer' - shorter rotation (default)
-            'farther' - longer rotation
-            'positive_imag' - solution with positive imaginary part
-            'negative_imag' - solution with negative imaginary part
-
-    Returns:
-        complex: Rotated impedance with the target real part.
-
-    Raises:
-        ValueError: If target_real is not reachable on the constant-VSWR circle.
-
-    Examples:
-        >>> # Rotate 75+50j to have real part = 50Ω
-        >>> Z_new = rotate_toward_real(75+50j, 50, Z0=50)
-
-        >>> # Get the solution with positive reactance
-        >>> Z_new = rotate_toward_real(75+50j, 50, solution='positive_imag')
-
-    Notes:
-        Not all real parts are reachable - the target must lie on the constant-VSWR circle.
-    """
-    # Normalize
-    z = Z / Z0
-    r_target = target_real / Z0
-
-    # Convert to reflection coefficient to get |Γ|
-    gamma = moebius_transform(z, norm=1)
-    gamma_mag = np.abs(gamma)
-
-    # On a constant-|Γ| circle, we need to find z = r_target + jx such that |Γ(z)| = gamma_mag
-    # Γ(z) = (z - 1) / (z + 1)
-    # |Γ|² = |z - 1|² / |z + 1|²
-    # Let z = r + jx, then:
-    # |Γ|² = [(r-1)² + x²] / [(r+1)² + x²]
-    #
-    # Solving for x given r and |Γ|:
-    # |Γ|² [(r+1)² + x²] = (r-1)² + x²
-    # |Γ|² (r+1)² + |Γ|² x² = (r-1)² + x²
-    # x² (|Γ|² - 1) = (r-1)² - |Γ|² (r+1)²
-    # x² = [(r-1)² - |Γ|² (r+1)²] / (|Γ|² - 1)
-
-    numerator = (r_target - 1) ** 2 - gamma_mag**2 * (r_target + 1) ** 2
-    denominator = gamma_mag**2 - 1
-
-    # Check if denominator is too small (|Γ| ≈ 1, edge of chart)
-    if np.abs(denominator) < 1e-10:
-        raise ValueError(f"Target real={target_real}Ω not reachable (|Γ| ≈ 1, edge of chart)")
-
-    x_squared = numerator / denominator
-
-    # Check if solution exists (x² must be non-negative)
-    if x_squared < -1e-10:  # Small negative tolerance for numerical errors
-        raise ValueError(
-            f"Target real={target_real}Ω not reachable on constant-VSWR circle. "
-            f"VSWR={(1+gamma_mag)/(1-gamma_mag):.2f}, |Γ|={gamma_mag:.3f}"
-        )
-
-    # Handle near-zero case
-    if x_squared < 0:
-        x_squared = 0
-
-    x_mag = np.sqrt(x_squared)
-
-    # Two solutions: +x and -x
-    z_pos = r_target + 1j * x_mag
-    z_neg = r_target - 1j * x_mag
-
-    # Select solution based on criterion
-    gamma_current = gamma
-    gamma_pos = moebius_transform(z_pos, norm=1)
-    gamma_neg = moebius_transform(z_neg, norm=1)
-
-    if solution == "positive_imag":
-        result = z_pos
-    elif solution == "negative_imag":
-        result = z_neg
-    elif solution == "closer":
-        # Choose shorter rotation (smaller phase change)
-        angle_current = np.angle(gamma_current)
-        angle_pos = np.angle(gamma_pos)
-        angle_neg = np.angle(gamma_neg)
-
-        # Calculate angular distances
-        diff_pos = np.abs(angle_pos - angle_current)
-        diff_neg = np.abs(angle_neg - angle_current)
-
-        # Normalize to [-π, π]
-        if diff_pos > np.pi:
-            diff_pos = 2 * np.pi - diff_pos
-        if diff_neg > np.pi:
-            diff_neg = 2 * np.pi - diff_neg
-
-        result = z_pos if diff_pos < diff_neg else z_neg
-    elif solution == "farther":
-        # Choose longer rotation
-        angle_current = np.angle(gamma_current)
-        angle_pos = np.angle(gamma_pos)
-        angle_neg = np.angle(gamma_neg)
-
-        diff_pos = np.abs(angle_pos - angle_current)
-        diff_neg = np.abs(angle_neg - angle_current)
-
-        if diff_pos > np.pi:
-            diff_pos = 2 * np.pi - diff_pos
-        if diff_neg > np.pi:
-            diff_neg = 2 * np.pi - diff_neg
-
-        result = z_pos if diff_pos > diff_neg else z_neg
-    else:
-        raise ValueError("solution must be 'closer', 'farther', 'positive_imag', or 'negative_imag'")
-
-    return result * Z0
-
-
-def rotate_toward_imag(Z, target_imag, Z0=50, solution="closer"):
-    """
-    Rotate an impedance to match a target imaginary part (reactance).
-
-    Finds the rotation along the constant-VSWR circle that results in the
-    specified imaginary part of impedance.
-
-    Args:
-        Z (complex): Input impedance in Ohms.
-        target_imag (float): Desired imaginary part in Ohms (reactance).
-            Positive for inductive, negative for capacitive.
-        Z0 (float): Characteristic impedance (default: 50Ω).
-        solution (str): Which solution to use if two exist:
-            'closer' - shorter rotation (default)
-            'farther' - longer rotation
-            'higher_real' - solution with higher real part
-            'lower_real' - solution with lower real part
-
-    Returns:
-        complex: Rotated impedance with the target imaginary part.
-
-    Raises:
-        ValueError: If target_imag is not reachable on the constant-VSWR circle.
-
-    Examples:
-        >>> # Rotate 75+50j to have reactance = 25Ω
-        >>> Z_new = rotate_toward_imag(75+50j, 25, Z0=50)
-
-        >>> # Get the solution with higher resistance
-        >>> Z_new = rotate_toward_imag(75+50j, 25, solution='higher_real')
-    """
-    # Normalize
-    z = Z / Z0
-    x_target = target_imag / Z0
-
-    # Convert to reflection coefficient
-    gamma = moebius_transform(z, norm=1)
-    gamma_mag = np.abs(gamma)
-
-    # Target point on the constant reactance circle
-    # For constant X, we need to find where our constant-VSWR circle intersects
-    # This is more complex as constant X forms arcs, not circles in Γ-space
-
-    # Parametrize: try different real parts and find which gives target imaginary
-    # Use binary search or Newton's method
-
-    # Simpler approach: sweep angles and find closest match FIXME
-    angles = np.linspace(0, 2 * np.pi, 100000)
-    gammas = gamma_mag * np.exp(1j * angles)
-    zs = moebius_inverse_transform(gammas, norm=1)
-
-    imag_parts = np.imag(zs)
-    idx = np.argmin(np.abs(imag_parts - x_target))
-
-    # Check if reachable
-    if np.abs(imag_parts[idx] - x_target) > 0.1:  # tolerance
-        raise ValueError(
-            f"Target imag={target_imag}Ω not reachable on constant-VSWR circle. "
-            f"Closest achievable: {imag_parts[idx]*Z0:.1f}Ω"
-        )
-
-    # Find the two closest solutions (on opposite sides)
-    sorted_idx = np.argsort(np.abs(imag_parts - x_target))
-
-    candidates = []
-    for i in sorted_idx[:10]:  # Check top 10 matches
-        if np.abs(imag_parts[i] - x_target) < 0.1:
-            candidates.append((i, zs[i]))
-
-    if len(candidates) < 2:
-        # Only one solution found
-        return zs[idx] * Z0
-
-    # We have multiple solutions, pick based on criterion
-    #    angle_current = np.angle(gamma)
-
-    if solution == "higher_real":
-        result = max(candidates, key=lambda x: np.real(x[1]))[1]
-    elif solution == "lower_real":
-        result = min(candidates, key=lambda x: np.real(x[1]))[1]
-    elif solution in ["closer", "farther"]:
-        # Calculate angular distances
-        diffs = [(np.abs(np.angle(gamma_mag * np.exp(1j * angles[i]) / gamma)), z) for i, z in candidates]
-        if solution == "closer":
-            result = min(diffs, key=lambda x: x[0])[1]
-        else:  # farther
-            result = max(diffs, key=lambda x: x[0])[1]
-    else:
-        raise ValueError("solution must be 'closer', 'farther', 'higher_real', or 'lower_real'")
-
-    return result * Z0
 
 
 def choose_minor_divider(

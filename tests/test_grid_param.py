@@ -25,17 +25,19 @@ from pysmithchart import Y_DOMAIN, Z_DOMAIN
 
 @pytest.fixture(autouse=True)
 def _close_figures():
-    """Ensure figures are closed after each test."""
+    """Automatically close all Matplotlib figures after each test."""
     yield
     plt.close("all")
 
 
 @pytest.fixture
 def admittances():
+    """Provide a small set of complex admittances for plotting tests."""
     return [0.5 + 0.5j, 1.0 + 0.0j, 0.5 - 0.5j, 2.0 + 1.0j]
 
 
 def _assert_grid(ax, *, z_major: bool, z_minor: bool, y_major: bool, y_minor: bool):
+    """Assert that Smith-chart grid enable flags match expectations."""
     assert ax.scParams["grid.Z.major.enable"] is z_major
     assert ax.scParams["grid.Z.minor.enable"] is z_minor
     assert ax.scParams["grid.Y.major.enable"] is y_major
@@ -51,13 +53,14 @@ def _assert_grid(ax, *, z_major: bool, z_minor: bool, y_major: bool, y_minor: bo
     ],
 )
 def test_grid_parameter_enables_expected_grids(grid, expected):
-    print(grid)
+    """Grid keyword enables the correct impedance/admittance grid combinations."""
     ax = plt.subplot(111, projection="smith", grid=grid)
     zmaj, zmin, ymaj, ymin = expected
     _assert_grid(ax, z_major=zmaj, z_minor=zmin, y_major=ymaj, y_minor=ymin)
 
 
 def test_grid_admittance_allows_plotting(admittances):
+    """Admittance grid supports plotting with Y-domain data."""
     ax = plt.subplot(111, projection="smith", grid="admittance")
     _assert_grid(ax, z_major=False, z_minor=False, y_major=True, y_minor=True)
 
@@ -66,18 +69,20 @@ def test_grid_admittance_allows_plotting(admittances):
 
 
 def test_grid_invalid_value_raises():
+    """Invalid grid values raise a ValueError."""
     with pytest.raises(ValueError):
         plt.subplots(subplot_kw={"projection": "smith", "grid": "invalid"})
 
 
 def test_grid_default_is_impedance():
+    """Default Smith chart uses the impedance grid only."""
     fig, ax = plt.subplots(subplot_kw={"projection": "smith"})
-    # Default should have impedance enabled and admittance disabled.
     assert ax.scParams["grid.Z.major.enable"] is True
     assert ax.scParams["grid.Y.major.enable"] is False
 
 
 def test_grid_combined_with_smith_params():
+    """Grid selection works correctly when combined with smith_style overrides."""
     ss = {"grid.Y.major.color": "blue"}
     fig, ax = plt.subplots(
         subplot_kw={
@@ -90,8 +95,12 @@ def test_grid_combined_with_smith_params():
     assert ax.scParams["grid.Y.major.color"] == "blue"
 
 
-@pytest.mark.parametrize("grid, domain", [("impedance", Z_DOMAIN), ("admittance", Y_DOMAIN), ("both", Y_DOMAIN)])
+@pytest.mark.parametrize(
+    "grid, domain",
+    [("impedance", Z_DOMAIN), ("admittance", Y_DOMAIN), ("both", Y_DOMAIN)],
+)
 def test_can_create_axes_and_plot_for_each_grid_mode(grid, domain, admittances):
+    """Each grid mode can create an axis and accept a basic plot."""
     fig = plt.figure(figsize=(9, 3))
     ax = fig.add_subplot(111, projection="smith", grid=grid)
 

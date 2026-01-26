@@ -272,6 +272,7 @@ class GridMixin:
             yt_major: Major imaginary-axis tick values (sorted, ABSOLUTE)
             real_divs: Max divisions for real axis (or None for automatic)
             imag_divs: Max divisions for imaginary axis (or None for automatic)
+            threshold: Integer that determines tick spacing
 
         Returns:
             tuple: (x_minor, y_minor) arrays of minor tick positions (ABSOLUTE)

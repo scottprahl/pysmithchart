@@ -10,7 +10,7 @@ from matplotlib.spines import Spine
 
 from pysmithchart import utils
 from pysmithchart.constants import SC_TWICE_INFINITY
-from pysmithchart.constants import R_DOMAIN, Z_DOMAIN, NORM_Z_DOMAIN, Y_DOMAIN
+from pysmithchart.constants import R_DOMAIN, Z_DOMAIN, NORM_Z_DOMAIN, Y_DOMAIN, NORM_Y_DOMAIN
 
 
 class HelpersMixin:

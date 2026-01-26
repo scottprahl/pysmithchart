@@ -9,7 +9,6 @@ from matplotlib.axes import Axes
 
 from pysmithchart.constants import SC_DEFAULT_PARAMS, RC_DEFAULT_PARAMS
 from pysmithchart.constants import SC_NEAR_INFINITY, SC_TWICE_INFINITY, SC_EPSILON
-from pysmithchart.formatters import RealFormatter, ImagFormatter
 from pysmithchart.locators import MajorXLocator, MajorYLocator, MinorLocator
 
 

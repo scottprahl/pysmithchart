@@ -1,15 +1,16 @@
 """
-Test suite for rotation functions in pysmithchart.utils.
+Test suite for rotation functions in pysmithchart.
 
 Tests the three modern rotation functions:
 - rotate_by_wavelength
-- rotate_toward_real
-- rotate_toward_imag
+- rotate_Z_toward_real
+- rotate_Z_toward_imag
 """
 
 import pytest
 import numpy as np
-from pysmithchart import utils
+from pysmithchart.rotation import *
+from pysmithchart.utils import rotate_by_wavelength, rotate_Z_toward_real, rotate_Z_toward_imag
 
 
 class TestRotateByWavelength:
@@ -19,14 +20,14 @@ class TestRotateByWavelength:
         """Test that zero wavelength returns the same impedance."""
         Z = 75 + 50j
         Z0 = 50
-        Z_rot = utils.rotate_by_wavelength(Z, 0, Z0=Z0)
+        Z_rot = rotate_by_wavelength(Z, 0, Z0=Z0)
         assert np.isclose(Z_rot, Z), f"Expected {Z}, got {Z_rot}"
 
     def test_quarter_wave_transform(self):
         """Test quarter-wave transformation: Z → Z₀²/Z."""
         Z = 100 + 0j  # Pure resistance
         Z0 = 50
-        Z_rot = utils.rotate_by_wavelength(Z, 0.25, Z0=Z0)
+        Z_rot = rotate_by_wavelength(Z, 0.25, Z0=Z0)
         Z_expected = Z0**2 / Z  # Should be 25Ω
         assert np.isclose(Z_rot, Z_expected, rtol=1e-5), f"Quarter-wave: Expected {Z_expected}, got {Z_rot}"
 
@@ -34,14 +35,14 @@ class TestRotateByWavelength:
         """Test that half wavelength returns to starting impedance."""
         Z = 75 + 50j
         Z0 = 50
-        Z_rot = utils.rotate_by_wavelength(Z, 0.5, Z0=Z0)
+        Z_rot = rotate_by_wavelength(Z, 0.5, Z0=Z0)
         assert np.isclose(Z_rot, Z, rtol=1e-5), f"Half-wave should return to start: {Z} → {Z_rot}"
 
     def test_full_wave_returns_to_start(self):
         """Test that full wavelength returns to starting impedance."""
         Z = 75 + 50j
         Z0 = 50
-        Z_rot = utils.rotate_by_wavelength(Z, 1.0, Z0=Z0)
+        Z_rot = rotate_by_wavelength(Z, 1.0, Z0=Z0)
         assert np.isclose(Z_rot, Z, rtol=1e-5), f"Full wave should return to start: {Z} → {Z_rot}"
 
     def test_constant_vswr(self):
@@ -55,7 +56,7 @@ class TestRotateByWavelength:
 
         # Rotate by various amounts
         for wavelength in [0.1, 0.25, 0.333, 0.5]:
-            Z_rot = utils.rotate_by_wavelength(Z, wavelength, Z0=Z0)
+            Z_rot = rotate_by_wavelength(Z, wavelength, Z0=Z0)
             gamma_rot = (Z_rot / Z0 - 1) / (Z_rot / Z0 + 1)
             vswr_rot = (1 + abs(gamma_rot)) / (1 - abs(gamma_rot))
 
@@ -68,14 +69,14 @@ class TestRotateByWavelength:
         Z = 75 + 50j
         Z0 = 50
 
-        Z_toward_load = utils.rotate_by_wavelength(Z, 0.1, Z0=Z0, direction="toward_load")
-        Z_toward_gen = utils.rotate_by_wavelength(Z, 0.1, Z0=Z0, direction="toward_generator")
+        Z_toward_load = rotate_by_wavelength(Z, 0.1, Z0=Z0, direction="toward_load")
+        Z_toward_gen = rotate_by_wavelength(Z, 0.1, Z0=Z0, direction="toward_generator")
 
         # They should be different
         assert not np.isclose(Z_toward_load, Z_toward_gen), "Different directions should give different results"
 
         # Going 0.1λ toward load then 0.1λ toward generator should return to start
-        Z_back = utils.rotate_by_wavelength(Z_toward_load, 0.1, Z0=Z0, direction="toward_generator")
+        Z_back = rotate_by_wavelength(Z_toward_load, 0.1, Z0=Z0, direction="toward_generator")
         assert np.isclose(Z_back, Z, rtol=1e-5), f"Should return to start: {Z} → {Z_toward_load} → {Z_back}"
 
     def test_matched_load_stays_matched(self):
@@ -84,12 +85,12 @@ class TestRotateByWavelength:
         Z0 = 50
 
         for wavelength in [0.1, 0.25, 0.5, 1.0]:
-            Z_rot = utils.rotate_by_wavelength(Z, wavelength, Z0=Z0)
+            Z_rot = rotate_by_wavelength(Z, wavelength, Z0=Z0)
             assert np.isclose(Z_rot, Z, rtol=1e-5), f"Matched load should stay matched: {Z} → {Z_rot} at λ={wavelength}"
 
 
 class TestRotateTowardReal:
-    """Tests for rotate_toward_real function."""
+    """Tests for rotate_Z_toward_real function."""
 
     def test_finds_target_resistance(self):
         """Test that the result has the target real part."""
@@ -97,7 +98,7 @@ class TestRotateTowardReal:
         target_R = 50
         Z0 = 50
 
-        Z_result = utils.rotate_toward_real(Z_start, target_R, Z0=Z0)
+        Z_result = rotate_Z_toward_real(Z_start, target_R, Z0=Z0)
 
         # Check that real part matches target
         assert np.isclose(Z_result.real, target_R, rtol=1e-5), f"Real part should be {target_R}, got {Z_result.real}"
@@ -108,8 +109,8 @@ class TestRotateTowardReal:
         target_R = 50
         Z0 = 50
 
-        Z_pos = utils.rotate_toward_real(Z_start, target_R, Z0=Z0, solution="positive_imag")
-        Z_neg = utils.rotate_toward_real(Z_start, target_R, Z0=Z0, solution="negative_imag")
+        Z_pos = rotate_Z_toward_real(Z_start, target_R, Z0=Z0, solution="positive_imag")
+        Z_neg = rotate_Z_toward_real(Z_start, target_R, Z0=Z0, solution="negative_imag")
 
         # Both should have target real part
         assert np.isclose(Z_pos.real, target_R, rtol=1e-5)
@@ -130,7 +131,7 @@ class TestRotateTowardReal:
         vswr_start = (1 + abs(gamma_start)) / (1 - abs(gamma_start))
 
         # Rotate to target resistance
-        Z_result = utils.rotate_toward_real(Z_start, target_R, Z0=Z0)
+        Z_result = rotate_Z_toward_real(Z_start, target_R, Z0=Z0)
         gamma_result = (Z_result / Z0 - 1) / (Z_result / Z0 + 1)
         vswr_result = (1 + abs(gamma_result)) / (1 - abs(gamma_result))
 
@@ -142,7 +143,7 @@ class TestRotateTowardReal:
         target_R = 50
         Z0 = 50
 
-        Z_result = utils.rotate_toward_real(Z_start, target_R, Z0=Z0)
+        Z_result = rotate_Z_toward_real(Z_start, target_R, Z0=Z0)
 
         # Should stay at the same point (or very close)
         assert np.isclose(Z_result.real, target_R, rtol=1e-5)
@@ -154,7 +155,7 @@ class TestRotateTowardReal:
         Z0 = 50
 
         with pytest.raises(ValueError, match="not reachable"):
-            utils.rotate_toward_real(Z_start, target_R, Z0=Z0)
+            rotate_Z_toward_real(Z_start, target_R, Z0=Z0)
 
     def test_closer_solution(self):
         """Test that 'closer' solution gives shorter rotation."""
@@ -162,16 +163,16 @@ class TestRotateTowardReal:
         target_R = 50
         Z0 = 50
 
-        Z_closer = utils.rotate_toward_real(Z_start, target_R, Z0=Z0, solution="closer")
-        Z_pos = utils.rotate_toward_real(Z_start, target_R, Z0=Z0, solution="positive_imag")
-        Z_neg = utils.rotate_toward_real(Z_start, target_R, Z0=Z0, solution="negative_imag")
+        Z_closer = rotate_Z_toward_real(Z_start, target_R, Z0=Z0, solution="closer")
+        Z_pos = rotate_Z_toward_real(Z_start, target_R, Z0=Z0, solution="positive_imag")
+        Z_neg = rotate_Z_toward_real(Z_start, target_R, Z0=Z0, solution="negative_imag")
 
         # Closer should be one of the two solutions
         assert np.isclose(Z_closer, Z_pos, rtol=1e-5) or np.isclose(Z_closer, Z_neg, rtol=1e-5)
 
 
 class TestRotateTowardImag:
-    """Tests for rotate_toward_imag function."""
+    """Tests for rotate_Z_toward_imag function."""
 
     def test_finds_target_reactance(self):
         """Test that the result has the target imaginary part."""
@@ -179,7 +180,7 @@ class TestRotateTowardImag:
         target_X = 0  # Real axis
         Z0 = 50
 
-        Z_result = utils.rotate_toward_imag(Z_start, target_X, Z0=Z0)
+        Z_result = rotate_Z_toward_imag(Z_start, target_X, Z0=Z0)
 
         # Check that imaginary part matches target
         assert np.isclose(
@@ -192,7 +193,7 @@ class TestRotateTowardImag:
         target_X = 0
         Z0 = 50
 
-        Z_result = utils.rotate_toward_imag(Z_start, target_X, Z0=Z0)
+        Z_result = rotate_Z_toward_imag(Z_start, target_X, Z0=Z0)
 
         # Should be on real axis
         assert np.isclose(Z_result.imag, 0, atol=1e-6), f"Should be on real axis, got Im(Z) = {Z_result.imag}"
@@ -206,8 +207,8 @@ class TestRotateTowardImag:
         target_X = 25
         Z0 = 50
 
-        Z_high = utils.rotate_toward_imag(Z_start, target_X, Z0=Z0, solution="higher_real")
-        Z_low = utils.rotate_toward_imag(Z_start, target_X, Z0=Z0, solution="lower_real")
+        Z_high = rotate_Z_toward_imag(Z_start, target_X, Z0=Z0, solution="higher_real")
+        Z_low = rotate_Z_toward_imag(Z_start, target_X, Z0=Z0, solution="lower_real")
 
         print(Z_high, Z_low)
 
@@ -229,7 +230,7 @@ class TestRotateTowardImag:
         vswr_start = (1 + abs(gamma_start)) / (1 - abs(gamma_start))
 
         # Rotate to target reactance
-        Z_result = utils.rotate_toward_imag(Z_start, target_X, Z0=Z0)
+        Z_result = rotate_Z_toward_imag(Z_start, target_X, Z0=Z0)
         gamma_result = (Z_result / Z0 - 1) / (Z_result / Z0 + 1)
         vswr_result = (1 + abs(gamma_result)) / (1 - abs(gamma_result))
 
@@ -241,7 +242,7 @@ class TestRotateTowardImag:
         target_X = -30
         Z0 = 50
 
-        Z_result = utils.rotate_toward_imag(Z_start, target_X, Z0=Z0)
+        Z_result = rotate_Z_toward_imag(Z_start, target_X, Z0=Z0)
 
         assert np.isclose(
             Z_result.imag, target_X, rtol=1e-4, atol=1e-6
@@ -253,9 +254,9 @@ class TestRotateTowardImag:
         target_X = 0
         Z0 = 50
 
-        Z_closer = utils.rotate_toward_imag(Z_start, target_X, Z0=Z0, solution="closer")
-        Z_high = utils.rotate_toward_imag(Z_start, target_X, Z0=Z0, solution="higher_real")
-        Z_low = utils.rotate_toward_imag(Z_start, target_X, Z0=Z0, solution="lower_real")
+        Z_closer = rotate_Z_toward_imag(Z_start, target_X, Z0=Z0, solution="closer")
+        Z_high = rotate_Z_toward_imag(Z_start, target_X, Z0=Z0, solution="higher_real")
+        Z_low = rotate_Z_toward_imag(Z_start, target_X, Z0=Z0, solution="lower_real")
 
         # Closer should be one of the two solutions
         assert np.isclose(Z_closer, Z_high, rtol=1e-4) or np.isclose(Z_closer, Z_low, rtol=1e-4)
@@ -270,10 +271,10 @@ class TestRotationFunctionsIntegration:
         Z0 = 50
 
         # First rotate by some wavelength
-        Z_rotated = utils.rotate_by_wavelength(Z_start, 0.125, Z0=Z0)
+        Z_rotated = rotate_by_wavelength(Z_start, 0.125, Z0=Z0)
 
         # Then match to 50Ω resistance
-        Z_matched = utils.rotate_toward_real(Z_rotated, 50, Z0=Z0)
+        Z_matched = rotate_Z_toward_real(Z_rotated, 50, Z0=Z0)
 
         assert np.isclose(Z_matched.real, 50, rtol=1e-5), f"Should have R=50Ω, got {Z_matched.real}Ω"
 
@@ -283,11 +284,11 @@ class TestRotationFunctionsIntegration:
     #         Z0 = 50
     #
     #         # First match resistance to Z0
-    #         Z_r_matched = utils.rotate_toward_real(Z_start, Z0, Z0=Z0)
+    #         Z_r_matched = rotate_Z_toward_real(Z_start, Z0, Z0=Z0)
     #         print(Z_r_matched)
     #
     #         # Then match reactance to 0 (real axis)
-    #         Z_full_matched = utils.rotate_toward_imag(Z_r_matched, 0, Z0=Z0)
+    #         Z_full_matched = rotate_Z_toward_imag(Z_r_matched, 0, Z0=Z0)
     #         print(Z_full_matched)
     #
     #         # Should be very close to Z0 (perfect match)
@@ -302,7 +303,7 @@ class TestRotationFunctionsIntegration:
         Z0 = 50
 
         # Rotate by λ/4
-        Z_rot_lambda = utils.rotate_by_wavelength(Z_start, 0.25, Z0=Z0)
+        Z_rot_lambda = rotate_by_wavelength(Z_start, 0.25, Z0=Z0)
 
         # This should equal Z0^2 / Z for resistive loads
         # For complex loads, check VSWR is maintained
