@@ -112,6 +112,7 @@ test: $(VENV)/.ready
 	$(PYTEST) $(PYTEST_OPTS) tests/test_vmeijin_full.py
 	$(PYTEST) $(PYTEST_OPTS) tests/test_vmeijin_short.py
 	$(PYTEST) $(PYTEST_OPTS) tests/test_xy_to_z.py
+	$(PYTEST) $(PYTEST_OPTS) tests/test_grid_param.py
 
 .PHONY: note-test
 note-test: $(VENV)/.ready
@@ -132,17 +133,27 @@ pylint-check: $(VENV)/.ready
 	-@$(PYLINT) pysmithchart/__init__.py
 	-@$(PYLINT) pysmithchart/axes.py
 	-@$(PYLINT) pysmithchart/constants.py
+	-@$(PYLINT) pysmithchart/core.py
 	-@$(PYLINT) pysmithchart/formatters.py
+	-@$(PYLINT) pysmithchart/grid.py
+	-@$(PYLINT) pysmithchart/helpers.py
 	-@$(PYLINT) pysmithchart/locators.py
 	-@$(PYLINT) pysmithchart/moebius_transform.py
+	-@$(PYLINT) pysmithchart/plotting.py
 	-@$(PYLINT) pysmithchart/polar_transform.py
+	-@$(PYLINT) pysmithchart/rotation.py
+	-@$(PYLINT) pysmithchart/transforms.py
 	-@$(PYLINT) pysmithchart/utils.py
-	-@$(PYLINT) tests/test_xy_to_z.py
-	-@$(PYLINT) tests/test_schang.py
+	-@$(PYLINT) tests/test_annotate.py
+	-@$(PYLINT) tests/test_grid_param.py
 	-@$(PYLINT) tests/test_noergaard.py
+	-@$(PYLINT) tests/test_rotation_functions.py
+	-@$(PYLINT) tests/test_scatter.py
+	-@$(PYLINT) tests/test_schang.py
 	-@$(PYLINT) tests/test_simple.py
 	-@$(PYLINT) tests/test_vmeijin_short.py
 	-@$(PYLINT) tests/test_vmeijin_full.py
+	-@$(PYLINT) tests/test_xy_to_z.py
 
 .PHONY: yaml-check
 yaml-check: $(VENV)/.ready
