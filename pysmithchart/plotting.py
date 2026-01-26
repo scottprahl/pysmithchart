@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib.axes import Axes
 from scipy.interpolate import splprep, splev
 
-from pysmithchart.constants import Z_DOMAIN, Y_DOMAIN, R_DOMAIN, NORM_Z_DOMAIN
+from pysmithchart.constants import Z_DOMAIN, Y_DOMAIN, R_DOMAIN, NORM_Z_DOMAIN, NORM_Y_DOMAIN
 from pysmithchart import utils
 
 
@@ -538,22 +538,19 @@ class PlottingMixin:
         return Axes.legend(self, unique_handles, unique_labels, **kwargs)
 
     def plot_constant_resistance(
-        self, resistance, *args, reactance_range=None, domain=None, num_points=500, arrow=None, **kwargs
+        self, norm_resistance, *args, range=None, num_points=500, arrow=None, **kwargs
     ):
         """
         Plot a constant resistance circle on the Smith chart.
 
         Args:
-            resistance (float): The resistance value to plot.
-                - For Z_DOMAIN: Value in Ohms (will be normalized by Z₀)
-                - For NORM_Z_DOMAIN: Normalized value (used as-is, typically r = R/Z₀)
+            norm_resistance (float): Normalized resistance value (r = R/Z₀, unitless).
+                For example, r=1.0 represents Z₀, r=2.0 represents 2×Z₀, etc.
             *args: Optional format string (e.g., 'r-', 'b--', 'go').
-            reactance_range (tuple, optional): The (min, max) reactance range to plot.
+            range (tuple, optional): The (min, max) normalized reactance range to plot.
                 If None, draws a complete circle. If specified, draws an arc between
-                the min and max reactance values.
-            domain (str, optional): Domain for the data (Z_DOMAIN or NORM_Z_DOMAIN).
-                Default: Z_DOMAIN (values in Ohms, normalized by Z₀).
-            num_points (int, optional): Number of points to use for the circle (default: 200).
+                the min and max reactance values (in normalized units).
+            num_points (int, optional): Number of points to use for the circle (default: 500).
             arrow (str, bool, or dict, optional): Add directional arrow(s) to the curve.
                 - None/False: No arrows (default)
                 - True/'end': Arrow at end
@@ -566,66 +563,55 @@ class PlottingMixin:
             list[matplotlib.lines.Line2D]: The plotted line objects.
 
         Examples:
-            >>> # Plot 50Ω constant resistance circle (normalized by Z₀=50Ω)
-            >>> ax.plot_constant_resistance(50, 'r-', label='R = 50Ω')
+            >>> # Plot r=1.0 constant resistance circle (matches Z₀)
+            >>> ax.plot_constant_resistance(1.0, 'r-', label='r = 1.0')
 
-            >>> # With arrow showing direction
-            >>> ax.plot_constant_resistance(50, 'r-', arrow='end', label='R = 50Ω')
+            >>> # Plot r=2.0 with arrow showing direction
+            >>> ax.plot_constant_resistance(2.0, 'b-', arrow='end', label='r = 2.0')
 
-            >>> # Plot normalized r=1.0 circle using absolute domain
-            >>> ax.plot_constant_resistance(1.0, 'b-', domain=NORM_Z_DOMAIN, label='r = 1.0')
+            >>> # Plot arc with limited reactance range
+            >>> ax.plot_constant_resistance(0.5, 'g--', range=(-1, 1), arrow='both')
 
-            >>> # Plot arc with limited reactance range and both arrows
-            >>> ax.plot_constant_resistance(75, 'g--', reactance_range=(-100, 100), arrow='both')
+            >>> # Plot r=0.5 (half of Z₀)
+            >>> ax.plot_constant_resistance(0.5, color='orange', linewidth=2)
 
         Notes:
             On a Smith chart, constant resistance forms a circle. The circle is parametrized
             by varying the reactance from -∞ to +∞. For a complete circle, the function uses
             angular parametrization. For a partial arc, it uses the specified reactance range.
+            
+            All values are normalized (unitless). To plot physical values in Ohms, divide by Z₀.
         """
-        # Default to Z_DOMAIN if not specified
-        if domain is None:
-            domain = Z_DOMAIN
-
-        if reactance_range is None:
+        if range is None:
             # Draw complete circle using angular parametrization
             theta = np.linspace(-np.pi / 2 + 0.01, np.pi / 2 - 0.01, num_points)
-
             # Use tangent to span from -large to +large reactance
-            if domain == NORM_Z_DOMAIN:
-                X = 10 * resistance * np.tan(theta)
-            else:  # Z_DOMAIN
-                Z0 = self._get_key("axes.Z0")
-                X = 10 * max(Z0, resistance) * np.tan(theta)
-
-            Z = resistance + 1j * X
+            x_vals = 10 * norm_resistance * np.tan(theta)
         else:
             # Draw arc with specified reactance range
-            X = np.linspace(reactance_range[0], reactance_range[1], num_points)
-            Z = resistance + 1j * X
+            x_vals = np.linspace(range[0], range[1], num_points)
 
-        # Plot the circle with optional format string and arrow
+        # Generate impedance points: Z = r + jx
+        z_points = norm_resistance + 1j * x_vals
+
+        # Plot in NORM_Z_DOMAIN - let plot() handle transformation
         if args:
-            return self.plot(Z, *args, domain=domain, arrow=arrow, **kwargs)
+            return self.plot(z_points, *args, domain=NORM_Z_DOMAIN, arrow=arrow, **kwargs)
         else:
-            return self.plot(Z, domain=domain, arrow=arrow, **kwargs)
+            return self.plot(z_points, domain=NORM_Z_DOMAIN, arrow=arrow, **kwargs)
 
     def plot_constant_reactance(
-        self, reactance, *args, resistance_range=None, domain=None, num_points=200, arrow=None, **kwargs
+        self, norm_reactance, *args, range=None, num_points=200, arrow=None, **kwargs
     ):
         """
         Plot a constant reactance arc on the Smith chart.
 
         Args:
-            reactance (float): The reactance value to plot.
-                - For Z_DOMAIN: Value in Ohms (will be normalized by Z₀)
-                - For NORM_Z_DOMAIN: Normalized value (used as-is, typically x = X/Z₀)
-                Positive for inductive, negative for capacitive.
+            norm_reactance (float): Normalized reactance value (x = X/Z₀, unitless).
+                Positive for inductive reactance, negative for capacitive reactance.
             *args: Optional format string (e.g., 'r-', 'b--', 'go').
-            resistance_range (tuple, optional): The (min, max) resistance range to plot.
+            range (tuple, optional): The (min, max) normalized resistance range to plot.
                 If None, automatically determines range to show the full arc.
-            domain (str, optional): Domain for the data (Z_DOMAIN or NORM_Z_DOMAIN).
-                Default: Z_DOMAIN (values in Ohms, normalized by Z₀).
             num_points (int, optional): Number of points to use for the arc (default: 200).
             arrow (str, bool, or dict, optional): Add directional arrow(s) to the curve.
                 - None/False: No arrows (default)
@@ -639,43 +625,38 @@ class PlottingMixin:
             list[matplotlib.lines.Line2D]: The plotted line objects.
 
         Examples:
-            >>> # Plot +50Ω constant reactance arc (inductive)
-            >>> ax.plot_constant_reactance(50, 'r-', label='X = +50Ω (inductive)')
+            >>> # Plot x=+1.0 constant reactance arc (inductive)
+            >>> ax.plot_constant_reactance(1.0, 'r-', label='x = +1.0 (inductive)')
 
-            >>> # Plot normalized x=1.0 using absolute domain
-            >>> ax.plot_constant_reactance(1.0, 'b-', domain=NORM_Z_DOMAIN, label='x = 1.0')
+            >>> # Plot x=-1.0 arc (capacitive)
+            >>> ax.plot_constant_reactance(-1.0, 'b-', label='x = -1.0 (capacitive)')
 
             >>> # Plot with custom resistance range
-            >>> ax.plot_constant_reactance(75, 'g--', resistance_range=(0, 200))
+            >>> ax.plot_constant_reactance(0.5, 'g--', range=(0, 5))
+
+            >>> # Plot with arrow
+            >>> ax.plot_constant_reactance(2.0, color='orange', arrow='end')
 
         Notes:
             On a Smith chart, constant reactance forms circular arcs. The arcs are parametrized
             by varying the resistance from 0 to ∞. Positive reactance (inductive) appears in the
             upper half of the chart, negative reactance (capacitive) in the lower half.
+            
+            All values are normalized (unitless). To plot physical values in Ohms, divide by Z₀.
         """
-        # Default to Z_DOMAIN if not specified
-        if domain is None:
-            domain = Z_DOMAIN
-
         # Determine resistance range if not specified
-        if resistance_range is None:
-            if domain == NORM_Z_DOMAIN:
-                # For normalized/absolute, use range that covers most of the chart
-                resistance_range = (0.01, 10)
-            else:  # Z_DOMAIN
-                # For absolute values in Ohms, use range based on Z0
-                Z0 = self._get_key("axes.Z0")
-                resistance_range = (0.01, 10 * Z0)
+        if range is None:
+            range = (0.01, 10)
 
-        # Generate points along constant reactance
-        R = np.linspace(resistance_range[0], resistance_range[1], num_points)
-        Z = R + 1j * reactance
+        # Generate points along constant reactance: Z = r + jx
+        r_vals = np.linspace(range[0], range[1], num_points)
+        z_points = r_vals + 1j * norm_reactance
 
-        # Plot the circle with optional format string
+        # Plot in NORM_Z_DOMAIN - let plot() handle transformation
         if args:
-            lines = self.plot(Z, *args, domain=domain, **kwargs)
+            lines = self.plot(z_points, *args, domain=NORM_Z_DOMAIN, **kwargs)
         else:
-            lines = self.plot(Z, domain=domain, **kwargs)
+            lines = self.plot(z_points, domain=NORM_Z_DOMAIN, **kwargs)
 
         # Add arrows if requested
         if arrow and lines:
@@ -684,7 +665,7 @@ class PlottingMixin:
         return lines
 
     def plot_constant_conductance(
-        self, conductance, *args, susceptance_range=None, domain=None, num_points=500, arrow=None, **kwargs
+        self, norm_conductance, *args, range=None, num_points=500, arrow=None, **kwargs
     ):
         """
         Plot a constant conductance circle on the Smith chart (admittance chart).
@@ -693,15 +674,12 @@ class PlottingMixin:
         constant resistance forms a circle on an impedance Smith chart.
 
         Args:
-            conductance (float): The conductance value to plot.
-                - For Y_DOMAIN: Value in Siemens (will be normalized by Y₀=1/Z₀)
-                - For NORM_Z_DOMAIN: Normalized value (used as-is, typically g = G×Z₀)
+            norm_conductance (float): Normalized conductance value (g = G×Z₀, unitless).
+                For example, g=1.0 represents Y₀ (where Y₀=1/Z₀).
             *args: Optional format string (e.g., 'r-', 'b--', 'go').
-            susceptance_range (tuple, optional): The (min, max) susceptance range to plot.
+            range (tuple, optional): The (min, max) normalized susceptance range to plot.
                 If None, draws a complete circle.
-            domain (str, optional): Domain for the data (Y_DOMAIN or NORM_Z_DOMAIN).
-                Default: Y_DOMAIN (values in Siemens, normalized by Y₀).
-            num_points (int, optional): Number of points to use for the circle (default: 200).
+            num_points (int, optional): Number of points to use for the circle (default: 500).
             arrow (str, bool, or dict, optional): Add directional arrow(s) to the curve.
                 - None/False: No arrows (default)
                 - True/'end': Arrow at end
@@ -714,56 +692,48 @@ class PlottingMixin:
             list[matplotlib.lines.Line2D]: The plotted line objects.
 
         Examples:
-            >>> # Plot 0.02S constant conductance circle (Y₀=1/50Ω=0.02S)
-            >>> ax.plot_constant_conductance(0.02, 'r-', label='G = 0.02S')
+            >>> # Plot g=1.0 constant conductance circle (matches Y₀)
+            >>> ax.plot_constant_conductance(1.0, 'r-', label='g = 1.0')
 
-            >>> # Plot normalized g=1.0 circle using absolute domain
-            >>> ax.plot_constant_conductance(1.0, 'b-', domain=NORM_Z_DOMAIN, label='g = 1.0')
+            >>> # Plot g=2.0 with arrow
+            >>> ax.plot_constant_conductance(2.0, 'b-', arrow='end', label='g = 2.0')
 
             >>> # Plot with custom susceptance range
-            >>> ax.plot_constant_conductance(0.02, 'g--', susceptance_range=(-0.05, 0.05))
+            >>> ax.plot_constant_conductance(0.5, 'g--', range=(-2, 2))
+
+            >>> # Plot g=0.5 (half of Y₀)
+            >>> ax.plot_constant_conductance(0.5, color='orange', linewidth=2)
 
         Notes:
             On an admittance Smith chart, constant conductance forms a circle, just like
             constant resistance on an impedance chart. The circle is parametrized by varying
             susceptance from -∞ to +∞.
+            
+            All values are normalized (unitless). To plot physical values in Siemens:
+            norm_conductance = G × Z₀, where G is in Siemens and Z₀ is in Ohms.
         """
-        # Default to Y_DOMAIN if not specified
-        if domain is None:
-            domain = Y_DOMAIN
-
-        if susceptance_range is None:
+        if range is None:
             # Draw complete circle using angular parametrization
             theta = np.linspace(-np.pi / 2 + 0.01, np.pi / 2 - 0.01, num_points)
-
             # Use tangent to span from -large to +large susceptance
-            if domain == NORM_Z_DOMAIN:
-                B = 10 * conductance * np.tan(theta)
-            else:  # Y_DOMAIN
-                Z0 = self._get_key("axes.Z0")
-                Y0 = 1 / Z0
-                B = 10 * max(Y0, conductance) * np.tan(theta)
-
-            Y = conductance + 1j * B
+            b_vals = 10 * norm_conductance * np.tan(theta)
         else:
             # Draw arc with specified susceptance range
-            B = np.linspace(susceptance_range[0], susceptance_range[1], num_points)
-            Y = conductance + 1j * B
+            b_vals = np.linspace(range[0], range[1], num_points)
 
-        # Plot the circle with optional format string
+        # Generate admittance points: Y = g + jb
+        y_points = norm_conductance + 1j * b_vals
+
+        # Plot in NORM_Y_DOMAIN - let plot() handle transformation
         if args:
-            lines = self.plot(Y, *args, domain=domain, **kwargs)
+            lines = self.plot(y_points, *args, domain=NORM_Y_DOMAIN, arrow=arrow, **kwargs)
         else:
-            lines = self.plot(Y, domain=domain, **kwargs)
-
-        # Add arrows if requested
-        if arrow and lines:
-            self._add_arrows_to_line(lines[0], arrow)
+            lines = self.plot(y_points, domain=NORM_Y_DOMAIN, arrow=arrow, **kwargs)
 
         return lines
 
     def plot_constant_susceptance(
-        self, susceptance, *args, conductance_range=None, domain=None, num_points=200, arrow=None, **kwargs
+        self, norm_susceptance, *args, range=None, num_points=200, arrow=None, **kwargs
     ):
         """
         Plot a constant susceptance arc on the Smith chart (admittance chart).
@@ -772,15 +742,11 @@ class PlottingMixin:
         constant reactance forms an arc on an impedance Smith chart.
 
         Args:
-            susceptance (float): The susceptance value to plot.
-                - For Y_DOMAIN: Value in Siemens (will be normalized by Y₀=1/Z₀)
-                - For NORM_Z_DOMAIN: Normalized value (used as-is, typically b = B×Z₀)
-                Positive for capacitive, negative for inductive.
+            norm_susceptance (float): Normalized susceptance value (b = B×Z₀, unitless).
+                Positive for capacitive susceptance, negative for inductive susceptance.
             *args: Optional format string (e.g., 'r-', 'b--', 'go').
-            conductance_range (tuple, optional): The (min, max) conductance range to plot.
+            range (tuple, optional): The (min, max) normalized conductance range to plot.
                 If None, automatically determines range to show the full arc.
-            domain (str, optional): Domain for the data (Y_DOMAIN or NORM_Z_DOMAIN).
-                Default: Y_DOMAIN (values in Siemens, normalized by Y₀).
             num_points (int, optional): Number of points to use for the arc (default: 200).
             arrow (str, bool, or dict, optional): Add directional arrow(s) to the curve.
                 - None/False: No arrows (default)
@@ -794,17 +760,17 @@ class PlottingMixin:
             list[matplotlib.lines.Line2D]: The plotted line objects.
 
         Examples:
-            >>> # Plot +0.02S constant susceptance arc (capacitive)
-            >>> ax.plot_constant_susceptance(0.02, 'r-', label='B = +0.02S (capacitive)')
+            >>> # Plot b=+1.0 constant susceptance arc (capacitive)
+            >>> ax.plot_constant_susceptance(1.0, 'r-', label='b = +1.0 (capacitive)')
 
-            >>> # Plot -0.02S constant susceptance arc (inductive)
-            >>> ax.plot_constant_susceptance(-0.02, 'b-', label='B = -0.02S (inductive)')
-
-            >>> # Plot normalized b=1.0 arc
-            >>> ax.plot_constant_susceptance(1.0, 'g-', domain=NORM_Z_DOMAIN, label='b = 1.0')
+            >>> # Plot b=-1.0 arc (inductive)
+            >>> ax.plot_constant_susceptance(-1.0, 'b-', label='b = -1.0 (inductive)')
 
             >>> # Plot with custom conductance range
-            >>> ax.plot_constant_susceptance(0.02, 'g--', conductance_range=(0, 0.05))
+            >>> ax.plot_constant_susceptance(0.5, 'g--', range=(0, 5))
+
+            >>> # Plot with arrow
+            >>> ax.plot_constant_susceptance(2.0, color='orange', arrow='end')
 
         Notes:
             On an admittance Smith chart, constant susceptance forms circular arcs. The arcs
@@ -813,30 +779,23 @@ class PlottingMixin:
 
             Note: The sign convention is opposite to reactance - positive susceptance is capacitive,
             while positive reactance is inductive.
+            
+            All values are normalized (unitless). To plot physical values in Siemens:
+            norm_susceptance = B × Z₀, where B is in Siemens and Z₀ is in Ohms.
         """
-        if domain is None:
-            domain = Y_DOMAIN
-
         # Determine conductance range if not specified
-        if conductance_range is None:
-            if domain == NORM_Z_DOMAIN:
-                # For normalized/absolute, use range that covers most of the chart
-                conductance_range = (0.01, 10)
-            else:  # Y_DOMAIN
-                # For absolute values in Siemens, use range based on Y0
-                Z0 = self._get_key("axes.Z0")
-                Y0 = 1 / Z0
-                conductance_range = (0.01, 10 * Y0)
+        if range is None:
+            range = (0.01, 10)
 
-        # Generate points along constant susceptance
-        G = np.linspace(conductance_range[0], conductance_range[1], num_points)
-        Y = G + 1j * susceptance
+        # Generate points along constant susceptance: Y = g + jb
+        g_vals = np.linspace(range[0], range[1], num_points)
+        y_points = g_vals + 1j * norm_susceptance
 
-        # Plot the circle with optional format string
+        # Plot in NORM_Y_DOMAIN - let plot() handle transformation
         if args:
-            lines = self.plot(Y, *args, domain=domain, **kwargs)
+            lines = self.plot(y_points, *args, domain=NORM_Y_DOMAIN, **kwargs)
         else:
-            lines = self.plot(Y, domain=domain, **kwargs)
+            lines = self.plot(y_points, domain=NORM_Y_DOMAIN, **kwargs)
 
         # Add arrows if requested
         if arrow and lines:
@@ -930,8 +889,8 @@ class PlottingMixin:
             Z_start: Starting impedance (complex number).
             Z_end: Ending impedance (complex number).
             *args: Optional format string (e.g., 'r-', 'b--').
-            domain: Domain for the impedances (Z_DOMAIN, NORM_Z_DOMAIN, etc.).
-                   Default: Z_DOMAIN.
+            domain: Domain for the impedances (Z_DOMAIN, NORM_Z_DOMAIN, Y_DOMAIN, R_DOMAIN).
+                   Default: uses plot.default.domain from configuration.
             num_points (int): Number of points for smooth path (default: 100).
             arrow (str, bool, or dict, optional): Add directional arrow(s).
                 - For single arc (same VSWR): Arrow added to the arc
@@ -947,19 +906,24 @@ class PlottingMixin:
             list: List of line objects. Single line for same VSWR, two lines otherwise.
 
         Examples:
-            >>> # Same VSWR - single arc with arrow
+            >>> # Same VSWR - single arc with arrow (impedance in Ohms)
             >>> ax.plot_rotation_path(75+50j, 100+50j, 'r-', arrow='end', label='Rotation')
 
-            >>> # Different VSWR - two-step path with arrows
-            >>> ax.plot_rotation_path(75+50j, 50+0j, 'b--', arrow='end', label='Matching')
+            >>> # Different VSWR - two-step path (normalized impedance)
+            >>> ax.plot_rotation_path(1.5+1j, 1+0j, 'b--', domain=NORM_Z_DOMAIN, arrow='end')
+
+            >>> # Admittance-based matching
+            >>> ax.plot_rotation_path(0.02+0.01j, 0.02+0j, 'g-', domain=Y_DOMAIN, arrow='end')
 
         Notes:
             For same VSWR: Represents traveling along a lossless transmission line.
             For different VSWR: Represents a matching network with transmission line + reactive element.
+            
+            All coordinate transformations are handled by _apply_domain_transform().
         """
-        # Default domain
+        # Get default domain if not specified
         if domain is None:
-            domain = Z_DOMAIN
+            domain = self._get_key("plot.default.domain")
 
         # Convert to complex if needed
         if not isinstance(Z_start, complex):
@@ -974,24 +938,13 @@ class PlottingMixin:
             else:
                 Z_end = complex(Z_end, 0)
 
-        # Transform to normalized impedance
-        Z0 = self._get_key("axes.Z0")
-
-        if domain == Z_DOMAIN:
-            z_start_norm = Z_start / Z0
-            z_end_norm = Z_end / Z0
-        elif domain == NORM_Z_DOMAIN:
-            z_start_norm = Z_start
-            z_end_norm = Z_end
-        elif domain == Y_DOMAIN:
-            z_start_norm = (1 / Z_start) / Z0
-            z_end_norm = (1 / Z_end) / Z0
-        elif domain == R_DOMAIN:
-            z_start_norm = utils.moebius_inverse_transform(Z_start, norm=1)
-            z_end_norm = utils.moebius_inverse_transform(Z_end, norm=1)
-        else:
-            z_start_norm = Z_start
-            z_end_norm = Z_end
+        # Transform start and end points to normalized impedance using the unified function
+        # This handles all domain types (Z_DOMAIN, NORM_Z_DOMAIN, Y_DOMAIN, R_DOMAIN)
+        x_start, y_start = self._apply_domain_transform(Z_start, domain=domain, warn_s_parameter=False)
+        x_end, y_end = self._apply_domain_transform(Z_end, domain=domain, warn_s_parameter=False)
+        
+        z_start_norm = x_start + 1j * y_start
+        z_end_norm = x_end + 1j * y_end
 
         # Convert to reflection coefficients
         gamma_start = utils.moebius_transform(z_start_norm, norm=1)
@@ -1024,7 +977,7 @@ class PlottingMixin:
             angles = np.linspace(angle_start, angle_start + angle_diff, num_points)
             gamma_path = avg_mag * np.exp(1j * angles)
 
-            # Plot single arc with arrow
+            # Plot single arc with arrow (using R_DOMAIN for reflection coefficients)
             if fmt_str:
                 return self.plot(gamma_path, fmt_str, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs)
             else:

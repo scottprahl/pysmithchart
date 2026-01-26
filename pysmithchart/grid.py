@@ -69,12 +69,12 @@ class GridMixin:
         # Draw resistance circles with clipped reactance ranges
         for r, x_range in zip(xticks, r_ranges):
             if 0 <= r < SC_NEAR_INFINITY:
-                self.plot_constant_resistance(r, domain=NORM_Z_DOMAIN, reactance_range=x_range, **style)
+                self.plot_constant_resistance(r, range=x_range, **style)
 
         # Draw reactance circles with clipped resistance ranges
         for x, r_range in zip(yticks, x_ranges):
             if abs(x) < SC_NEAR_INFINITY:
-                self.plot_constant_reactance(x, domain=NORM_Z_DOMAIN, resistance_range=r_range, **style)
+                self.plot_constant_reactance(x, range=r_range, **style)
 
     def _draw_impedance_minor(self, fancy, **kwargs):
         """Draw minor impedance gridlines with nice spacing.
@@ -103,11 +103,11 @@ class GridMixin:
         # Draw minor gridlines (full circles for now, TODO: fancy clipping)
         for r in x_minor:
             if 0 <= r < SC_NEAR_INFINITY:
-                self.plot_constant_resistance(r, domain=NORM_Z_DOMAIN, **style)
+                self.plot_constant_resistance(r, **style)
 
         for x in y_minor:
             if abs(x) < SC_NEAR_INFINITY:
-                self.plot_constant_reactance(x, domain=NORM_Z_DOMAIN, **style)
+                self.plot_constant_reactance(x, **style)
 
     # ========== ADMITTANCE DRAWING ==========
 
@@ -138,21 +138,11 @@ class GridMixin:
         # Draw conductance circles with clipped susceptance ranges
         for g, b_range in zip(xticks, g_ranges):
             if g > 1e-10:
-                if b_range is None:
-                    self.plot_constant_conductance(g / Z0, domain=Y_DOMAIN, **style)
-                else:
-                    # Convert range to Siemens
-                    b_range_siemens = (b_range[0] / Z0, b_range[1] / Z0)
-                    self.plot_constant_conductance(g / Z0, domain=Y_DOMAIN, susceptance_range=b_range_siemens, **style)
+                self.plot_constant_conductance(g, range=b_range, **style)
 
         # Draw susceptance circles with clipped conductance ranges
         for b, g_range in zip(yticks, b_ranges):
-            if g_range is None:
-                self.plot_constant_susceptance(b / Z0, domain=Y_DOMAIN, conductance_range=(0, 20 * Y0), **style)
-            else:
-                # Convert range to Siemens
-                g_range_siemens = (g_range[0] / Z0, g_range[1] / Z0)
-                self.plot_constant_susceptance(b / Z0, domain=Y_DOMAIN, conductance_range=g_range_siemens, **style)
+            self.plot_constant_susceptance(b, range=g_range, **style)
 
     def _draw_admittance_minor(self, fancy, **kwargs):
         """Draw minor admittance gridlines with nice spacing.
@@ -181,13 +171,13 @@ class GridMixin:
 
         g_minor, b_minor = self._compute_minor_ticks(xt_major, yt_major, real_divs, imag_divs, threshold)
 
-        # Draw minor gridlines (full circles for now, TODO: fancy clipping)
+        # Draw minor gridlines as full circles
         for g in g_minor:
             if g > 1e-10:
-                self.plot_constant_conductance(g / Z0, domain=Y_DOMAIN, **style)
+                self.plot_constant_conductance(g, **style)
 
         for b in b_minor:
-            self.plot_constant_susceptance(b / Z0, domain=Y_DOMAIN, conductance_range=(0, 20 * Y0), **style)
+            self.plot_constant_susceptance(b, range=(0, 20 * Y0), **style)
 
     # ========== HELPER METHODS (DOMAIN-AGNOSTIC) ==========
 
