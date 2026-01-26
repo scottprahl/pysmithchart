@@ -83,13 +83,13 @@ Quick Start
 .. code-block:: python
 
     import matplotlib.pyplot as plt
-    from pysmithchart import REFLECTANCE_DOMAIN
+    from pysmithchart import R_DOMAIN
 
     S = [0.5 + 0.3j, -0.2 - 0.1j]
 
     plt.figure(figsize=(6, 6))
     plt.subplot(1, 1, 1, projection="smith")
-    plt.plot(S, domain=REFLECTANCE_DOMAIN, marker='o', markersize=10, label='S₁₁')
+    plt.plot(S, domain=R_DOMAIN, marker='o', markersize=10, label='S₁₁')
     plt.legend()
     plt.title('Reflection Coefficients')
     plt.show()
@@ -110,7 +110,7 @@ Quick Start
     plt.figure(figsize=(6, 6))
     ax = plt.subplot(1, 1, 1, projection="smith",
                      axes_impedance=200,  # Z₀ = 200Ω
-                     grid_minor_enable=True)
+                     grid.Z.minor_enable=True)
 
     plt.plot(ZL, "b-o", markersize=10, label='Load Impedance')
     plt.legend()
