@@ -10,7 +10,8 @@ Getting Started
    :maxdepth: 2
 
    01_quickstart
-   02_domains
+   02a_domains
+   02b_admittance_charts
 
 How-To Guides
 -------------
