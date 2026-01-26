@@ -4,23 +4,20 @@ CHANGELOG
 Version 0.9.0
 -------------
 
-* Redid all the jupyter notebooks for documentation
-* Refactored monolithic ``axes.py`` (1,420 lines) into modular components
-* Renamed *_PARAMETER to *_DOMAIN and added new ABSOLUTE_DOMAIN to plot normalized impedances
+* added admittance grids
+* much clearer support for domains for data
+* added NORM_Z_DOMAIN and NORM_Y_DOMAIN
+* Renovation of jupyter notebooks for documentation
 * added ``scatter()`` 
-* Fixed ``text()`` 
-* Fixed ``annotate()`` method to handle mixed coordinate systems correctly
+* improved ``text()`` 
+* improved ``annotate()``
 * added ``plot_constant_resistance``
 * added ``plot_constant_reactance``
 * added ``plot_constant_susceptance``
 * added ``plot_constant_conductance``
 * added ``plot_vswr``
 * added ``plot_rotation_path``
-* rationalized internal names for grid parameters and functions
-* Improved code organization with clear module boundaries
-* Enhanced docstrings throughout all modules
-* Better separation between initialization, transforms, grid, plotting, and helper functionality
-* Each module now has focused responsibility and clear public API
+* rationalized internal names
 
 0.5.0
 -----
