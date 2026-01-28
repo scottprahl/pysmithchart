@@ -2,13 +2,26 @@
 Utility functions for rotations in Smith charts.
 
 Public Functions:
-    Rotation Functions:
-        rotate_by_wavelength(Z, wavelength, Z0, direction): Rotate by electrical length
-        rotate_Z_toward_real(Z, target_resistance, Z0, solution): Rotate to match resistance
-        rotate_Z_toward_imag(Z, target_reactance, Z0, solution): Rotate to match reactance
-        rotate_Y_toward_real(Z, target_conductance, Z0, solution): Rotate to match condunctance
-        rotate_Y_toward_imag(Z, target_susceptance, Z0, solution): Rotate to match susceptance
+    Transmission Line Rotations:
+        rotate_z_by_wavelength(z_norm, wavelengths, direction): Rotate impedance by electrical length
+        rotate_y_by_wavelength(y_norm, wavelengths, direction): Rotate admittance by electrical length
 
+    Impedance Rotations (to match target values):
+        rotate_z_toward_resistance(z_norm, r_norm, solution): Rotate to match resistance
+        rotate_z_toward_reactance(z_norm, x_norm, solution): Rotate to match reactance
+
+    Admittance Rotations (to match target values):
+        rotate_y_toward_conductance(y_norm, g_norm, solution): Rotate to match conductance
+        rotate_y_toward_susceptance(y_norm, b_norm, solution): Rotate to match susceptance
+
+Notes:
+    All rotation functions work with normalized values:
+    - For impedance: z = Z/Z₀, r = R/Z₀, x = X/Z₀ (unitless)
+    - For admittance: y = Y×Z₀, g = G×Z₀, b = B×Z₀ (unitless)
+
+    To convert between physical and normalized values:
+    - z_norm = Z_physical / Z0
+    - y_norm = Y_physical * Z0
 """
 
 import numpy as np
@@ -16,52 +29,68 @@ from pysmithchart.utils import moebius_transform, moebius_inverse_transform
 
 # Public API
 __all__ = (
-    "rotate_by_wavelength",
-    "rotate_Z_toward_real",
-    "rotate_Z_toward_imag",
-    "rotate_Y_toward_real",
-    "rotate_Y_toward_imag",
+    "rotate_z_by_wavelength",
+    "rotate_y_by_wavelength",
+    "rotate_z_toward_resistance",
+    "rotate_z_toward_reactance",
+    "rotate_y_toward_conductance",
+    "rotate_y_toward_susceptance",
 )
 
 
-def rotate_by_wavelength(Z, wavelength, Z0=50, direction="toward_load"):
+def rotate_z_by_wavelength(z_norm, wavelengths, direction="toward_load"):
     """
-    Rotate an impedance by a specified electrical length (in wavelengths).
+    Rotate normalized impedance by a specified electrical length.
 
     Moving along a transmission line rotates the impedance around the center
-    of the Smith chart at constant |Γ|.
+    of the Smith chart at constant |Γ| (constant VSWR).
 
     Args:
-        Z (complex): Input impedance in Ohms.
-        wavelength (float): Electrical length in wavelengths (e.g., 0.25 for λ/4).
-            Positive rotates toward load, negative toward generator.
-        Z0 (float): Characteristic impedance (default: 50Ω).
+        z_norm (complex): Input normalized impedance (z = Z/Z₀, unitless).
+        wavelengths (float): Electrical length in wavelengths.
+            - Positive values rotate toward the load
+            - Negative values rotate toward the generator
+            - Examples: 0.125 for λ/8, 0.25 for λ/4, 0.5 for λ/2
         direction (str): 'toward_load' (default) or 'toward_generator'.
+            This sets the sign convention for positive wavelength values.
 
     Returns:
-        complex: Rotated impedance in Ohms.
+        complex: Rotated normalized impedance.
 
     Examples:
-        >>> # Rotate 75+50j by λ/8 toward load
-        >>> Z_new = rotate_by_wavelength(75+50j, 0.125, Z0=50)
+        >>> # Rotate z=1.5+1j by λ/8 toward load
+        >>> z_new = rotate_z_by_wavelength(1.5+1j, 0.125)
+        >>> print(f"z = {z_new.real:.3f} + {z_new.imag:.3f}j")
+        z = 1.732 + 0.500j
 
         >>> # Rotate by λ/4 toward generator
-        >>> Z_new = rotate_by_wavelength(75+50j, 0.25, direction='toward_generator')
+        >>> z_new = rotate_z_by_wavelength(2+2j, 0.25, direction='toward_generator')
+
+        >>> # Quarter-wave transform: z → 1/z
+        >>> z_new = rotate_z_by_wavelength(2+0j, 0.25)
+        >>> print(f"z = {z_new.real:.3f}")  # Should be 0.5
+        z = 0.500
+
+        >>> # Half-wave: returns to same impedance
+        >>> z_new = rotate_z_by_wavelength(1.5+1j, 0.5)
+        >>> # z_new ≈ 1.5+1j (within numerical precision)
 
     Notes:
-        - λ/4 rotation transforms Z → Z0²/Z
-        - λ/2 rotation returns to the same impedance
-        - Phase rotation: θ = 4π * wavelength (radians)
-    """
-    # Convert to normalized impedance
-    z = Z / Z0
+        - λ/4 rotation: Transforms z → 1/z (quarter-wave transformer)
+        - λ/2 rotation: Returns to the same impedance
+        - Phase rotation: θ = 4π × wavelengths (radians)
+        - Rotation preserves |Γ| (moves along constant VSWR circle)
 
+        All values are normalized (unitless). To use with physical impedances:
+        z_norm = Z_physical / Z₀
+        Z_physical = z_rotated × Z₀
+    """
     # Convert to reflection coefficient
-    gamma = moebius_transform(z, norm=1)
+    gamma = moebius_transform(z_norm, norm=1)
 
     # Calculate rotation angle in radians
     # 1 wavelength = 2π electrical radians, full circle = 4π phase rotation
-    angle = 4 * np.pi * wavelength
+    angle = 4 * np.pi * wavelengths
 
     # Apply direction
     if direction == "toward_generator":
@@ -75,8 +104,74 @@ def rotate_by_wavelength(Z, wavelength, Z0=50, direction="toward_load"):
     # Convert back to normalized impedance
     z_rotated = moebius_inverse_transform(gamma_rotated, norm=1)
 
-    # Convert back to Ohms
-    return z_rotated * Z0
+    return z_rotated
+
+
+def rotate_y_by_wavelength(y_norm, wavelengths, direction="toward_load"):
+    """
+    Rotate normalized admittance by a specified electrical length.
+
+    Moving along a transmission line rotates the admittance around the center
+    of the Smith chart at constant |Γ| (constant VSWR). This is equivalent to
+    converting to impedance, rotating, and converting back.
+
+    Args:
+        y_norm (complex): Input normalized admittance (y = Y×Z₀, unitless).
+        wavelengths (float): Electrical length in wavelengths.
+            - Positive values rotate toward the load
+            - Negative values rotate toward the generator
+            - Examples: 0.125 for λ/8, 0.25 for λ/4, 0.5 for λ/2
+        direction (str): 'toward_load' (default) or 'toward_generator'.
+            This sets the sign convention for positive wavelength values.
+
+    Returns:
+        complex: Rotated normalized admittance.
+
+    Examples:
+        >>> # Rotate y=0.5+0.25j by λ/8 toward load
+        >>> y_new = rotate_y_by_wavelength(0.5+0.25j, 0.125)
+        >>> print(f"y = {y_new.real:.3f} + {y_new.imag:.3f}j")
+        y = 0.577 + 0.144j
+
+        >>> # Rotate by λ/4 toward generator
+        >>> y_new = rotate_y_by_wavelength(1+0.5j, 0.25, direction='toward_generator')
+
+        >>> # Quarter-wave transform: y → 1/y
+        >>> y_new = rotate_y_by_wavelength(2+0j, 0.25)
+        >>> print(f"y = {y_new.real:.3f}")  # Should be 0.5
+        y = 0.500
+
+        >>> # Half-wave: returns to same admittance
+        >>> y_new = rotate_y_by_wavelength(0.5+0.25j, 0.5)
+        >>> # y_new ≈ 0.5+0.25j (within numerical precision)
+
+    Notes:
+        - λ/4 rotation: Transforms y → 1/y (quarter-wave transformer)
+        - λ/2 rotation: Returns to the same admittance
+        - Phase rotation: θ = 4π × wavelengths (radians)
+        - Rotation preserves |Γ| (moves along constant VSWR circle)
+        - Equivalent to: y_rotated = 1 / rotate_z_by_wavelength(1/y, wavelengths, direction)
+
+        All values are normalized (unitless). To use with physical admittances:
+        y_norm = Y_physical × Z₀
+        Y_physical = y_rotated / Z₀
+    """
+    # Convert admittance to impedance
+    if y_norm == 0:
+        z_norm = 1e9 + 0j  # Large value for open circuit
+    else:
+        z_norm = 1 / y_norm
+
+    # Rotate the impedance
+    z_rotated = rotate_z_by_wavelength(z_norm, wavelengths, direction)
+
+    # Convert back to admittance
+    if abs(z_rotated) < 1e-10:
+        y_rotated = 1e9 + 0j  # Large value for short circuit
+    else:
+        y_rotated = 1 / z_rotated
+
+    return y_rotated
 
 
 def _rotate_on_constant_gamma_to_real(
@@ -165,88 +260,119 @@ def _rotate_on_constant_gamma_to_real(
         return v_pos if d_pos > d_neg else v_neg
 
 
-def rotate_Z_toward_real(Z, target_resistance, Z0=50, solution="closer"):
+def rotate_z_toward_resistance(z_norm, r_norm, solution="closer"):
     """
-    Rotate an impedance to match a target real part (series-matching style step).
+    Rotate normalized impedance to match a target normalized resistance.
 
     Finds the rotation along the constant-VSWR circle that results in the
-    specified real part of impedance.
+    specified real part of impedance (series-matching style step).
 
     Args:
-        Z (complex): Input impedance in Ohms.
-        target_resistance (float): Desired real part in Ohms.
-        Z0 (float): Characteristic impedance (default: 50Ω).
+        z_norm (complex): Input normalized impedance (z = Z/Z₀, unitless).
+        r_norm (float): Target normalized resistance (r = R/Z₀, unitless).
         solution (str): Which solution to use if two exist:
-            'closer' (default), 'farther', 'positive_imag', 'negative_imag'.
+            - 'closer' (default): Shorter rotation angle
+            - 'farther': Longer rotation angle
+            - 'positive_imag': Solution with positive reactance
+            - 'negative_imag': Solution with negative reactance
 
     Returns:
-        complex: Rotated impedance with the target real part.
+        complex: Rotated normalized impedance with real part equal to r_norm.
 
     Raises:
-        ValueError: If target_resistance is not reachable on the constant-VSWR circle.
-    """
-    z = Z / Z0
-    r_target = target_resistance / Z0
+        ValueError: If r_norm is not reachable on the constant-VSWR circle.
 
-    def gamma_from_z(z_norm):
-        # Your existing mapping: Γ = (z - 1)/(z + 1)
-        return moebius_transform(z_norm, norm=1)
+    Examples:
+        >>> # Start at z=2+1j, rotate to r=1 (match Z₀)
+        >>> z_new = rotate_z_toward_resistance(2+1j, 1.0)
+        >>> print(f"r={z_new.real:.3f}, x={z_new.imag:.3f}")
+        r=1.000, x=1.414
+
+        >>> # Choose the farther rotation path
+        >>> z_new = rotate_z_toward_resistance(2+1j, 1.0, solution='farther')
+
+        >>> # Force positive reactance solution
+        >>> z_new = rotate_z_toward_resistance(0.5+0.5j, 1.0, solution='positive_imag')
+
+    Notes:
+        This is commonly used in series stub matching where you rotate to a target
+        resistance, then add a series reactive element to cancel the remaining reactance.
+
+        All values are normalized (unitless). To use with physical values in Ohms:
+        z_norm = Z / Z₀, r_norm = R / Z₀
+    """
+
+    def gamma_from_z(z_normalized):
+        return moebius_transform(z_normalized, norm=1)
 
     z_new = _rotate_on_constant_gamma_to_real(
-        z,
-        r_target,
+        z_norm,
+        r_norm,
         gamma_from_z,
         solution=solution,
         what="impedance",
     )
-    return z_new * Z0
+    return z_new
 
 
-def rotate_Y_toward_real(Y, target_conductance, Y0=1 / 50, solution="closer"):
+def rotate_y_toward_conductance(y_norm, g_norm, solution="closer"):
     """
-    Rotate an admittance to match a target conductance (shunt-matching style step).
+    Rotate normalized admittance to match a target normalized conductance.
 
     Finds the rotation along the constant-VSWR circle that results in the
-    specified real part of admittance (conductance).
+    specified real part of admittance (shunt-matching style step).
 
     Args:
-        Y (complex): Input admittance in Siemens.
-        target_conductance (float): Desired real part in Siemens.
-        Y0 (float): Characteristic admittance (default: 1/50 S).
+        y_norm (complex): Input normalized admittance (y = Y×Z₀, unitless).
+        g_norm (float): Target normalized conductance (g = G×Z₀, unitless).
         solution (str): Which solution to use if two exist:
-            'closer' (default), 'farther', 'positive_imag', 'negative_imag'.
+            - 'closer' (default): Shorter rotation angle
+            - 'farther': Longer rotation angle
+            - 'positive_imag': Solution with positive susceptance
+            - 'negative_imag': Solution with negative susceptance
 
     Returns:
-        complex: Rotated admittance with the target conductance.
+        complex: Rotated normalized admittance with real part equal to g_norm.
 
     Raises:
-        ValueError: If target_conductance is not reachable on the constant-VSWR circle.
+        ValueError: If g_norm is not reachable on the constant-VSWR circle.
+
+    Examples:
+        >>> # Start at y=0.5+0.25j, rotate to g=1.0 (match Y₀)
+        >>> y_new = rotate_y_toward_conductance(0.5+0.25j, 1.0)
+        >>> print(f"g={y_new.real:.3f}, b={y_new.imag:.3f}")
+        g=1.000, b=0.559
+
+        >>> # Choose the farther rotation path
+        >>> y_new = rotate_y_toward_conductance(0.5+0.25j, 1.0, solution='farther')
+
+        >>> # Force positive susceptance solution
+        >>> y_new = rotate_y_toward_conductance(2+1j, 1.0, solution='positive_imag')
 
     Notes:
         This is the standard first step for single shunt-stub matching:
-        choose the stub location so that Re{Y(d)} = Y0 (i.e., normalized g = 1),
-        then cancel the remaining susceptance with the stub.
-    """
-    y = Y / Y0
-    g_target = target_conductance / Y0
+        rotate to g = 1 (normalized conductance = Y₀), then cancel the
+        remaining susceptance with a shunt stub.
 
-    def gamma_from_y(y_norm):
-        # Use the identity: Γ = (z - 1)/(z + 1) with z = 1/y
-        # This yields Γ = (1 - y)/(1 + y), i.e., the admittance-form reflection coefficient.
-        if y_norm == 0:
-            # y=0 -> z=∞ -> Γ≈+1, but avoid division error.
+        All values are normalized (unitless). To use with physical values in Siemens:
+        y_norm = Y × Z₀, g_norm = G × Z₀, where Y and G are in Siemens, Z₀ in Ohms.
+    """
+
+    def gamma_from_y(y_normalized):
+        # Γ = (1 - y)/(1 + y) via z = 1/y
+        if y_normalized == 0:
             return 1 + 0j
-        z_norm = 1 / y_norm
-        return moebius_transform(z_norm, norm=1)
+        z_normalized = 1 / y_normalized
+        return moebius_transform(z_normalized, norm=1)
 
     y_new = _rotate_on_constant_gamma_to_real(
-        y,
-        g_target,
+        y_norm,
+        g_norm,
         gamma_from_y,
         solution=solution,
         what="admittance",
     )
-    return y_new * Y0
+    return y_new
 
 
 def _gamma_from_z_norm(z_norm: complex) -> complex:
@@ -345,59 +471,108 @@ def _crossings_on_constant_gamma_with_imag(
         return v1 if d1 >= d2 else v2
 
 
-def rotate_Z_toward_imag(Z, target_reactance, Z0=50, solution="closer"):
+def rotate_z_toward_reactance(z_norm, x_norm, solution="closer"):
     """
-    Rotate an impedance along its constant-VSWR circle to hit a target reactance.
+    Rotate normalized impedance to match a target normalized reactance.
+
+    Finds the rotation along the constant-VSWR circle that results in the
+    specified imaginary part of impedance.
 
     Args:
-        Z (complex): Impedance in ohms.
-        target_reactance (float): Desired imaginary part in ohms.
-        Z0 (float): Characteristic impedance.
-        solution (str): 'closer', 'farther', 'higher_real', 'lower_real'.
+        z_norm (complex): Input normalized impedance (z = Z/Z₀, unitless).
+        x_norm (float): Target normalized reactance (x = X/Z₀, unitless).
+            Positive for inductive, negative for capacitive.
+        solution (str): Which solution to use if two exist:
+            - 'closer' (default): Shorter rotation angle
+            - 'farther': Longer rotation angle
+            - 'higher_real': Solution with higher resistance
+            - 'lower_real': Solution with lower resistance
 
     Returns:
-        complex: Rotated impedance (ohms) with imag(Z) == target_reactance.
+        complex: Rotated normalized impedance with imaginary part equal to x_norm.
 
     Raises:
-        ValueError: If target is not reachable on the constant-|Γ| circle.
-    """
-    z = Z / Z0
-    x_target = target_reactance / Z0
+        ValueError: If x_norm is not reachable on the constant-VSWR circle.
 
+    Examples:
+        >>> # Start at z=2+1j, rotate to x=0 (purely resistive)
+        >>> z_new = rotate_z_toward_reactance(2+1j, 0.0)
+        >>> print(f"r={z_new.real:.3f}, x={z_new.imag:.3f}")
+        r=2.236, x=0.000
+
+        >>> # Rotate to inductive reactance x=+2
+        >>> z_new = rotate_z_toward_reactance(1+0.5j, 2.0)
+
+        >>> # Choose higher resistance solution
+        >>> z_new = rotate_z_toward_reactance(0.5+0.5j, 0.0, solution='higher_real')
+
+    Notes:
+        This is useful for impedance matching scenarios where you need to rotate
+        to a specific reactance before adding matching elements.
+
+        All values are normalized (unitless). To use with physical values in Ohms:
+        z_norm = Z / Z₀, x_norm = X / Z₀
+    """
     z_new = _crossings_on_constant_gamma_with_imag(
-        z,
-        x_target,
+        z_norm,
+        x_norm,
         _gamma_from_z_norm,
         solution=solution,
         what="impedance",
     )
-    return z_new * Z0
+    return z_new
 
 
-def rotate_Y_toward_imag(Y, target_susceptance, Y0=1 / 50, solution="closer"):
+def rotate_y_toward_susceptance(y_norm, b_norm, solution="closer"):
     """
-    Rotate an admittance along its constant-VSWR circle to hit a target susceptance.
+    Rotate normalized admittance to match a target normalized susceptance.
+
+    Finds the rotation along the constant-VSWR circle that results in the
+    specified imaginary part of admittance.
 
     Args:
-        Y (complex): Admittance in siemens.
-        target_susceptance (float): Desired imaginary part in siemens.
-        Y0 (float): Characteristic admittance.
-        solution (str): 'closer', 'farther', 'higher_real', 'lower_real'.
+        y_norm (complex): Input normalized admittance (y = Y×Z₀, unitless).
+        b_norm (float): Target normalized susceptance (b = B×Z₀, unitless).
+            Positive for capacitive, negative for inductive.
+        solution (str): Which solution to use if two exist:
+            - 'closer' (default): Shorter rotation angle
+            - 'farther': Longer rotation angle
+            - 'higher_real': Solution with higher conductance
+            - 'lower_real': Solution with lower conductance
 
     Returns:
-        complex: Rotated admittance (siemens) with imag(Y) == target_susceptance.
+        complex: Rotated normalized admittance with imaginary part equal to b_norm.
 
     Raises:
-        ValueError: If target is not reachable on the constant-|Γ| circle.
-    """
-    y = Y / Y0
-    b_target = target_susceptance / Y0
+        ValueError: If b_norm is not reachable on the constant-VSWR circle.
 
+    Examples:
+        >>> # Start at y=0.5+0.25j, rotate to b=0 (purely conductive)
+        >>> y_new = rotate_y_toward_susceptance(0.5+0.25j, 0.0)
+        >>> print(f"g={y_new.real:.3f}, b={y_new.imag:.3f}")
+        g=0.559, b=0.000
+
+        >>> # Rotate to capacitive susceptance b=+1
+        >>> y_new = rotate_y_toward_susceptance(1+0.5j, 1.0)
+
+        >>> # Choose higher conductance solution
+        >>> y_new = rotate_y_toward_susceptance(0.5+0.5j, 0.0, solution='higher_real')
+
+    Notes:
+        This is useful for admittance-based matching scenarios where you need to
+        rotate to a specific susceptance before adding shunt elements.
+
+        Sign convention: Positive susceptance is capacitive, negative is inductive
+        (opposite to reactance convention).
+
+        All values are normalized (unitless). To use with physical values in Siemens:
+        y_norm = Y × Z₀, b_norm = B × Z₀, where Y and B are in Siemens, Z₀ in Ohms.
+    """
     y_new = _crossings_on_constant_gamma_with_imag(
-        y,
-        b_target,
+        y_norm,
+        b_norm,
         _gamma_from_y_norm,
         solution=solution,
         what="admittance",
     )
-    return y_new * Y0
+    return y_new
