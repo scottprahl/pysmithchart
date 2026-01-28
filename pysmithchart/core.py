@@ -150,7 +150,6 @@ class AxesCore:
         self._normbox = None
         self._admittance_majorarcs = None
         self._admittance_minorarcs = None
-        self.grid = None  # Will be replaced with actual grid method later
 
         # Define shortcut mappings for user-friendly names
         SHORTCUT_MAP = {
