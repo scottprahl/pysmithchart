@@ -100,7 +100,7 @@ def test_plot_normalized_axes(chart_dir):
     freqs = np.logspace(0, 9, 200)
     plt.figure(figsize=(18, 12)).set_layout_engine("tight")
 
-    for i, (do_normalize_axes, impedance) in enumerate(product([True, False], [10, 50, 200])):
+    for i, impedance in enumerate([10, 50, 200]):
         s11 = s11_of_parallel_cap_res(freqs, z0=impedance)
         plt.subplot(
             2,

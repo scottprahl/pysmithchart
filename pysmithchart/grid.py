@@ -2,7 +2,6 @@
 
 import numpy as np
 
-from pysmithchart.constants import Y_DOMAIN, NORM_Z_DOMAIN
 from pysmithchart.constants import SC_EPSILON, SC_NEAR_INFINITY
 from pysmithchart.utils import choose_minor_divider
 
@@ -133,9 +132,6 @@ class GridMixin:
         """
         style = self._get_grid_style("admittance", "major", **kwargs)
         style.setdefault("marker", "")
-
-        Z0 = self._get_key("axes.Z0")
-        Y0 = 1 / Z0
 
         # Get major ticks and ranges (same tick computation, domain-agnostic)
         xticks = np.sort(self.xaxis.get_majorticklocs())
@@ -452,9 +448,9 @@ class GridMixin:
                 mm_value = float(thr[:-2])
                 # Convert mm to Möbius distance using current figure size
                 return self._mm_to_moebius(mm_value)
-            else:
-                # Legacy numeric value - divide by 1000
-                return thr / 1000
+
+            # Legacy numeric value - divide by 1000
+            return thr / 1000
 
         if isinstance(threshold, tuple):
             thr_x = convert_threshold(threshold[0])

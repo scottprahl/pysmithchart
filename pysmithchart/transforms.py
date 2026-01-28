@@ -1,10 +1,13 @@
 """Transform-related functionality for SmithAxes."""
 
 import numpy as np
+from matplotlib.cbook import simple_linear_interpolation as linear_interpolation
 from matplotlib.transforms import Affine2D, BboxTransformTo
 
 from pysmithchart.moebius_transform import MoebiusTransform
 from pysmithchart.constants import SC_TWICE_INFINITY
+from pysmithchart.polar_transform import PolarTranslate
+from pysmithchart import utils
 
 
 class TransformMixin:
@@ -111,7 +114,7 @@ class TransformMixin:
         assert which in ["tick1", "tick2", "grid"]
         return self._xaxis_transform
 
-    def get_xaxis_text1_transform(self, pad_points):
+    def get_xaxis_text1_transform(self, pad_points):  # pylint: disable=unused-argument
         """
         Get the transformation for text on the first x-axis.
 
@@ -147,8 +150,6 @@ class TransformMixin:
         Returns:
             tuple: A tuple containing the transformation and text alignment information.
         """
-        from pysmithchart.polar_transform import PolarTranslate
-
         if hasattr(self, "yaxis") and len(self.yaxis.majorTicks) > 0:
             font_size = self.yaxis.majorTicks[0].label1.get_size()
         else:
@@ -179,8 +180,6 @@ class TransformMixin:
             >>> z = 50 + 50j  # Impedance
             >>> s = ax.moebius_z(z)  # Convert to S-parameter
         """
-        from pysmithchart import utils
-
         if normalize is None:
             normalize = True
 
@@ -219,8 +218,6 @@ class TransformMixin:
             >>> s = 0.2 + 0.3j  # Reflection coefficient
             >>> z = ax.moebius_inv_z(s)  # Convert to impedance
         """
-        from pysmithchart import utils
-
         if normalize is None:
             normalize = True
 
@@ -254,8 +251,6 @@ class TransformMixin:
 
         Returns: Interpolated real values.
         """
-        from matplotlib.cbook import simple_linear_interpolation as linear_interpolation
-
         return self.moebius_inv_z(linear_interpolation(self.moebius_z(np.array(x)), steps))
 
     def imag_interp1d(self, y, steps):
@@ -273,9 +268,6 @@ class TransformMixin:
 
         Returns: Interpolated imaginary values.
         """
-        from matplotlib.cbook import simple_linear_interpolation as linear_interpolation
-        from pysmithchart import utils
-
         angs = np.angle(self.moebius_z(np.array(y) * 1j)) % (2 * np.pi)
         i_angs = linear_interpolation(angs, steps)
         return np.imag(self.moebius_inv_z(utils.ang_to_c(i_angs)))

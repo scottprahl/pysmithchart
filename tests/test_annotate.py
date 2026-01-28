@@ -1,3 +1,4 @@
+#pylint:disable=protected-access
 """
 Pytest tests for SmithAxes annotate() method with domain support.
 """
@@ -33,7 +34,7 @@ class TestSmithAxesAnnotate:
     def test_annotate_with_arrow(self, smith_axes):
         """Test annotation with arrow."""
         ann = smith_axes.annotate(
-            "Load", xy=(50, 25), xytext=(70, 40), domain=Z_DOMAIN, arrowprops=dict(arrowstyle="->")
+            "Load", xy=(50, 25), xytext=(70, 40), domain=Z_DOMAIN, arrowprops={"arrowstyle": "->"}
         )
         assert ann is not None
         assert ann.arrow_patch is not None
@@ -73,7 +74,7 @@ class TestSmithAxesAnnotate:
             xytext=(75, 50),  # Z-parameter
             domain=R_DOMAIN,
             domain_text=Z_DOMAIN,
-            arrowprops=dict(arrowstyle="->"),
+            arrowprops={"arrowstyle": "->"},
         )
         assert ann is not None
 
@@ -104,14 +105,14 @@ class TestSmithAxesAnnotate:
             fontsize=14,
             color="red",
             fontweight="bold",
-            arrowprops=dict(arrowstyle="->", color="blue", lw=2),
+            arrowprops={"arrowstyle": "->", "color": "blue", "lw": 2},
         )
         assert ann.get_fontsize() == 14
         assert ann.get_color() == "red"
 
     def test_annotate_with_bbox(self, smith_axes):
         """Test annotation with background box."""
-        bbox_props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        bbox_props = {"boxstyle": 'round', "facecolor": 'wheat', "alpha": 0.5}
         ann = smith_axes.annotate("Boxed", xy=(50, 25), domain=Z_DOMAIN, bbox=bbox_props)
         assert ann.get_bbox_patch() is not None
 
@@ -125,7 +126,7 @@ class TestSmithAxesAnnotate:
                 xy=(50 + i * 10, 25),
                 xytext=(60 + i * 10, 35),
                 domain=Z_DOMAIN,
-                arrowprops=dict(arrowstyle=style),
+                arrowprops={"arrowstyle": style},
             )
             assert ann is not None
 
@@ -139,7 +140,7 @@ class TestSmithAxesAnnotate:
                 xy=(50, 25 + i * 10),
                 xytext=(70, 35 + i * 10),
                 domain=Z_DOMAIN,
-                arrowprops=dict(arrowstyle="->", connectionstyle=style),
+                arrowprops={"arrowstyle": "->", "connectionstyle": style},
             )
             assert ann is not None
 
@@ -152,7 +153,7 @@ class TestSmithAxesAnnotate:
 
         # Annotate it
         ann = smith_axes.annotate(
-            "Point", xy=(z.real, z.imag), xytext=(70, 40), domain=Z_DOMAIN, arrowprops=dict(arrowstyle="->")
+            "Point", xy=(z.real, z.imag), xytext=(70, 40), domain=Z_DOMAIN, arrowprops={"arrowstyle": "->"}
         )
         assert ann is not None
 
@@ -167,7 +168,7 @@ class TestSmithAxesAnnotate:
         annotations = []
         for x, y, label in points:
             ann = smith_axes.annotate(
-                label, xy=(x, y), xytext=(x + 15, y + 15), domain=Z_DOMAIN, arrowprops=dict(arrowstyle="->")
+                label, xy=(x, y), xytext=(x + 15, y + 15), domain=Z_DOMAIN, arrowprops={"arrowstyle": "->"}
             )
             annotations.append(ann)
 
@@ -177,7 +178,7 @@ class TestSmithAxesAnnotate:
     def test_annotate_at_matched_load(self, smith_axes):
         """Test annotation at matched load (50Ω)."""
         ann = smith_axes.annotate(
-            "Matched\n50Ω", xy=(50, 0), xytext=(60, 20), domain=Z_DOMAIN, arrowprops=dict(arrowstyle="->")
+            "Matched\n50Ω", xy=(50, 0), xytext=(60, 20), domain=Z_DOMAIN, arrowprops={"arrowstyle": "->"}
         )
         assert ann is not None
 
@@ -197,7 +198,7 @@ class TestSmithAxesAnnotate:
                 domain=Z_DOMAIN,
                 ha=ha,
                 va=va,
-                arrowprops=dict(arrowstyle="->"),
+                arrowprops={"arrowstyle": "->"},
             )
             assert ann.get_ha() == ha
             assert ann.get_va() == va
@@ -218,7 +219,7 @@ class TestSmithAxesAnnotate:
             xy=(z.real, z.imag),
             xytext=(75, 50),
             domain=Z_DOMAIN,
-            arrowprops=dict(arrowstyle="->", color="red"),
+            arrowprops={"arrowstyle": "->", "color": "red"},
         )
 
         assert ann is not None
@@ -227,7 +228,7 @@ class TestSmithAxesAnnotate:
     def test_annotate_all_datatypes_parametrized(self, smith_axes, domain):
         """Parametrized test for all datatypes."""
         ann = smith_axes.annotate(
-            f"Test {domain}", xy=(50, 25), xytext=(70, 40), domain=domain, arrowprops=dict(arrowstyle="->")
+            f"Test {domain}", xy=(50, 25), xytext=(70, 40), domain=domain, arrowprops={"arrowstyle": "->"}
         )
         assert isinstance(ann, matplotlib.text.Annotation)
 
@@ -252,12 +253,12 @@ class TestSmithAxesAnnotateIntegration:
         """Test annotation with grid enabled."""
         smith_axes.grid(grid="impedance")
         ann = smith_axes.annotate(
-            "Test", xy=(50, 25), xytext=(70, 40), domain=Z_DOMAIN, arrowprops=dict(arrowstyle="->")
+            "Test", xy=(50, 25), xytext=(70, 40), domain=Z_DOMAIN, arrowprops={"arrowstyle": "->"}
         )
         assert ann is not None
         smith_axes.grid(grid="admittance")
         ann = smith_axes.annotate(
-            "Test", xy=(50, 25), xytext=(70, 40), domain=Z_DOMAIN, arrowprops=dict(arrowstyle="->")
+            "Test", xy=(50, 25), xytext=(70, 40), domain=Z_DOMAIN, arrowprops={"arrowstyle": "->"}
         )
         assert ann is not None
 
@@ -266,7 +267,7 @@ class TestSmithAxesAnnotateIntegration:
         smith_axes.plot([50 + 25j], "o", domain=Z_DOMAIN, label="Data")
         smith_axes.legend()
         ann = smith_axes.annotate(
-            "Point", xy=(50, 25), xytext=(70, 40), domain=Z_DOMAIN, arrowprops=dict(arrowstyle="->")
+            "Point", xy=(50, 25), xytext=(70, 40), domain=Z_DOMAIN, arrowprops={"arrowstyle": "->"}
         )
         assert ann is not None
 
@@ -286,9 +287,9 @@ class TestSmithAxesAnnotateIntegration:
                 xy=(z.real, z.imag),
                 xytext=(z.real + 20, z.imag + 20),
                 domain=Z_DOMAIN,
-                arrowprops=dict(arrowstyle="->", color="blue"),
+                arrowprops={"arrowstyle": "->", "color": "blue"},
                 fontsize=10,
-                bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
+                bbox={"boxstyle": 'round', "facecolor": 'white', "alpha": 0.8},
             )
 
         assert len(smith_axes.texts) >= 3  # Annotations are stored in .texts

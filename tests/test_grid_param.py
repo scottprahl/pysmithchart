@@ -1,23 +1,16 @@
+#pylint:disable=unused-import
 """
 Pytest tests for the Smith-chart `grid` parameter.
 
-Save as: tests/test_grid_parameter.py
-
-Notes:
-- Uses a non-interactive backend (Agg) so it can run in CI/headless environments.
 - Closes all figures to avoid resource leakage across tests.
-- Does not write files by default (tests should be side-effect free).
+- Does not write files by default
 """
 
 from __future__ import annotations
 
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
-
-# Use a headless backend before pyplot is used in any meaningful way.
-matplotlib.use("Agg", force=True)
 
 import pysmithchart  # noqa: F401  (ensures projection is registered)
 from pysmithchart import Y_DOMAIN, Z_DOMAIN
@@ -76,7 +69,7 @@ def test_grid_invalid_value_raises():
 
 def test_grid_default_is_impedance():
     """Default Smith chart uses the impedance grid only."""
-    fig, ax = plt.subplots(subplot_kw={"projection": "smith"})
+    _, ax = plt.subplots(subplot_kw={"projection": "smith"})
     assert ax.scParams["grid.Z.major.enable"] is True
     assert ax.scParams["grid.Y.major.enable"] is False
 
@@ -84,7 +77,7 @@ def test_grid_default_is_impedance():
 def test_grid_combined_with_smith_params():
     """Grid selection works correctly when combined with smith_style overrides."""
     ss = {"grid.Y.major.color": "blue"}
-    fig, ax = plt.subplots(
+    _, ax = plt.subplots(
         subplot_kw={
             "projection": "smith",
             "grid": "admittance",
@@ -105,7 +98,7 @@ def test_can_create_axes_and_plot_for_each_grid_mode(grid, domain, admittances):
     ax = fig.add_subplot(111, projection="smith", grid=grid)
 
     if domain is Z_DOMAIN:
-        data = np.array(admittances) * 50  # unnormalized impedances
+        data = np.array(1 / admittances) * 50  # unnormalized impedances
     else:
         data = admittances
 

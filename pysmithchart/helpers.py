@@ -1,9 +1,10 @@
 """Helper and utility methods for SmithAxes."""
 
 import warnings
-import numpy as np
 from numbers import Number
 from collections.abc import Iterable
+
+import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.patches import Circle
 from matplotlib.spines import Spine
@@ -147,8 +148,8 @@ class HelpersMixin:
         # Return scalars if input was scalar
         if is_scalar_input:
             return float(x_transformed[0]), float(y_transformed[0])
-        else:
-            return x_transformed, y_transformed
+
+        return x_transformed, y_transformed
 
     def _gen_axes_patch(self):
         """Generate the patch used to draw the Smith chart axes."""
@@ -167,7 +168,7 @@ class HelpersMixin:
             facecolor="none",
         )
 
-    def _gen_axes_spines(self, locations=None, offset=0.0, units="inches"):
+    def _gen_axes_spines(self):
         """Generate the spines for the circular Smith chart axes."""
         spine = Spine.circular_spine(self, (0.5, 0.5), self._get_key("axes.radius"))
         if self._get_key("grid.outer.enable"):

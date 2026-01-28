@@ -12,7 +12,14 @@ from pysmithchart import utils
 
 
 class PlottingMixin:
-    """Mixin class providing plotting methods for SmithAxes."""
+    """Mixin class providing plotting methods for SmithAxes.
+
+    This class is designed to be used as a mixin with matplotlib.axes.Axes
+    via multiple inheritance. Attributes like _current_zorder are provided
+    by the SmithAxes class through the AxesCore mixin.
+    """
+
+    # pylint: disable=no-member  # Attributes come from AxesCore mixin
 
     def plot(self, *args, **kwargs):
         """
@@ -312,7 +319,7 @@ class PlottingMixin:
         lw = line.get_linewidth()
 
         # Arrow properties
-        arrow_props = dict(arrowstyle=style, lw=lw, color=color, mutation_scale=size)
+        arrow_props = {"arrowstyle": style, "lw": lw, "color": color, "mutation_scale": size}
 
         annotations = []
 
@@ -414,10 +421,10 @@ class PlottingMixin:
 
             # Call parent with transformed coordinates
             # Don't pass transform parameter - let matplotlib use default (transData)
-            return super(PlottingMixin, self).text(x_transformed, y_transformed, s, **kwargs)
-        else:
-            # User specified a non-data transform, use coordinates as-is
-            return super(PlottingMixin, self).text(x, y, s, transform=transform, **kwargs)
+            return super().text(x_transformed, y_transformed, s, **kwargs)
+
+        # User specified a non-data transform, use coordinates as-is
+        return super().text(x, y, s, transform=transform, **kwargs)
 
     def annotate(
         self,
@@ -488,7 +495,7 @@ class PlottingMixin:
             xytext_transformed = None
 
         # Call parent annotate with transformed coordinates
-        return super(PlottingMixin, self).annotate(
+        return super().annotate(
             text,
             xy=xy_transformed,
             xytext=xytext_transformed,
@@ -499,7 +506,7 @@ class PlottingMixin:
             **kwargs,
         )
 
-    def legend(self, *args, **kwargs):
+    def legend(self, *_args, **kwargs):
         """
         Create and display a legend for the Smith chart, filtering duplicate entries.
 
@@ -614,8 +621,8 @@ class PlottingMixin:
         # Plot in NORM_Z_DOMAIN
         if args:
             return self.plot(z_points, *args, domain=NORM_Z_DOMAIN, arrow=arrow, **kwargs)
-        else:
-            return self.plot(z_points, domain=NORM_Z_DOMAIN, arrow=arrow, **kwargs)
+
+        return self.plot(z_points, domain=NORM_Z_DOMAIN, arrow=arrow, **kwargs)
 
     def plot_constant_reactance(self, norm_reactance, *args, range=None, num_points=200, arrow=None, **kwargs):
         """
@@ -1024,53 +1031,52 @@ class PlottingMixin:
             # Plot single arc with arrow (using R_DOMAIN for reflection coefficients)
             if fmt_str:
                 return self.plot(gamma_path, fmt_str, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs)
-            else:
-                return self.plot(gamma_path, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs)
 
+            return self.plot(gamma_path, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs)
+
+        # CASE 2: Different VSWR - two-step matching path
+
+        # Intermediate point: rotate to real axis on start VSWR circle
+        angle_start = np.angle(gamma_start)
+        angle_end = np.angle(gamma_end)
+
+        # Choose which real axis crossing is closer to end point
+        if np.abs(angle_end - 0) < np.abs(angle_end - np.pi):
+            angle_intermediate = 0.0  # Positive real axis
         else:
-            # CASE 2: Different VSWR - two-step matching path
+            angle_intermediate = np.pi  # Negative real axis
 
-            # Intermediate point: rotate to real axis on start VSWR circle
-            angle_start = np.angle(gamma_start)
-            angle_end = np.angle(gamma_end)
+        gamma_intermediate = mag_start * np.exp(1j * angle_intermediate)
 
-            # Choose which real axis crossing is closer to end point
-            if np.abs(angle_end - 0) < np.abs(angle_end - np.pi):
-                angle_intermediate = 0.0  # Positive real axis
-            else:
-                angle_intermediate = np.pi  # Negative real axis
+        # STEP 1: Rotate along constant VSWR from start to real axis
+        angle_diff = angle_intermediate - angle_start
+        while angle_diff > np.pi:
+            angle_diff -= 2 * np.pi
+        while angle_diff < -np.pi:
+            angle_diff += 2 * np.pi
 
-            gamma_intermediate = mag_start * np.exp(1j * angle_intermediate)
+        angles_step1 = np.linspace(angle_start, angle_start + angle_diff, num_points // 2)
+        gamma_step1 = mag_start * np.exp(1j * angles_step1)
 
-            # STEP 1: Rotate along constant VSWR from start to real axis
-            angle_diff = angle_intermediate - angle_start
-            while angle_diff > np.pi:
-                angle_diff -= 2 * np.pi
-            while angle_diff < -np.pi:
-                angle_diff += 2 * np.pi
+        # STEP 2: Move from intermediate point toward center (radial)
+        t = np.linspace(0, 1, num_points // 2)
+        gamma_step2 = gamma_intermediate * (1 - t) + gamma_end * t
 
-            angles_step1 = np.linspace(angle_start, angle_start + angle_diff, num_points // 2)
-            gamma_step1 = mag_start * np.exp(1j * angles_step1)
+        lines = []
 
-            # STEP 2: Move from intermediate point toward center (radial)
-            t = np.linspace(0, 1, num_points // 2)
-            gamma_step2 = gamma_intermediate * (1 - t) + gamma_end * t
+        # Plot step 1 (transmission line rotation) with arrow
+        if fmt_str:
+            lines.extend(self.plot(gamma_step1, fmt_str, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs))
+        else:
+            lines.extend(self.plot(gamma_step1, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs))
 
-            lines = []
+        # Plot step 2 (reactive element) with arrow - remove label to avoid duplicate
+        fmt_kwargs_2 = fmt_kwargs.copy()
+        fmt_kwargs_2.pop("label", None)
 
-            # Plot step 1 (transmission line rotation) with arrow
-            if fmt_str:
-                lines.extend(self.plot(gamma_step1, fmt_str, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs))
-            else:
-                lines.extend(self.plot(gamma_step1, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs))
+        if fmt_str:
+            lines.extend(self.plot(gamma_step2, fmt_str, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs_2))
+        else:
+            lines.extend(self.plot(gamma_step2, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs_2))
 
-            # Plot step 2 (reactive element) with arrow - remove label to avoid duplicate
-            fmt_kwargs_2 = fmt_kwargs.copy()
-            fmt_kwargs_2.pop("label", None)
-
-            if fmt_str:
-                lines.extend(self.plot(gamma_step2, fmt_str, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs_2))
-            else:
-                lines.extend(self.plot(gamma_step2, domain=R_DOMAIN, arrow=arrow, **fmt_kwargs_2))
-
-            return lines
+        return lines

@@ -256,8 +256,8 @@ def _rotate_on_constant_gamma_to_real(
 
     if solution == "closer":
         return v_pos if d_pos < d_neg else v_neg
-    else:  # farther
-        return v_pos if d_pos > d_neg else v_neg
+
+    return v_pos if d_pos > d_neg else v_neg
 
 
 def rotate_z_toward_resistance(z_norm, r_norm, solution="closer"):
@@ -467,8 +467,8 @@ def _crossings_on_constant_gamma_with_imag(
 
     if solution == "closer":
         return v1 if d1 <= d2 else v2
-    else:  # farther
-        return v1 if d1 >= d2 else v2
+
+    return v1 if d1 >= d2 else v2
 
 
 def rotate_z_toward_reactance(z_norm, x_norm, solution="closer"):

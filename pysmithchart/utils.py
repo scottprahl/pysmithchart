@@ -404,8 +404,8 @@ def moebius_transform(z, norm=1):
     # Replace any inf/nan with inf
     if np.isscalar(result):
         return np.inf if not np.isfinite(result) else result
-    else:
-        return np.where(np.isfinite(result), result, np.inf)
+
+    return np.where(np.isfinite(result), result, np.inf)
 
 
 def moebius_inverse_transform(s, norm=1):
@@ -443,8 +443,8 @@ def moebius_inverse_transform(s, norm=1):
     # Replace any inf/nan with SC_INFINITY
     if np.isscalar(result):
         return SC_INFINITY if not np.isfinite(result) else result
-    else:
-        return np.where(np.isfinite(result), result, SC_INFINITY)
+
+    return np.where(np.isfinite(result), result, SC_INFINITY)
 
 
 def ang_to_c(ang, radius=1):
@@ -580,7 +580,7 @@ def reactance_to_component(X, freq):
     Convert reactance to component value (L or C).
 
     Args:
-        X: Reactance in Ohms (positive for inductor, negative for capacitor)
+        X: Reactance in Ohms
         freq: Frequency in Hz
 
     Returns:
@@ -588,25 +588,26 @@ def reactance_to_component(X, freq):
     """
     omega = 2 * np.pi * freq
 
-    if X > 0:
-        # Inductor
+    vals = ("None", 0, "")
+
+    if X > 0:  # Inductor
         L = X / omega
         if L >= 1e-3:
-            return ("Capacitor", L * 1e6, "mH")
+            vals = ("Capacitor", L * 1e6, "mH")
         elif L >= 1e-6:
-            return ("Inductor", L * 1e6, "µH")
+            vals = ("Inductor", L * 1e6, "µH")
         else:
-            return ("Inductor", L * 1e9, "nH")
-    if X < 0:
-        # Capacitor
+            vals = ("Inductor", L * 1e9, "nH")
+
+    if X < 0:  # Capacitor
         C = -1 / (omega * X)
         if C >= 1e-3:
-            return ("Capacitor", C * 1e6, "mF")
+            vals = ("Capacitor", C * 1e6, "mF")
         elif C >= 1e-6:
-            return ("Capacitor", C * 1e6, "µF")
+            vals = ("Capacitor", C * 1e6, "µF")
         elif C >= 1e-9:
-            return ("Capacitor", C * 1e9, "nF")
+            vals = ("Capacitor", C * 1e9, "nF")
         else:
-            return ("Capacitor", C * 1e12, "pF")
-    else:
-        return ("None", 0, "")
+            vals = ("Capacitor", C * 1e12, "pF")
+
+    return vals

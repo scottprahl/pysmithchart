@@ -9,11 +9,19 @@ from matplotlib.axes import Axes
 
 from pysmithchart.constants import SC_DEFAULT_PARAMS, RC_DEFAULT_PARAMS
 from pysmithchart.constants import SC_NEAR_INFINITY, SC_TWICE_INFINITY, SC_EPSILON
+from pysmithchart.constants import NORM_Z_DOMAIN
 from pysmithchart.locators import MajorXLocator, MajorYLocator, MinorLocator
 
 
 class AxesCore:
-    """Core functionality for SmithAxes including initialization and configuration."""
+    """Core functionality for SmithAxes including initialization and configuration.
+
+    This class is designed to be used as a mixin with matplotlib.axes.Axes
+    via multiple inheritance. Many methods that appear to be missing (like
+    set_aspect, tick_params, text, etc.) are actually provided by Axes at runtime.
+    """
+
+    # pylint: disable=no-member  # Methods come from Axes mixin
 
     name = "smith"
 
@@ -136,6 +144,14 @@ class AxesCore:
         self._current_zorder = None
         self.scParams = copy.deepcopy(SC_DEFAULT_PARAMS)
 
+        # Initialize attributes that will be set later
+        self.xaxis = None
+        self.yaxis = None
+        self._normbox = None
+        self._admittance_majorarcs = None
+        self._admittance_minorarcs = None
+        self.grid = None  # Will be replaced with actual grid method later
+
         # Define shortcut mappings for user-friendly names
         SHORTCUT_MAP = {
             "Z0": "axes.Z0",
@@ -206,7 +222,7 @@ class AxesCore:
                 if mp.rcParams[key] == mp.rcParamsDefault[key]:
                     mp.rcParams[key] = value
 
-        Axes.__init__(self, *args, **axes_kwargs)
+        Axes.__init__(self, *args, **axes_kwargs)  # pylint: disable=non-parent-init-called
 
         self.set_aspect(1, adjustable="box", anchor="C")
         self.tick_params(axis="both", which="both", bottom=False, top=False, left=False, right=False)
@@ -277,8 +293,6 @@ class AxesCore:
 
     def _add_manual_axis_labels(self):
         """Manually add axis labels for both impedance and admittance modes."""
-        from pysmithchart.constants import NORM_Z_DOMAIN
-
         bbox = self._get_key("axes.xlabel.fancybox")
         rotation = self._get_key("axes.xlabel.rotation")
 
@@ -399,12 +413,14 @@ class AxesCore:
         self._normbox = None
 
         # Temporarily disable grid to prevent issues during parent clear
-        original_grid = self.grid
-        self.grid = lambda *args, **kwargs: None
+        original_grid = getattr(self, "grid", None)
+        if original_grid is not None:
+            self.grid = lambda *args, **kwargs: None
         try:
             Axes.clear(self)
         finally:
-            self.grid = original_grid
+            if original_grid is not None:
+                self.grid = original_grid
 
         # Perform Smith chart initialization
         self._init_smith_chart()
