@@ -1,0 +1,40 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it as below.
+title: 'pysmithchart: A Python library extending Matplotlib to generate Smith Charts'
+version: 0.6.0
+date-released: '2026-01-05'
+doi: 10.5281/zenodo.8370821
+url: https://github.com/scottprahl/pysmithchart
+repository-code: https://github.com/scottprahl/pysmithchart
+license: BSD-3-Clause
+type: software
+authors:
+- family-names: Staerke
+  given-names: Paul
+- family-names: Prahl
+  given-names: Scott
+  orcid: https://orcid.org/0000-0003-1468-6851
+abstract: pysmithchart is a Python library that extends Matplotlib by registering a custom
+  "smith" projection for plotting Smith charts. It supports visualization and analysis of
+  reflection coefficients, impedances, and admittances for RF and microwave engineering tasks
+  such as impedance matching and transmission-line work.
+keywords:
+- Smith Chart
+- impedance
+- reflection
+- RF engineering
+- microwave
+- matplotlib
+- transmission line
+preferred-citation:
+  type: software
+  authors:
+  - family-names: Staerke
+    given-names: Paul
+  - family-names: Prahl
+    given-names: Scott
+    orcid: https://orcid.org/0000-0003-1468-6851
+  title: 'pysmithchart: A Python library extending Matplotlib to generate Smith Charts'
+  year: 2026
+  version: 0.6.0
+  url: https://github.com/scottprahl/pysmithchart
