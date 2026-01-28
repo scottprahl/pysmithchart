@@ -1,4 +1,4 @@
-#pylint:disable=unused-import
+# pylint:disable=unused-import
 """
 Pytest tests for the Smith-chart `grid` parameter.
 

@@ -1,4 +1,4 @@
-#pylint:disable=protected-access
+# pylint:disable=protected-access
 """
 Pytest tests for SmithAxes annotate() method with domain support.
 """
@@ -112,7 +112,7 @@ class TestSmithAxesAnnotate:
 
     def test_annotate_with_bbox(self, smith_axes):
         """Test annotation with background box."""
-        bbox_props = {"boxstyle": 'round', "facecolor": 'wheat', "alpha": 0.5}
+        bbox_props = {"boxstyle": "round", "facecolor": "wheat", "alpha": 0.5}
         ann = smith_axes.annotate("Boxed", xy=(50, 25), domain=Z_DOMAIN, bbox=bbox_props)
         assert ann.get_bbox_patch() is not None
 
@@ -289,7 +289,7 @@ class TestSmithAxesAnnotateIntegration:
                 domain=Z_DOMAIN,
                 arrowprops={"arrowstyle": "->", "color": "blue"},
                 fontsize=10,
-                bbox={"boxstyle": 'round', "facecolor": 'white', "alpha": 0.8},
+                bbox={"boxstyle": "round", "facecolor": "white", "alpha": 0.8},
             )
 
         assert len(smith_axes.texts) >= 3  # Annotations are stored in .texts
