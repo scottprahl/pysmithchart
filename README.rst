@@ -48,6 +48,9 @@ Smith charts remain a foundational tool in RF engineering, and this library is d
    :width: 400px
    :align: center
 
+This project originated from `pySmithPlot <https://github.com/vMeijin/pySmithPlot>`_ by Paul Staerke.  
+It has been completely rewritten so any issues are not his.
+
 ----
 
 Features
@@ -104,14 +107,13 @@ Quick Start
 .. code-block:: python
 
     import matplotlib.pyplot as plt
+    import pysmithchart
 
     ZL = [30 + 30j, 50 + 50j, 100 + 100j]
 
+    sc = {"grid.Z.minor_enable":True}
     plt.figure(figsize=(6, 6))
-    ax = plt.subplot(1, 1, 1, projection="smith",
-                     axes_impedance=200,  # Z₀ = 200Ω
-                     grid.Z.minor_enable=True)
-
+    ax = plt.subplot(1, 1, 1, projection="smith", Z0=200, **sc)
     plt.plot(ZL, "b-o", markersize=10, label='Load Impedance')
     plt.legend()
     plt.title('Impedances with Z₀ = 200Ω')
@@ -137,6 +139,28 @@ License
 -------
 
 ``pysmithchart`` is released under the BSD-3 Clause License.
+
+Citation
+--------
+
+If you use ``pysmithchart`` in academic or technical work, please cite:
+
+Prahl, S. (2026). *pysmithchart: A Python module for Smith charts* (Version 0.6.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.8370821
+
+BibTeX
+~~~~~~
+
+.. code-block:: bibtex
+
+   @software{pygrin_prahl_2026,
+     author    = {Scott Prahl},
+     title     = {pysmithchart: A Python module for Smith charts},
+     year      = {2026},
+     version   = {0.6.0},
+     doi       = {10.5281/zenodo.8370821},
+     url       = {https://github.com/scottprahl/pygrin},
+     publisher = {Zenodo}
+   }
 
 Acknowledgments
 ---------------
