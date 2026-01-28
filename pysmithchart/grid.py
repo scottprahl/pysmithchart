@@ -100,14 +100,27 @@ class GridMixin:
 
         x_minor, y_minor = self._compute_minor_ticks(xt_major, yt_major, real_divs, imag_divs, threshold)
 
-        # Draw minor gridlines (full circles for now, TODO: fancy clipping)
-        for r in x_minor:
-            if 0 <= r < SC_NEAR_INFINITY:
-                self.plot_constant_resistance(r, **style)
+        if fancy:
+            # First compute major ranges
+            major_r_ranges, major_x_ranges = self._compute_major_ranges(
+                xt_major, yt_major, self._get_key("grid.major.threshold")
+            )
+            # Then inherit those ranges for minor gridlines
+            r_ranges, x_ranges = self._inherit_major_ranges(
+                x_minor, y_minor, xt_major, yt_major, major_r_ranges, major_x_ranges
+            )
+        else:
+            r_ranges = [None] * len(x_minor)
+            x_ranges = [None] * len(y_minor)
 
-        for x in y_minor:
+        # Draw minor gridlines with inherited clipping from major
+        for r, x_range in zip(x_minor, r_ranges):
+            if 0 <= r < SC_NEAR_INFINITY:
+                self.plot_constant_resistance(r, range=x_range, **style)
+
+        for x, r_range in zip(y_minor, x_ranges):
             if abs(x) < SC_NEAR_INFINITY:
-                self.plot_constant_reactance(x, **style)
+                self.plot_constant_reactance(x, range=r_range, **style)
 
     # ========== ADMITTANCE DRAWING ==========
 
@@ -154,9 +167,6 @@ class GridMixin:
         style = self._get_grid_style("admittance", "minor", **kwargs)
         style.setdefault("marker", "")
 
-        Z0 = self._get_key("axes.Z0")
-        Y0 = 1 / Z0
-
         # Get admittance minor grid parameters
         real_divs = self._get_key("grid.Y.minor.real.divisions")
         imag_divs = self._get_key("grid.Y.minor.imag.divisions")
@@ -171,13 +181,26 @@ class GridMixin:
 
         g_minor, b_minor = self._compute_minor_ticks(xt_major, yt_major, real_divs, imag_divs, threshold)
 
-        # Draw minor gridlines as full circles
-        for g in g_minor:
-            if g > 1e-10:
-                self.plot_constant_conductance(g, **style)
+        if fancy:
+            # First compute major ranges
+            major_g_ranges, major_b_ranges = self._compute_major_ranges(
+                xt_major, yt_major, self._get_key("grid.major.threshold")
+            )
+            # Then inherit those ranges for minor gridlines
+            g_ranges, b_ranges = self._inherit_major_ranges(
+                g_minor, b_minor, xt_major, yt_major, major_g_ranges, major_b_ranges
+            )
+        else:
+            g_ranges = [None] * len(g_minor)
+            b_ranges = [None] * len(b_minor)
 
-        for b in b_minor:
-            self.plot_constant_susceptance(b, range=(0, 20 * Y0), **style)
+        # Draw minor gridlines with inherited clipping from major
+        for g, b_range in zip(g_minor, g_ranges):
+            if g > 1e-10:
+                self.plot_constant_conductance(g, range=b_range, **style)
+
+        for b, g_range in zip(b_minor, b_ranges):
+            self.plot_constant_susceptance(b, range=g_range, **style)
 
     # ========== HELPER METHODS (DOMAIN-AGNOSTIC) ==========
 
@@ -248,6 +271,76 @@ class GridMixin:
                     tmp_xticks = np.delete(tmp_xticks, k)
                 else:
                     k += 1
+
+        return real_ranges, imag_ranges
+
+    def _inherit_major_ranges(self, x_minor, y_minor, xt_major, yt_major, major_real_ranges, major_imag_ranges):
+        """Compute clipping ranges for minor gridlines by inheriting from major gridlines.
+
+        For each minor tick, find the nearest major ticks on either side and use
+        the most restrictive clipping range (minimum of the max values).
+
+        Args:
+            x_minor: Minor real-axis tick values (sorted, ABSOLUTE)
+            y_minor: Minor imaginary-axis tick values (sorted, ABSOLUTE)
+            xt_major: Major real-axis tick values (sorted, ABSOLUTE)
+            yt_major: Major imaginary-axis tick values (sorted, ABSOLUTE)
+            major_real_ranges: Clipping ranges for major real gridlines
+            major_imag_ranges: Clipping ranges for major imaginary gridlines
+
+        Returns:
+            tuple: (real_ranges, imag_ranges) for minor gridlines
+        """
+        real_ranges = []
+        imag_ranges = []
+
+        # For each minor real tick, inherit range from nearest major real ticks
+        for r_minor in x_minor:
+            # Find major ticks on either side
+            idx_before = np.where(xt_major <= r_minor)[0]
+            idx_after = np.where(xt_major >= r_minor)[0]
+
+            range_before = major_real_ranges[idx_before[-1]] if len(idx_before) > 0 else None
+            range_after = major_real_ranges[idx_after[0]] if len(idx_after) > 0 else None
+
+            # Use the most restrictive range (smallest absolute max value)
+            if range_before is None and range_after is None:
+                real_ranges.append(None)
+            elif range_before is None:
+                real_ranges.append(range_after)
+            elif range_after is None:
+                real_ranges.append(range_before)
+            else:
+                # Both have ranges - take minimum of the max values
+                # Ranges are symmetric: (-x, x) so we just compare the positive value
+                max_before = abs(range_before[1]) if range_before[1] != 0 else abs(range_before[0])
+                max_after = abs(range_after[1]) if range_after[1] != 0 else abs(range_after[0])
+                min_max = min(max_before, max_after)
+                real_ranges.append((-min_max, min_max))
+
+        # For each minor imaginary tick, inherit range from nearest major imaginary ticks
+        # Note: y_minor and yt_major contain both positive and negative values, already sorted
+        for y_minor_val in y_minor:
+            # Find major ticks on either side (in the SORTED array, not by absolute value)
+            idx_before = np.where(yt_major <= y_minor_val)[0]
+            idx_after = np.where(yt_major >= y_minor_val)[0]
+
+            range_before = major_imag_ranges[idx_before[-1]] if len(idx_before) > 0 else None
+            range_after = major_imag_ranges[idx_after[0]] if len(idx_after) > 0 else None
+
+            # Use the most restrictive range (smallest max value)
+            if range_before is None and range_after is None:
+                imag_ranges.append(None)
+            elif range_before is None:
+                imag_ranges.append(range_after)
+            elif range_after is None:
+                imag_ranges.append(range_before)
+            else:
+                # Both have ranges - take minimum of the max values
+                max_before = range_before[1]
+                max_after = range_after[1]
+                min_max = min(max_before, max_after)
+                imag_ranges.append((0, min_max))
 
         return real_ranges, imag_ranges
 
@@ -341,12 +434,66 @@ class GridMixin:
         return yticks[len_y:]
 
     def _split_threshold(self, threshold):
-        """Split threshold into x and y components."""
+        """Split threshold into x and y components and convert to Möbius distance.
+
+        Args:
+            threshold: Either a legacy numeric value (will be divided by 1000),
+                      a tuple of legacy values, or a string like "2mm" for physical distance.
+                      Can also be a tuple of strings like ("2mm", "1.5mm").
+
+        Returns:
+            tuple: (thr_x, thr_y) in Möbius distance units
+        """
+
+        def convert_threshold(thr):
+            """Convert a single threshold value to Möbius distance."""
+            if isinstance(thr, str) and thr.endswith("mm"):
+                # Physical distance in millimeters
+                mm_value = float(thr[:-2])
+                # Convert mm to Möbius distance using current figure size
+                return self._mm_to_moebius(mm_value)
+            else:
+                # Legacy numeric value - divide by 1000
+                return thr / 1000
+
         if isinstance(threshold, tuple):
-            thr_x, thr_y = threshold
+            thr_x = convert_threshold(threshold[0])
+            thr_y = convert_threshold(threshold[1])
         else:
-            thr_x = thr_y = threshold
-        return (thr_x / 1000, thr_y / 1000)
+            thr_x = thr_y = convert_threshold(threshold)
+
+        return (thr_x, thr_y)
+
+    def _mm_to_moebius(self, mm):
+        """Convert physical distance in mm to Möbius distance.
+
+        Args:
+            mm: Distance in millimeters
+
+        Returns:
+            float: Equivalent distance in Möbius space
+        """
+        # Get the bounding box of the axes in display coordinates (pixels)
+        bbox = self.get_window_extent()
+
+        # The Smith chart radius in display coordinates
+        r = self._get_key("axes.radius")
+
+        # Smith chart diameter in pixels (width of the circular chart area)
+        # The chart goes from -r to +r in axes coordinates, which is 2*r
+        # The axes coordinates go from 0 to 1, so we need the full axes width
+        chart_diameter_pixels = bbox.width * 2 * r
+
+        # Convert mm to inches (1 inch = 25.4 mm), then to pixels using DPI
+        dpi = self.figure.dpi
+        mm_to_pixels = dpi / 25.4
+        distance_pixels = mm * mm_to_pixels
+
+        # Convert pixels to fraction of chart diameter (this gives us data space distance)
+        # In Möbius space, the chart has diameter 2 (from -1 to +1)
+        moebius_distance = (distance_pixels / chart_diameter_pixels) * 2
+
+        return moebius_distance
 
     def _get_grid_style(self, grid, level, **user_kwargs):
         """Get styling parameters for a grid."""

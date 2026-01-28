@@ -241,10 +241,27 @@ class AxesCore:
         Axes.set_ylim(self, -SC_TWICE_INFINITY, SC_TWICE_INFINITY)
 
         # Configure axis locators
-        self.xaxis.set_major_locator(MajorXLocator(self, self._get_key("grid.Z.major.real.divisions")))
-        self.yaxis.set_major_locator(MajorYLocator(self, self._get_key("grid.Z.major.imag.divisions")))
-        self.xaxis.set_minor_locator(MinorLocator(self._get_key("grid.Z.minor.real.divisions")))
-        self.yaxis.set_minor_locator(MinorLocator(self._get_key("grid.Z.minor.imag.divisions")))
+        # Use admittance divisions if only admittance is enabled, otherwise use impedance
+        impedance_enabled = self._get_key("grid.Z.major.enable")
+        admittance_enabled = self._get_key("grid.Y.major.enable")
+
+        if admittance_enabled and not impedance_enabled:
+            # Pure admittance chart - use Y divisions
+            real_divs = self._get_key("grid.Y.major.real.divisions")
+            imag_divs = self._get_key("grid.Y.major.imag.divisions")
+            real_minor_divs = self._get_key("grid.Y.minor.real.divisions")
+            imag_minor_divs = self._get_key("grid.Y.minor.imag.divisions")
+        else:
+            # Impedance chart or both - use Z divisions
+            real_divs = self._get_key("grid.Z.major.real.divisions")
+            imag_divs = self._get_key("grid.Z.major.imag.divisions")
+            real_minor_divs = self._get_key("grid.Z.minor.real.divisions")
+            imag_minor_divs = self._get_key("grid.Z.minor.imag.divisions")
+
+        self.xaxis.set_major_locator(MajorXLocator(self, real_divs))
+        self.yaxis.set_major_locator(MajorYLocator(self, imag_divs))
+        self.xaxis.set_minor_locator(MinorLocator(real_minor_divs))
+        self.yaxis.set_minor_locator(MinorLocator(imag_minor_divs))
 
         # Configure ticks
         self.xaxis.set_ticks_position("none")
