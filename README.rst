@@ -162,6 +162,6 @@ BibTeX
      year      = {2026},
      version   = {0.6.0},
      doi       = {10.5281/zenodo.8370821},
-     url       = {https://github.com/scottprahl/pygrin},
+     url       = {https://github.com/scottprahl/pysmithchart},
      publisher = {Zenodo}
    }
