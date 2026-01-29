@@ -19,7 +19,7 @@ How-To Guides
 .. toctree::
    :maxdepth: 2
 
-   03_plotting_data
+   03_plotting
    04_vswr_and_circles
    05_transmission_lines
    06_arrows_and_paths

@@ -9,6 +9,9 @@ from pysmithchart.constants import SC_TWICE_INFINITY
 from pysmithchart.polar_transform import PolarTranslate
 from pysmithchart import utils
 
+# Only export the mixin class, not imported symbols
+__all__ = ['TransformMixin']
+
 
 class TransformMixin:
     """Mixin class providing transform-related methods for SmithAxes."""

@@ -16,13 +16,13 @@ Public Functions:
         cs(z, N): Format complex number as string
 
     Möbius Transformations:
-        moebius_transform(z, norm): Forward Möbius transform (Z → Γ)
-        moebius_inverse_transform(s, norm): Inverse Möbius transform (Γ → Z)
+        moebius_transform(z, norm): Forward Möbius transform (Z → Gamma)
+        moebius_inverse_transform(s, norm): Inverse Möbius transform (Gamma → Z)
 
     RF Calculations:
         calc_gamma(Z_0, Z_L): Calculate reflection coefficient
         calc_vswr(Z_0, Z_L): Calculate VSWR from impedances
-        calc_load(Z_0, gamma): Calculate load impedance from Γ
+        calc_load(Z_0, gamma): Calculate load impedance from Gamma
         reactance_to_component(X, freq): describe reactance as C or L
 
     Angle/Wavelength Conversions:
@@ -138,17 +138,17 @@ def vswr_to_gamma_mag(vswr):
 
 
 def calc_vswr_from_gamma(gamma):
-    """Converts reflection-coefficient magnitude |Gamma| to VSWR.
+    """Converts reflection-coefficient magnitude to VSWR.
 
     For a lossless line, VSWR and reflection coefficient magnitude are related by:
 
-        VSWR = (1 + |Gamma|) / (1 - |Gamma|)
+        VSWR = (1 + |Γ|) / (1 - |Γ|)
 
-    This function accepts either a scalar or an array-like |Gamma| magnitude and
+    This function accepts either a scalar or an array-like magnitude and
     returns the corresponding scalar or NumPy array of VSWR values.
 
     Args:
-        gamma: Reflection-coefficient magnitude(s) |Gamma|. Must satisfy
+        gamma: Reflection-coefficient magnitude(s). Must satisfy
             0 <= gamma < 1. May be a float or any array-like object accepted by
             `numpy.asarray`.
 
@@ -157,7 +157,7 @@ def calc_vswr_from_gamma(gamma):
     """
     r = np.asarray(gamma)
     if np.any(r < 0) or np.any(r >= 1):
-        raise ValueError("|Gamma| must satisfy 0 <= gamma < 1.")
+        raise ValueError("Reflection coefficient magnitude must satisfy 0 <= gamma < 1.")
     return (1 + r) / (1 - r)
 
 
@@ -166,14 +166,14 @@ def calc_vswr(Z_0, Z_L):
 
     This is a convenience wrapper that computes the reflection coefficient:
 
-        Gamma = (Z_L - Z_0) / (Z_L + Z_0)
+        Γ = (Z_L - Z_0) / (Z_L + Z_0)
 
     then converts its magnitude to VSWR:
 
-        VSWR = (1 + |Gamma|) / (1 - |Gamma|)
+        VSWR = (1 + |Γ|) / (1 - |Γ|)
 
     This function assumes the standard lossless relationship between VSWR
-    and |Gamma|.
+    and the reflection coefficient magnitude.
 
     Args:
         Z_0: Reference (characteristic) impedance Z0 in ohms. Typically a real,
@@ -183,7 +183,7 @@ def calc_vswr(Z_0, Z_L):
 
     Returns:
         The VSWR (a real, non-negative float). For a perfect match, VSWR = 1.
-        As the mismatch approaches |Gamma| -> 1, VSWR grows without bound.
+        As the mismatch approaches |Γ| -> 1, VSWR grows without bound.
     """
     if Z_0 == 0:
         raise ValueError("Z_0 must be non-zero.")

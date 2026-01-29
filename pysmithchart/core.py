@@ -12,6 +12,9 @@ from pysmithchart.constants import SC_NEAR_INFINITY, SC_TWICE_INFINITY, SC_EPSIL
 from pysmithchart.constants import NORM_Z_DOMAIN
 from pysmithchart.locators import MajorXLocator, MajorYLocator, MinorLocator
 
+# Only export the mixin class, not imported symbols
+__all__ = ['AxesCore']
+
 
 class AxesCore:
     """Core functionality for SmithAxes including initialization and configuration.

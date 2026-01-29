@@ -21,6 +21,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx_automodapi.automodapi",
     "nbsphinx",
+    "matplotlib.sphinxext.plot_directive",
     "sphinx.ext.graphviz",
     "sphinx.ext.inheritance_diagram",
 ]
@@ -32,6 +33,11 @@ numpydoc_show_class_members = False
 exclude_patterns = [
     "_build",
     ".ipynb_checkpoints",
+]
+
+suppress_warnings = [
+    'ref.mpltype',
+    'docutils',  # Suppress docutils warnings from matplotlib
 ]
 
 nbsphinx_execute = "never"

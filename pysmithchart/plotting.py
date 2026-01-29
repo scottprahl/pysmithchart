@@ -10,6 +10,9 @@ from scipy.interpolate import splprep, splev
 from pysmithchart.constants import Z_DOMAIN, Y_DOMAIN, R_DOMAIN, NORM_Z_DOMAIN, NORM_Y_DOMAIN
 from pysmithchart import utils
 
+# Only export the mixin class, not imported symbols
+__all__ = ['PlottingMixin']
+
 
 class PlottingMixin:
     """Mixin class providing plotting methods for SmithAxes.
@@ -41,7 +44,7 @@ class PlottingMixin:
                 domain (str, optional):
                     Specifies the input data format
                     - `Z_DOMAIN`: (default) Impedance in Ohms.
-                    - `R_DOMAIN`: Γ or scattering parameters
+                    - `R_DOMAIN`: Gamma or scattering parameters
                     - `NORM_Z_DOMAIN`: Normalized impedance.
                     - `Y_DOMAIN`: Admittance in Siemens
                     - `NORM_Y_DOMAIN`: Normalized admittance.
@@ -223,7 +226,7 @@ class PlottingMixin:
             domain (str, optional):
                 Specifies the input data format
                 - `Z_DOMAIN`: (default) Impedance in Ohms.
-                - `R_DOMAIN`: Γ or scattering parameters
+                - `R_DOMAIN`: Gamma or scattering parameters
                 - `NORM_Z_DOMAIN`: Normalized impedance.
                 - `Y_DOMAIN`: Admittance in Siemens
                 - `NORM_Y_DOMAIN`: Normalized admittance.
@@ -360,17 +363,15 @@ class PlottingMixin:
         Add text to the Smith chart at the specified coordinates.
 
         Args:
-            x (float or complex): Real part of the coordinate, or complex impedance value.
-                If complex, y parameter is ignored and s becomes the second argument.
-            y (float or str, optional): Imaginary part (if x is real), or text string (if x is complex).
-            s (str, optional): The text string to display (if x and y are real).
-            domain (str, optional): Coordinate type (Z_DOMAIN, Y_DOMAIN, R_DOMAIN).
-                Default: Uses plot.default.domain from smith_params.
-            **kwargs: Additional matplotlib text parameters including:
-                - transform: Coordinate transform (default uses data coordinates with Smith chart transformation).
-                  If you specify transform=ax.transAxes or another non-data transform, coordinates will be
-                  used as-is without Smith chart transformation.
-                - All standard matplotlib text properties (fontsize, color, ha, va, etc.)
+            x (float or complex): X-coordinate or complex coordinate.
+            y (float, optional): Y-coordinate. Not needed if x is complex.
+            s (str, optional): Text string to display.
+            domain (str, optional): Coordinate domain (Z_DOMAIN, Y_DOMAIN, etc.).
+                Defaults to plot.default.domain from configuration.
+            transform (Transform, optional): Matplotlib transform to use.
+                If None or 'data', uses Smith chart transformation.
+                Otherwise uses the specified transform (e.g., transAxes).
+            **kwargs: Additional arguments passed to matplotlib.axes.Axes.text().
 
         Returns:
             matplotlib.text.Text: The created text object.
@@ -859,7 +860,7 @@ class PlottingMixin:
         Plot a constant VSWR circle on the Smith chart.
 
         A constant VSWR circle represents all impedances with the same voltage standing
-        wave ratio. The circle is centered at the chart center with radius |Γ|.
+        wave ratio. The circle is centered at the chart center with radius :math:`|\\Gamma|`.
 
         Args:
             vswr (float): The VSWR value to plot. Must be >= 1.0.
@@ -893,16 +894,12 @@ class PlottingMixin:
 
             >>> # Plot VSWR = 3.0 with custom styling
             >>> ax.plot_vswr(3.0, color='green', linestyle='--', linewidth=2)
-
-        Notes:
-            The relationship between VSWR and reflection coefficient magnitude is:
-            |Γ| = (VSWR - 1) / (VSWR + 1)
         """
         if vswr < 1.0:
             raise ValueError(f"VSWR must be >= 1.0, got {vswr}")
 
         # Calculate reflection coefficient magnitude from VSWR
-        # |Γ| = (VSWR - 1) / (VSWR + 1)
+        # Gamma = (VSWR - 1) / (VSWR + 1)
         gamma_mag = (vswr - 1) / (vswr + 1)
 
         # Determine angle range
@@ -932,9 +929,11 @@ class PlottingMixin:
         Plot a physically realizable impedance matching path.
 
         For impedances at the same VSWR: Draws a single arc along the constant-VSWR circle.
+
         For impedances at different VSWR: Draws a two-step path:
-            Step 1: Rotate along constant-VSWR circle (transmission line)
-            Step 2: Move toward center (reactive element)
+        
+        - Step 1: Rotate along constant-VSWR circle (transmission line)
+        - Step 2: Move toward center (reactive element)
 
         Args:
             Z_start: Starting impedance (complex number).
