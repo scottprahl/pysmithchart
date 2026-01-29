@@ -16,6 +16,8 @@ Public API:
     - Y_DOMAIN: Admittance in Siemens (automatically normalized by Y₀)
     - NORM_Y_DOMAIN: Pre-normalized admittance values
 
+More documentation at <https://pysmithchart.readthedocs.io>
+
 Example:
     Plot impedance values in ohms is the default::
 
