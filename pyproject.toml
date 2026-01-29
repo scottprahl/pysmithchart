@@ -43,6 +43,7 @@ docs = [
   "nbsphinx==0.9.7",
   "sphinx_automodapi",
   "sphinx_rtd_theme",
+  "ipython",
 ]
 
 dev = [
