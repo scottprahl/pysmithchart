@@ -156,7 +156,7 @@ BibTeX
 
 .. code-block:: bibtex
 
-   @software{pygrin_prahl_2026,
+   @software{pysmithchart_prahl_2026,
      author    = {Scott Prahl and Paul Staerke},
      title     = {pysmithchart: A Python module for Smith charts},
      year      = {2026},
