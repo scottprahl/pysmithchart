@@ -1,38 +1,40 @@
 """
-This module registers the matplotlib projection "smith".
+Smith chart visualization using matplotlib custom projections.
 
-The `pysmithchart` package provides tools for working with Smith charts, enabling visualization and
-analysis of reflection coefficients, impedances, and admittances in RF and microwave engineering.
+The `pysmithchart` package provides tools for creating Smith charts, enabling
+visualization and analysis of reflection coefficients, impedances, and admittances
+in RF and microwave engineering applications.
 
-Modules:
-    axes: Defines the `SmithAxes` class, which implements the custom Smith chart projection.
-    core: Core initialization and configuration for SmithAxes.
-    transforms: Coordinate transformation operations (Möbius, etc.).
-    grid: Grid drawing functionality.
-    plotting: Plotting, text, and annotation methods.
-    helpers: Utility and helper methods.
-
-Constants:
-    R_DOMAIN: Scattering parameter domain for plotting reflection coefficients.
-    Z_DOMAIN: Impedance parameter domain for plotting normalized impedances.
-    Y_DOMAIN: Admittance parameter domain for plotting normalized admittances.
-    NORM_Z_DOMAIN: Absolute parameter domain for plotting unnormalized values.
+After importing this pysmithchart, the 'smith' projection becomes available in matplotlib.
 
 Public API:
-    - SmithAxes: The custom projection class for Smith charts.
-    - R_DOMAIN: Constant for S-parameter plotting.
-    - Z_DOMAIN: Constant for Z-parameter plotting.
-    - Y_DOMAIN: Constant for Y-parameter plotting.
-    - NORM_Z_DOMAIN: Constant for A-parameter plotting.
+    Domain constants for specifying parameter types in plot(), scatter(), and text()
+
+    - R_DOMAIN: S-parameters (reflection coefficients)
+    - Z_DOMAIN: Impedance in ohms (automatically normalized by Z₀)
+    - NORM_Z_DOMAIN: Pre-normalized impedance values
+    - Y_DOMAIN: Admittance in Siemens (automatically normalized by Y₀)
+    - NORM_Y_DOMAIN: Pre-normalized admittance values
 
 Example:
-    Import the module and plot a reflection coefficient using the Smith chart projection:
+    Plot impedance values in ohms is the default::
 
-    >>> import matplotlib.pyplot as plt
-    >>> from pysmithchart import R_DOMAIN
-    >>> plt.subplot(1, 1, 1, projection="smith")
-    >>> plt.plot([0.5 + 0.3j, -0.2 - 0.1j], 'o', domain=R_DOMAIN)
-    >>> plt.show()
+        import matplotlib.pyplot as plt
+        import pysmithchart
+
+        ax = plt.subplot(111, projection = "smith")
+        ax.plot([50 + 25j, 75 - 10j], 's-')
+        plt.show()
+
+    Plot reflection coefficients on a Smith chart::
+
+        import matplotlib.pyplot as plt
+        import pysmithchart
+        from pysmithchart import R_DOMAIN
+
+        ax = plt.subplot(111, projection = "smith", domain=R_DOMAIN)
+        ax.plot([0.5 + 0.3j, -0.2 - 0.1j], 'o-')
+        plt.show()
 """
 
 from matplotlib.projections import register_projection
@@ -46,15 +48,13 @@ from .axes import SmithAxes
 # Register the Smith projection
 register_projection(SmithAxes)
 
-# Public API for wildcard imports
-__all__ = ["SmithAxes", "R_DOMAIN", "Z_DOMAIN", "Y_DOMAIN", "NORM_Z_DOMAIN", "NORM_Y_DOMAIN"]
+# Public API - only export domain constants
+# SmithAxes is accessed via projection="smith", not direct import
+__all__ = ["R_DOMAIN", "Z_DOMAIN", "NORM_Z_DOMAIN", "Y_DOMAIN", "NORM_Y_DOMAIN"]
 
-__version__ = "0.6.0"
-__author__ = "Paul Staerke, Scott Prahl"
+__version__ = "0.9.0"
+__author__ = "Scott Prahl, Paul Staerke"
 __email__ = "scott.prahl@oit.edu"
 __copyright__ = "2025-2026 Scott Prahl"
 __license__ = "BSD-3-Clause"
 __url__ = "https://github.com/scottprahl/pysmithchart.git"
-
-if "site-packages" in __file__:
-    raise RuntimeError("pysmithchart is not running from a development checkout")
