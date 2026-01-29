@@ -36,8 +36,8 @@ exclude_patterns = [
 ]
 
 suppress_warnings = [
-    'ref.mpltype',
-    'docutils',  # Suppress docutils warnings from matplotlib
+    "ref.mpltype",
+    "docutils",  # Suppress docutils warnings from matplotlib
 ]
 
 nbsphinx_execute = "never"

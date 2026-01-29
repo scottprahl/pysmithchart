@@ -13,7 +13,7 @@ from pysmithchart.constants import NORM_Z_DOMAIN
 from pysmithchart.locators import MajorXLocator, MajorYLocator, MinorLocator
 
 # Only export the mixin class, not imported symbols
-__all__ = ['AxesCore']
+__all__ = ["AxesCore"]
 
 
 class AxesCore:

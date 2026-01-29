@@ -10,7 +10,7 @@ from pysmithchart.polar_transform import PolarTranslate
 from pysmithchart import utils
 
 # Only export the mixin class, not imported symbols
-__all__ = ['TransformMixin']
+__all__ = ["TransformMixin"]
 
 
 class TransformMixin:

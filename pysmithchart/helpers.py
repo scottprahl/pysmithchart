@@ -14,7 +14,7 @@ from pysmithchart.constants import SC_TWICE_INFINITY
 from pysmithchart.constants import R_DOMAIN, Z_DOMAIN, NORM_Z_DOMAIN, Y_DOMAIN, NORM_Y_DOMAIN
 
 # Only export the mixin class, not imported symbols
-__all__ = ['HelpersMixin']
+__all__ = ["HelpersMixin"]
 
 
 class HelpersMixin:

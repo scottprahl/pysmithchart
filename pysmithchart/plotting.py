@@ -11,7 +11,7 @@ from pysmithchart.constants import Z_DOMAIN, Y_DOMAIN, R_DOMAIN, NORM_Z_DOMAIN, 
 from pysmithchart import utils
 
 # Only export the mixin class, not imported symbols
-__all__ = ['PlottingMixin']
+__all__ = ["PlottingMixin"]
 
 
 class PlottingMixin:
@@ -856,7 +856,7 @@ class PlottingMixin:
         return lines
 
     def plot_vswr(self, vswr, *args, angle_range=None, num_points=200, arrow=None, **kwargs):
-        """
+        r"""
         Plot a constant VSWR circle on the Smith chart.
 
         A constant VSWR circle represents all impedances with the same voltage standing
@@ -931,7 +931,7 @@ class PlottingMixin:
         For impedances at the same VSWR: Draws a single arc along the constant-VSWR circle.
 
         For impedances at different VSWR: Draws a two-step path:
-        
+
         - Step 1: Rotate along constant-VSWR circle (transmission line)
         - Step 2: Move toward center (reactive element)
 
