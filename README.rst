@@ -149,7 +149,7 @@ Citation
 
 If you use ``pysmithchart`` in academic or technical work, please cite:
 
-Prahl, S. (2026). *pysmithchart: A Python module for Smith charts* (Version 0.9.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.18409151
+Prahl, S. and Staerke, P. (2026). *pysmithchart: A Python module for Smith charts* (Version 0.9.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.18409151
 
 BibTeX
 ~~~~~~
