@@ -26,7 +26,7 @@ def _close_figures():
 @pytest.fixture
 def admittances():
     """Provide a small set of complex admittances for plotting tests."""
-    return [0.5 + 0.5j, 1.0 + 0.0j, 0.5 - 0.5j, 2.0 + 1.0j]
+    return np.array([0.5 + 0.5j, 1.0 + 0.0j, 0.5 - 0.5j, 2.0 + 1.0j])
 
 
 def _assert_grid(ax, *, z_major: bool, z_minor: bool, y_major: bool, y_minor: bool):

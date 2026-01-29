@@ -1,10 +1,5 @@
 """
 Test suite for rotation functions in pysmithchart.
-
-Tests all rotation functions with normalized coordinates:
-- rotate_z_by_wavelength / rotate_y_by_wavelength
-- rotate_z_toward_resistance / rotate_z_toward_reactance
-- rotate_y_toward_conductance / rotate_y_toward_susceptance
 """
 
 import pytest
