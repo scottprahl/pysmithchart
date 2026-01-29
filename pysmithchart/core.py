@@ -125,12 +125,8 @@ class AxesCore:
             ...                 grid='admittance',
             ...                 smith_style={'grid.Y.major.color': 'blue'})
         """
-        self.transProjection = None
-        self.transAffine = None
-        self.transDataToAxes = None
-        self.transAxes = None
-        self.transMoebius = None
-        self.transData = None
+        self._current_zorder = None
+        self._normbox = None
         self._xaxis_pretransform = None
         self._xaxis_transform = None
         self._xaxis_text1_transform = None
@@ -138,18 +134,20 @@ class AxesCore:
         self._yaxis_correction = None
         self._yaxis_transform = None
         self._yaxis_text1_transform = None
-        self._majorarcs = None
-        self._minorarcs = None
+        self._Y_major_arcs = None
+        self._Y_minor_arcs = None
+        self._Z_major_arcs = None
+        self._Z_minor_arcs = None
         self._Z0 = 50
-        self._current_zorder = None
         self.scParams = copy.deepcopy(SC_DEFAULT_PARAMS)
-
-        # Initialize attributes that will be set later
+        self.transProjection = None
+        self.transAffine = None
+        self.transDataToAxes = None
+        self.transAxes = None
+        self.transMoebius = None
+        self.transData = None
         self.xaxis = None
         self.yaxis = None
-        self._normbox = None
-        self._admittance_majorarcs = None
-        self._admittance_minorarcs = None
 
         # Define shortcut mappings for user-friendly names
         SHORTCUT_MAP = {
@@ -405,10 +403,10 @@ class AxesCore:
         and when user explicitly calls plt.cla().
         """
         # Reset Smith chart-specific state
-        self._majorarcs = []
-        self._minorarcs = []
-        self._admittance_majorarcs = []
-        self._admittance_minorarcs = []
+        self._Z_major_arcs = []
+        self._Z_minor_arcs = []
+        self._Y_major_arcs = []
+        self._Y_minor_arcs = []
         self._normbox = None
 
         # Temporarily disable grid to prevent issues during parent clear
