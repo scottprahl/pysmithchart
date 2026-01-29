@@ -10,6 +10,10 @@
    :target: https://github.com/conda-forge/pysmithchart-feedstock
    :alt: Conda
 
+.. |doi| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.8370821.svg
+   :target: https://doi.org/10.5281/zenodo.8370821
+   :alt: doi  
+
 .. |license| image:: https://img.shields.io/github/license/scottprahl/pysmithchart?color=68CA66
    :target: https://github.com/scottprahl/pysmithchart/blob/main/LICENSE.txt
    :alt: License
@@ -33,7 +37,7 @@
 pysmithchart
 ============
 
-|pypi| |github| |conda| |lite|
+|pypi| |github| |conda| |doi|
 
 |license| |test| |docs| |downloads|
 
