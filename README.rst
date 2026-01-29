@@ -10,8 +10,8 @@
    :target: https://github.com/conda-forge/pysmithchart-feedstock
    :alt: Conda
 
-.. |doi| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.8370821.svg
-   :target: https://doi.org/10.5281/zenodo.8370821
+.. |doi| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.18409151.svg
+   :target: https://doi.org/10.5281/zenodo.18409151
    :alt: doi  
 
 .. |license| image:: https://img.shields.io/github/license/scottprahl/pysmithchart?color=68CA66
@@ -149,7 +149,7 @@ Citation
 
 If you use ``pysmithchart`` in academic or technical work, please cite:
 
-Prahl, S. (2026). *pysmithchart: A Python module for Smith charts* (Version 0.9.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.8370821
+Prahl, S. (2026). *pysmithchart: A Python module for Smith charts* (Version 0.9.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.18409151
 
 BibTeX
 ~~~~~~
@@ -157,11 +157,11 @@ BibTeX
 .. code-block:: bibtex
 
    @software{pygrin_prahl_2026,
-     author    = {Scott Prahl},
+     author    = {Scott Prahl and Paul Staerke},
      title     = {pysmithchart: A Python module for Smith charts},
      year      = {2026},
      version   = {0.9.0},
-     doi       = {10.5281/zenodo.8370821},
+     doi       = {10.5281/zenodo.18409151},
      url       = {https://github.com/scottprahl/pysmithchart},
      publisher = {Zenodo}
    }
