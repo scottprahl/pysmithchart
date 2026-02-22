@@ -1,6 +1,7 @@
 PACKAGE         := pysmithchart
 GITHUB_USER     := scottprahl
 
+PY_VERSION      ?= 3.14
 UV              ?= uv
 RUN             := $(UV) run --extra dev
 RUN_DOCS        := $(UV) run --extra docs
@@ -28,7 +29,7 @@ PORT            := 8000
 PYTEST_OPTS     := -x
 SPHINX_OPTS     := -T -E -b html -d $(DOCS_DIR)/_build/doctrees -D language=en
 
-PYLINT_TARGETS  := pysmithchart/*.py tests/*.py .github/scripts/update_citation.py
+PYLINT_TARGETS  := $(PACKAGE)/*.py tests/*.py .github/scripts/update_citation.py
 YAML_TARGETS    := .github/workflows/citation.yaml .github/workflows/pypi.yaml .github/workflows/test.yaml .readthedocs.yaml
 RST_TARGETS     := README.rst CHANGELOG.rst $(DOCS_DIR)/index.rst $(DOCS_DIR)/changelog.rst
 
@@ -84,6 +85,11 @@ html:
 	@mkdir -p "$(HTML_DIR)"
 	$(RUN_DOCS) sphinx-build $(SPHINX_OPTS) "$(DOCS_DIR)" "$(HTML_DIR)"
 	@command -v open >/dev/null 2>&1 && open "$(HTML_DIR)/index.html" || true
+
+.PHONY: lab
+lab:
+	@echo "==> Launching JupyterLab using uv"
+	$(RUN) jupyter lab --ServerApp.root_dir="$(CURDIR)"
 
 .PHONY: lint
 lint: pylint-check
@@ -156,10 +162,7 @@ lite-serve:
 	$(RUN_LITE) python -m http.server -d "$(OUT_ROOT)" --bind $(HOST) $(PORT)
 
 .PHONY: lite-deploy
-lite-deploy:
-	@echo "==> Sanity check"
-	@test -d "$(OUT_DIR)" || { echo "❌ Run 'make lite' first"; exit 1; }
-
+lite-deploy: realclean lite
 	@echo "==> Ensure $(PAGES_BRANCH) branch exists"
 	@if ! git show-ref --verify --quiet refs/heads/$(PAGES_BRANCH); then \
 	  CURRENT=$$(git branch --show-current); \
@@ -169,10 +172,6 @@ lite-deploy:
 	fi
 
 	@echo "==> Setup deployment worktree"
-	@git worktree remove "$(WORKTREE)" --force 2>/dev/null || true
-	@git worktree prune || true
-	@$(RMR) "$(WORKTREE)"
-
 	@git worktree add "$(WORKTREE)" "$(PAGES_BRANCH)"
 	@git -C "$(WORKTREE)" pull "$(REMOTE)" "$(PAGES_BRANCH)" 2>/dev/null || true
 
@@ -191,11 +190,6 @@ lite-deploy:
 	    git push "$(REMOTE)" "$(PAGES_BRANCH)" && \
 	    echo "✅ Deployed to https://$(GITHUB_USER).github.io/$(PACKAGE)/"; \
 	  fi
-
-.PHONY: lab
-lab:
-	@echo "==> Launching JupyterLab using uv"
-	$(RUN) jupyter lab --ServerApp.root_dir="$(CURDIR)"
 
 .PHONY: lite-clean
 lite-clean:
