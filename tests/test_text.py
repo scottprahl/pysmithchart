@@ -5,18 +5,13 @@ This module tests the custom text() method implementation that properly
 transforms impedance/admittance coordinates to Smith chart display space.
 """
 
-import pytest
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+import pytest
 
-matplotlib.use("Agg")  # Use non-interactive backend for testing
-
-import sys
-
-sys.path.insert(0, "/home/claude")
-
-from pysmithchart import Z_DOMAIN, R_DOMAIN
+from pysmithchart import R_DOMAIN, Z_DOMAIN
+from pysmithchart.utils import z_to_xy
 
 
 class TestSmithAxesTextMethod:
@@ -93,7 +88,7 @@ class TestSmithAxesTextMethod:
 
     def test_text_with_bbox(self, smith_axes):
         """Test text with background box."""
-        bbox_props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        bbox_props = {"boxstyle": "round", "facecolor": "wheat", "alpha": 0.5}
         text_obj = smith_axes.text(50, 0, "Boxed Text", bbox=bbox_props)
         assert text_obj.get_bbox_patch() is not None
 
@@ -140,12 +135,10 @@ class TestSmithAxesTextMethod:
 
         # For Z_DOMAIN, the transformation is:
         # z = 50 + 25j -> normalize by Z0 -> z_to_xy
-        from pysmithchart.utils import z_to_xy
-
         z = 50 + 25j
         # Z_DOMAIN is always normalized by Z0 in the transform pipeline
-        if smith_axes._get_key("axes.normalize"):
-            z = z / smith_axes._get_key("axes.Z0")
+        if smith_axes.scParams["axes.normalize"]:
+            z = z / smith_axes.scParams["axes.Z0"]
 
         x_expected, y_expected = z_to_xy(z)
 
@@ -163,8 +156,6 @@ class TestSmithAxesTextMethod:
         pos = text_obj.get_position()
 
         # For R_DOMAIN, transformation is: moebius_inv_z(s) -> z_to_xy
-        from pysmithchart.utils import z_to_xy
-
         s = 0.5 + 0.3j
         z_impedance = smith_axes.moebius_inv_z(s)
         x_expected, y_expected = z_to_xy(z_impedance)
@@ -357,7 +348,7 @@ class TestSmithAxesTextIntegration:
     def test_text_with_annotations(self, smith_axes):
         """Test text alongside annotations."""
         smith_axes.text(50, 25, "Text Label")
-        smith_axes.annotate("Annotation", xy=(50, 25), xytext=(75, 50), arrowprops=dict(arrowstyle="->"))
+        smith_axes.annotate("Annotation", xy=(50, 25), xytext=(75, 50), arrowprops={"arrowstyle": "->"})
         assert len(smith_axes.texts) >= 2  # Both text and annotation
 
 

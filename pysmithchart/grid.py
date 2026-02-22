@@ -22,6 +22,9 @@ class GridMixin:
             grid (str): 'impedance', 'admittance', or 'both' (default: 'both')
             **kwargs: Styling parameters that override configuration
         """
+        if getattr(self, "_suspend_grid_during_clear", False):
+            return
+
         assert grid in ["impedance", "admittance", "both"]
 
         fancy = self._get_key("grid.fancy")

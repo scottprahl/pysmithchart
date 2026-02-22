@@ -1,25 +1,20 @@
 PACKAGE         := pysmithchart
 GITHUB_USER     := scottprahl
 
-# -------- venv config --------
-PY_VERSION      ?= 3.12
-VENV            ?= .venv
-PY              := /opt/homebrew/opt/python@$(PY_VERSION)/bin/python$(PY_VERSION)
-PYTHON          := $(VENV)/bin/python
-SERVE_PY        := $(abspath $(PYTHON))
-PIP             := $(VENV)/bin/pip
-PYPROJECT       := pyproject.toml
+UV              ?= uv
+RUN             := $(UV) run --extra dev
+RUN_DOCS        := $(UV) run --extra docs
+RUN_LITE        := $(UV) run --extra lite
+RM              ?= rm -f
+RMR             ?= rm -rf
 
-BUILD_APPS      := lab
 DOCS_DIR        := docs
 HTML_DIR        := $(DOCS_DIR)/_build/html
-
-ROOT            := $(abspath .)
-OUT_ROOT        := $(ROOT)/_site
+OUT_ROOT        := _site
 OUT_DIR         := $(OUT_ROOT)/$(PACKAGE)
-STAGE_DIR       := $(ROOT)/.lite_src
-DOIT_DB         := $(ROOT)/.jupyterlite.doit.db
-LITE_CONFIG     := $(ROOT)/$(PACKAGE)/jupyter_lite_config.json
+STAGE_DIR       := .lite_src
+DOIT_DB         := .jupyterlite.doit.db
+LITE_CONFIG     := $(PACKAGE)/jupyter_lite_config.json
 
 # --- GitHub Pages deploy config ---
 PAGES_BRANCH    := gh-pages
@@ -30,26 +25,19 @@ REMOTE          := origin
 HOST            := 127.0.0.1
 PORT            := 8000
 
-PYTEST          := $(VENV)/bin/pytest
-PYLINT          := $(VENV)/bin/pylint
-SPHINX          := $(VENV)/bin/sphinx-build
-RUFF            := $(VENV)/bin/ruff
-BLACK           := $(VENV)/bin/black
-CHECKMANIFEST   := $(VENV)/bin/check-manifest
-PYROMA          := $(PYTHON) -m pyroma
-RSTCHECK        := $(PYTHON) -m rstcheck
-YAMLLINT        := $(PYTHON) -m yamllint
-
 PYTEST_OPTS     := -x
 SPHINX_OPTS     := -T -E -b html -d $(DOCS_DIR)/_build/doctrees -D language=en
-NOTEBOOK_RUN    := $(PYTEST) --verbose tests/all_test_notebooks.py
+
+PYLINT_TARGETS  := pysmithchart/*.py tests/*.py .github/scripts/update_citation.py
+YAML_TARGETS    := .github/workflows/citation.yaml .github/workflows/pypi.yaml .github/workflows/test.yaml .readthedocs.yaml
+RST_TARGETS     := README.rst CHANGELOG.rst $(DOCS_DIR)/index.rst $(DOCS_DIR)/changelog.rst
 
 .PHONY: help
 help:
 	@echo "Build Targets:"
 	@echo "  dist           - Build sdist+wheel locally"
 	@echo "  html           - Build Sphinx HTML documentation"
-	@echo "  venv           - Create/provision the virtual environment ($(VENV))"
+	@echo "  sync           - Sync uv environment with dev/docs/lite extras"
 	@echo "  lab            - Start jupyterlab"
 	@echo ""
 	@echo "Test Targets:"
@@ -73,114 +61,57 @@ help:
 	@echo "Clean Targets:"
 	@echo "  clean          - Remove build caches and docs output"
 	@echo "  lite-clean     - Remove JupyterLite outputs"
-	@echo "  realclean      - clean + remove $(VENV)"
-
-# venv bootstrap
-$(VENV)/.ready: Makefile $(PYPROJECT)
-	@echo "==> Ensuring venv at $(VENV) using $(PY)"
-	@if [ ! -x "$(PY)" ]; then \
-		echo "❌ Homebrew Python $(PY_VERSION) not found at $(PY)"; \
-		echo "   Try: brew install python@$(PY_VERSION)"; \
-		exit 1; \
-	fi
-	@if [ ! -d "$(VENV)" ]; then \
-		"$(PY)" -m venv "$(VENV)"; \
-	fi
-	@$(PYTHON) -m pip install --upgrade pip wheel
-	@echo "==> Installing $(PACKAGE) + dev extras"
-	@$(PYTHON) -m pip install -e ".[dev,docs,lite]"
-	@touch "$(VENV)/.ready"
-	@echo "✅ venv ready"
+	@echo "  realclean      - clean + remove deployment worktree"
 
 .PHONY: venv
-venv: $(VENV)/.ready
-	@:
+venv:
+	@$(UV) sync --python $(PY_VERSION) --extra dev --extra docs --extra lite
 
 .PHONY: dist
-dist: $(VENV)/.ready
-	$(PYTHON) -m build
-	
+dist:
+	$(RUN) python -m build
+
 .PHONY: test
-test: $(VENV)/.ready
-	$(PYTEST) $(PYTEST_OPTS) tests/test_annotate.py
-	$(PYTEST) $(PYTEST_OPTS) tests/test_noergaard.py
-	$(PYTEST) $(PYTEST_OPTS) tests/test_rotation_functions.py
-	$(PYTEST) $(PYTEST_OPTS) tests/test_scatter.py
-	$(PYTEST) $(PYTEST_OPTS) tests/test_schang.py
-	$(PYTEST) $(PYTEST_OPTS) tests/test_simple.py
-	$(PYTEST) $(PYTEST_OPTS) tests/test_text.py
-	$(PYTEST) $(PYTEST_OPTS) tests/test_vmeijin_full.py
-	$(PYTEST) $(PYTEST_OPTS) tests/test_vmeijin_short.py
-	$(PYTEST) $(PYTEST_OPTS) tests/test_xy_to_z.py
-	$(PYTEST) $(PYTEST_OPTS) tests/test_grid_param.py
+test:
+	$(RUN) pytest $(PYTEST_OPTS) tests --ignore=tests/test_all_notebooks.py
 
 .PHONY: note-test
-note-test: $(VENV)/.ready
-	$(PYTEST) --verbose tests/test_all_notebooks.py
-	@echo "✅ Notebook check complete"
+note-test:
+	$(RUN) pytest --verbose tests/test_all_notebooks.py
 
 .PHONY: html
-html: $(VENV)/.ready
+html:
 	@mkdir -p "$(HTML_DIR)"
-	$(SPHINX) $(SPHINX_OPTS) "$(DOCS_DIR)" "$(HTML_DIR)"
+	$(RUN_DOCS) sphinx-build $(SPHINX_OPTS) "$(DOCS_DIR)" "$(HTML_DIR)"
 	@command -v open >/dev/null 2>&1 && open "$(HTML_DIR)/index.html" || true
 
 .PHONY: lint
 lint: pylint-check
 
 .PHONY: pylint-check
-pylint-check: $(VENV)/.ready
-	-@$(PYLINT) pysmithchart/__init__.py
-	-@$(PYLINT) pysmithchart/axes.py
-	-@$(PYLINT) pysmithchart/constants.py
-	-@$(PYLINT) pysmithchart/core.py
-	-@$(PYLINT) pysmithchart/formatters.py
-	-@$(PYLINT) pysmithchart/grid.py
-	-@$(PYLINT) pysmithchart/helpers.py
-	-@$(PYLINT) pysmithchart/locators.py
-	-@$(PYLINT) pysmithchart/moebius_transform.py
-	-@$(PYLINT) pysmithchart/plotting.py
-	-@$(PYLINT) pysmithchart/polar_transform.py
-	-@$(PYLINT) pysmithchart/rotation.py
-	-@$(PYLINT) pysmithchart/transforms.py
-	-@$(PYLINT) pysmithchart/utils.py
-	-@$(PYLINT) tests/test_annotate.py
-	-@$(PYLINT) tests/test_grid_param.py
-	-@$(PYLINT) tests/test_noergaard.py
-	-@$(PYLINT) tests/test_rotation_functions.py
-	-@$(PYLINT) tests/test_scatter.py
-	-@$(PYLINT) tests/test_schang.py
-	-@$(PYLINT) tests/test_simple.py
-	-@$(PYLINT) tests/test_vmeijin_short.py
-	-@$(PYLINT) tests/test_vmeijin_full.py
-	-@$(PYLINT) tests/test_xy_to_z.py
+pylint-check:
+	-@$(RUN) pylint $(PYLINT_TARGETS)
 
 .PHONY: yaml-check
-yaml-check: $(VENV)/.ready
-	-@$(PYTHON) -m yamllint .github/workflows/citation.yaml
-	-@$(PYTHON) -m yamllint .github/workflows/pypi.yaml
-	-@$(PYTHON) -m yamllint .github/workflows/test.yaml
-	-@$(PYTHON) -m yamllint .readthedocs.yaml
+yaml-check:
+	-@$(RUN) python -m yamllint $(YAML_TARGETS)
 
 .PHONY: rst-check
-rst-check: $(VENV)/.ready
-	-@$(RSTCHECK) README.rst
-	-@$(RSTCHECK) CHANGELOG.rst
-	-@$(RSTCHECK) $(DOCS_DIR)/index.rst
-	-@$(RSTCHECK) $(DOCS_DIR)/changelog.rst
-	-@$(RSTCHECK) --ignore-directives automodapi $(DOCS_DIR)/$(PACKAGE).rst
+rst-check:
+	-@$(RUN) python -m rstcheck $(RST_TARGETS)
+	-@$(RUN) python -m rstcheck --ignore-directives automodapi $(DOCS_DIR)/$(PACKAGE).rst
 
 .PHONY: ruff-check
-ruff-check: $(VENV)/.ready
-	$(RUFF) check
+ruff-check:
+	$(RUN) ruff check
 
 .PHONY: manifest-check
-manifest-check: $(VENV)/.ready
-	$(CHECKMANIFEST)
+manifest-check:
+	$(RUN) check-manifest
 
 .PHONY: pyroma-check
-pyroma-check: $(VENV)/.ready
-	$(PYROMA) -d .
+pyroma-check:
+	$(RUN) python -m pyroma -d .
 
 .PHONY: rcheck
 rcheck:
@@ -197,61 +128,35 @@ rcheck:
 	@$(MAKE) test
 	@$(MAKE) note-test
 	@echo "✅ Release checks complete"
-	
+
 .PHONY: lite
-lite: $(VENV)/.ready $(LITE_CONFIG)
-	@echo "==> Building package wheel for PyOdide"
-	@$(PYTHON) -m build
-
-	@echo "==> Checking for .gh-pages worktree"
-	@if [ -d "$(WORKTREE)" ]; then \
-		echo "    Found .gh-pages worktree, removing..."; \
-		git worktree remove "$(WORKTREE)" --force 2>/dev/null || true; \
-		git worktree prune; \
-		rm -rf "$(WORKTREE)"; \
-		echo "    ✓ Removed"; \
-	else \
-		echo "    No .gh-pages worktree found"; \
-	fi
-
-	@echo "==> Cleaning previous builds"
-	@/bin/rm -rf "$(OUT_ROOT)"
-	@/bin/rm -rf "$(DOIT_DB)"
-	@/bin/rm -rf ".doit.db"
-	@/bin/rm -rf ".jupyterlite.doit.db.db"
-	@echo "    ✓ Cleaned"
-
+lite: lite-clean dist $(LITE_CONFIG)
 	@echo "==> Staging notebooks from docs -> $(STAGE_DIR)"
-	@/bin/rm -rf "$(STAGE_DIR)"; mkdir -p "$(STAGE_DIR)"
-	@if ls docs/*.ipynb 1> /dev/null 2>&1; then \
-		/bin/cp docs/*.ipynb "$(STAGE_DIR)"; \
-		echo "==> Clearing outputs from staged notebooks"; \
-		"$(PYTHON)" -m jupyter nbconvert --clear-output --inplace "$(STAGE_DIR)"/*.ipynb; \
-	else \
-		echo "⚠️  No notebooks found in docs/"; \
-	fi
+	@mkdir -p "$(STAGE_DIR)"
+	/bin/cp docs/*.ipynb "$(STAGE_DIR)"
+	@$(RUN_LITE) jupyter nbconvert --clear-output --inplace "$(STAGE_DIR)"/*.ipynb
 
 	@echo "==> Building JupyterLite"
-	@"$(PYTHON)" -m jupyter lite build \
+	@$(RUN_LITE) jupyter lite build \
 		--config="$(LITE_CONFIG)" \
 		--contents="$(STAGE_DIR)" \
 		--output-dir="$(OUT_DIR)"
 
 	@echo "==> Adding .nojekyll for GitHub Pages"
 	@touch "$(OUT_DIR)/.nojekyll"
-	
+
 	@echo "✅ Build complete -> $(OUT_DIR)"
 
 .PHONY: lite-serve
-lite-serve: $(VENV)/.ready
+lite-serve:
 	@test -d "$(OUT_DIR)" || { echo "❌ run 'make lite' first"; exit 1; }
 	@echo "Serving at"
 	@echo "   http://$(HOST):$(PORT)/$(PACKAGE)/?disableCache=1"
 	@echo ""
-	"$(PYTHON)" -m http.server -d "$(OUT_ROOT)" --bind $(HOST) $(PORT)
+	$(RUN_LITE) python -m http.server -d "$(OUT_ROOT)" --bind $(HOST) $(PORT)
 
 .PHONY: lite-deploy
-lite-deploy: 
+lite-deploy:
 	@echo "==> Sanity check"
 	@test -d "$(OUT_DIR)" || { echo "❌ Run 'make lite' first"; exit 1; }
 
@@ -266,7 +171,7 @@ lite-deploy:
 	@echo "==> Setup deployment worktree"
 	@git worktree remove "$(WORKTREE)" --force 2>/dev/null || true
 	@git worktree prune || true
-	@rm -rf "$(WORKTREE)"
+	@$(RMR) "$(WORKTREE)"
 	@git worktree add "$(WORKTREE)" "$(PAGES_BRANCH)"
 	@git -C "$(WORKTREE)" pull "$(REMOTE)" "$(PAGES_BRANCH)" 2>/dev/null || true
 
@@ -288,37 +193,29 @@ lite-deploy:
 
 .PHONY: lab
 lab:
-	@echo "==> Launching JupyterLab using venv ($(PYTHON))"
-	"$(PYTHON)" -m jupyter lab --ServerApp.root_dir="$(CURDIR)"
-
-.PHONY: clean
-clean:
-	@echo "==> Cleaning build artifacts"	
-	@find . -name '__pycache__' -type d -exec rm -rf {} +
-	@find . -name '.DS_Store' -type f -delete
-	@find . -name '.ipynb_checkpoints' -type d -prune -exec rm -rf {} +
-	@find . -name '.pytest_cache' -type d -prune -exec rm -rf {} +
-	rm -rf .ruff_cache
-	rm -rf $(PACKAGE).egg-info
-	rm -rf docs/api
-	rm -rf docs/_build
-	rm -rf tests/charts
-	rm -rf dist
-	rm -rf .cache
-
+	@echo "==> Launching JupyterLab using uv"
+	$(RUN) jupyter lab --ServerApp.root_dir="$(CURDIR)"
 
 .PHONY: lite-clean
 lite-clean:
 	@echo "==> Cleaning JupyterLite build artifacts"
-	@/bin/rm -rf "$(STAGE_DIR)"
-	@/bin/rm -rf "$(OUT_ROOT)"
-	@/bin/rm -rf ".lite_root"
-	@/bin/rm -rf "$(DOIT_DB)"
-	@/bin/rm -rf "_output"
+	$(RMR) $(STAGE_DIR) $(OUT_ROOT) $(DOIT_DB)
+	$(RMR) .cache dist $(PACKAGE).egg-info
+
+.PHONY: clean
+clean: lite-clean
+	@echo "==> Cleaning build artifacts"
+	@find . -name '__pycache__' -type d -prune | while IFS= read -r path; do $(RMR) "$$path"; done
+	@find . -name '.DS_Store' -type f | while IFS= read -r path; do $(RM) "$$path"; done
+	@find . -name '.ipynb_checkpoints' -type d -prune | while IFS= read -r path; do $(RMR) "$$path"; done
+	@find . -name '.pytest_cache' -type d -prune | while IFS= read -r path; do $(RMR) "$$path"; done
+	$(RMR) .ruff_cache
+	$(RMR) docs/api docs/_build
 
 .PHONY: realclean
-realclean: lite-clean clean
-	@echo "==> Deep cleaning: removing venv and deployment worktree"
+realclean: clean
+	@echo "==> Deep cleaning: removing .venv and deployment worktree"
 	@git worktree remove "$(WORKTREE)" --force 2>/dev/null || true
-	@/bin/rm -rf "$(WORKTREE)"
-	@/bin/rm -rf "$(VENV)"
+	@git worktree prune || true
+	$(RMR) "$(WORKTREE)"
+	$(RMR) .venv

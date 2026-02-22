@@ -10,11 +10,11 @@ After importing this pysmithchart, the 'smith' projection becomes available in m
 Public API:
     Domain constants for specifying parameter types in plot(), scatter(), and text()
 
-    - R_DOMAIN: S-parameters (reflection coefficients)
-    - Z_DOMAIN: Impedance in ohms (automatically normalized by Z₀)
-    - NORM_Z_DOMAIN: Pre-normalized impedance values
-    - Y_DOMAIN: Admittance in Siemens (automatically normalized by Y₀)
-    - NORM_Y_DOMAIN: Pre-normalized admittance values
+    - R_DOMAIN: S-parameters: S₁₁, S₁₂, or Γ (dimensionless)
+    - Z_DOMAIN: Impedance in ohms
+    - NORM_Z_DOMAIN: Normalized impedance values
+    - Y_DOMAIN: Admittance in Siemens
+    - NORM_Y_DOMAIN: Normalized admittance values
 
 More documentation at <https://pysmithchart.readthedocs.io>
 

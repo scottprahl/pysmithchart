@@ -1,15 +1,23 @@
 CHANGELOG
 =========
 
-Version 0.9.0
+Unreleased ()
 -------------
+
+* moved Makefile workflows to ``uv run`` wrappers for dev/docs/lite
+* raised minimum supported Python to 3.10
+* updated CI/runtime defaults to Python 3.14 and narrowed testing to Python 3.10 and 3.14
+* updated docs and lite optional dependency ranges in ``pyproject.toml``
+
+0.9.0 (2026-01-29)
+------------------
 
 * added admittance grids
 * much clearer support for domains for data
 * added NORM_Z_DOMAIN and NORM_Y_DOMAIN
 * Renovation of jupyter notebooks for documentation
-* added ``scatter()`` 
-* improved ``text()`` 
+* added ``scatter()``
+* improved ``text()``
 * improved ``annotate()``
 * added ``plot_constant_resistance``
 * added ``plot_constant_reactance``
@@ -19,8 +27,9 @@ Version 0.9.0
 * added ``plot_rotation_path``
 * rationalized internal names
 
-0.5.0
------
+0.5.0 (2026-01-29)
+------------------
+
 * __init__.py is only source of version
 * pyproject.toml is only source of package requirements
 * update .readthedocs.yaml
@@ -29,12 +38,14 @@ Version 0.9.0
 * move jupyter_lite_config.json to pysmithchart folder
 * improve README
 
-0.4.1
------
+0.4.1 (2025-11-24)
+------------------
+
 * fixing pypi deployment
 
-0.4.0
------
+0.4.0 (2025-11-16)
+------------------
+
 * added jupyterlite support
 * improved readme
 * simplified MANIFEST.in
@@ -43,8 +54,9 @@ Version 0.9.0
 * Makefile has many more targets
 * remove unnecessary files from pypi distributions
 
-0.3.0
------
+0.3.0 (2025-02-05)
+------------------
+
 * changed name to pysmithchart
 * fix bitrot so it works with current python and matplotlib
 * address deprecation warnings
@@ -56,8 +68,9 @@ Version 0.9.0
 * packaged for release on pypi
 * added documentation on readthedocs
 
-0.2.0
-------
+0.2.0 (2016-07-26)
+------------------
+
 * last release of pySmithPlot by @vMeijin
 * Support for Python 3
 * improved grid generation algorithm

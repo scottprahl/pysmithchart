@@ -141,6 +141,7 @@ class AxesCore:
         self._Y_minor_arcs = None
         self._Z_major_arcs = None
         self._Z_minor_arcs = None
+        self._suspend_grid_during_clear = False
         self._Z0 = 50
         self.scParams = copy.deepcopy(SC_DEFAULT_PARAMS)
         self.transProjection = None
@@ -413,14 +414,11 @@ class AxesCore:
         self._normbox = None
 
         # Temporarily disable grid to prevent issues during parent clear
-        original_grid = getattr(self, "grid", None)
-        if original_grid is not None:
-            self.grid = lambda *args, **kwargs: None
+        self._suspend_grid_during_clear = True
         try:
             Axes.clear(self)
         finally:
-            if original_grid is not None:
-                self.grid = original_grid
+            self._suspend_grid_during_clear = False
 
         # Perform Smith chart initialization
         self._init_smith_chart()
