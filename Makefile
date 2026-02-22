@@ -172,6 +172,7 @@ lite-deploy:
 	@git worktree remove "$(WORKTREE)" --force 2>/dev/null || true
 	@git worktree prune || true
 	@$(RMR) "$(WORKTREE)"
+
 	@git worktree add "$(WORKTREE)" "$(PAGES_BRANCH)"
 	@git -C "$(WORKTREE)" pull "$(REMOTE)" "$(PAGES_BRANCH)" 2>/dev/null || true
 
@@ -219,3 +220,4 @@ realclean: clean
 	@git worktree prune || true
 	$(RMR) "$(WORKTREE)"
 	$(RMR) .venv
+	@$(RM) uv.lock
