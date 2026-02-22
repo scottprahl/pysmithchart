@@ -1,45 +1,23 @@
 {
   "pysmithchart": {
     "releases": {
-      "0.6.0": [
-        {
-          "comment_text": "",
-          "digests": {
-            "md5": "052aeb953c5d2b755f3d2f9dc605d2c7",
-            "sha256": "ec0db3060cde14d4e860fced45b2e0d0137679d55007b02caad65f607b8075f6"
-          },
-          "downloads": -1,
-          "filename": "pysmithchart-0.6.0-py3-none-any.whl",
-          "has_sig": false,
-          "md5_digest": "052aeb953c5d2b755f3d2f9dc605d2c7",
-          "packagetype": "bdist_wheel",
-          "python_version": "py3",
-          "requires_python": ">=3.9",
-          "size": 53331,
-          "upload_time": "2026-01-29T03:24:08.461071Z",
-          "upload_time_iso_8601": "2026-01-29T03:24:08.461071Z",
-          "url": "./pysmithchart-0.6.0-py3-none-any.whl",
-          "yanked": false,
-          "yanked_reason": null
-        }
-      ],
       "0.9.0": [
         {
           "comment_text": "",
           "digests": {
-            "md5": "40c262eee6a55398edcf42925e0f3fed",
-            "sha256": "d371d4fd8e2c52b351911e7a89a0731994156e9502bf5fed4bce8b00df6aa1f8"
+            "md5": "fa204485123bf2c02d2d9efc469c0c8a",
+            "sha256": "43afdd965a97fc26146241ef88d5a0798c486b832f1177fe5f83bdce747d7247"
           },
           "downloads": -1,
           "filename": "pysmithchart-0.9.0-py3-none-any.whl",
           "has_sig": false,
-          "md5_digest": "40c262eee6a55398edcf42925e0f3fed",
+          "md5_digest": "fa204485123bf2c02d2d9efc469c0c8a",
           "packagetype": "bdist_wheel",
           "python_version": "py3",
-          "requires_python": ">=3.9",
-          "size": 53128,
-          "upload_time": "2026-01-29T03:46:45.558189Z",
-          "upload_time_iso_8601": "2026-01-29T03:46:45.558189Z",
+          "requires_python": ">=3.10",
+          "size": 53198,
+          "upload_time": "2026-02-22T19:10:51.128813Z",
+          "upload_time_iso_8601": "2026-02-22T19:10:51.128813Z",
           "url": "./pysmithchart-0.9.0-py3-none-any.whl",
           "yanked": false,
           "yanked_reason": null
